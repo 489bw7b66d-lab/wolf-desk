@@ -5,6 +5,7 @@ import { lastLeg, fibPlan } from './core-fib.js';
 import { elliott } from './core-elliott.js';
 import { chartPatterns } from './core-patterns.js';
 import { candlePatterns } from './core-candlesticks.js';
+import { confirmations } from './core-confirm.js';
 
 // Gewichtung der Ereignisse (Punkte). Trendzustand max. 70, Ereignisse max. 30 je Timeframe und Richtung.
 export const EVENT_POINTS = {
@@ -99,6 +100,7 @@ export function analyzeTimeframe(candles, tf = '') {
     macdHist: last(m.hist), macdHistPrev: m.hist[m.hist.length - 2],
     atr: atrNow,
     stack, structure: structureOf(pv), pivots: pv, events, elliott: ew,
+    confirmations: confirmations(candles, atrNow),
   };
 }
 

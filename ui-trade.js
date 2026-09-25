@@ -4,7 +4,7 @@ import { accountSummary } from './core-calc.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, priceVsPlan, withEntry, leverageIssues } from './core-risk.js';
 import { chartSvg } from './ui-chart.js';
 import { switchStyle } from './core-scanner.js';
-import { badge, ladder, esc, topReasons, styleRow, exitTable, fitHint, TFL } from './ui-parts.js';
+import { badge, ladder, esc, topReasons, styleRow, exitTable, fitHint, TFL, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -27,7 +27,8 @@ function calc() {
   const margin = size && lev ? size.notional / lev : null;
   const issues = manualLev ? leverageIssues(manualLev, { liqMax, exchangeMax, styleMax, margin, available: sum?.available }) : [];
   const exits = size ? exitPlan(p.dir, p.entry, p.tps, size.size, CONFIG.exitPlan) : null;
-  return { sum, size, maxLev, rec, cap, exits, lev, margin, issues, exchangeMax, styleMax };
+  const levCtx = size ? { notional: size.notional, available: sum.available, liqMax, exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct } : null;
+  return { sum, size, maxLev, rec, cap, exits, lev, margin, issues, exchangeMax, styleMax, levCtx };
 }
 
 function planText() {
@@ -45,7 +46,7 @@ function planText() {
 
 function render() {
   const r = current, p = r.plan;
-  const { sum, size, maxLev, rec, cap, exits, lev, margin, issues, exchangeMax, styleMax } = calc();
+  const { sum, size, maxLev, rec, cap, exits, lev, margin, exchangeMax, styleMax, levCtx } = calc();
   const riskState = riskPct >= CONFIG.rules.riskPerTradeMaxPct ? 'bad' : riskPct >= CONFIG.rules.riskPerTradeWarnPct ? 'warn' : 'ok';
   $('sheet-body').innerHTML = `
     <div class="sheet-head">
@@ -53,6 +54,7 @@ function render() {
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]} · ${esc(p.entryMode)}</span></div>
       ${badge(p.dir)}
     </div>
+    ${seal(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
     ${r.candles ? `<div class="chart-tfs" role="group" aria-label="Chart-Zeitraum">${r.tfs.map((tf) => `<button type="button" data-ctf="${tf}" aria-pressed="${tf === chartTf}">${TFL[tf]}</button>`).join('')}</div>
     <div id="sheet-chart" class="chart-box"></div>` : ''}
@@ -70,21 +72,12 @@ function render() {
       <div class="span2"><span class="k">Positionsgröße</span><span class="v big" style="color:var(--gold)">${size ? f.size(size.size) : '–'}</span></div>
       <div><span class="k">Risiko</span><span class="v ${riskState === 'ok' ? '' : riskState === 'warn' ? 'warn-t' : 'short'}">${size ? f.usd(size.riskAmt) : '–'}</span></div>
       <div><span class="k">Positionswert</span><span class="v">${size ? f.usd(size.notional) : '–'}</span></div>
-      <div class="span2"><span class="k">Margin (dein Einsatz)</span><span class="v big" style="color:var(--gold)">${margin ? f.usd(margin) : '–'}</span></div>
+      <div class="span2"><span class="k">Margin (dein Einsatz)</span><span class="v big" id="sheet-margin" style="color:var(--gold)">${margin ? f.usd(margin) : '–'}</span></div>
     </div>
-    <div class="lev-row">
-      <span class="k">Hebel</span>
-      <div class="stepper" role="group" aria-label="Hebel einstellen">
-        <button type="button" data-lev="-1" aria-label="Hebel verringern">−</button>
-        <span class="lev-val">${lev ? f.lev(lev) : '–'}<small>${manualLev ? 'manuell' : 'Empfehlung'}</small></span>
-        <button type="button" data-lev="1" aria-label="Hebel erhöhen">+</button>
-      </div>
-      ${manualLev ? '<button type="button" class="small-btn ghost" data-lev="auto">Auto</button>' : ''}
-    </div>
-    ${issues.map((i) => `<p class="warnline" style="color:var(--${i.status === 'bad' ? 'bad' : 'warn'})">${esc(i.text)}</p>`).join('')}
+    ${levCtx ? levSlider(lev || Math.min(maxLev || 1, levCtx.exchangeMax || 50), rec?.lev || null, levCtx) : ''}
     <h3 class="sub-h">Ausstiegsplan</h3>
     ${exitTable(exits, CONFIG.runnerNote)}
-    <p class="empty" style="margin-top:8px">${rec?.lev ? `Empfehlung nutzt ${f.pct(rec.budgetPct, 0)} deines verfügbaren Kapitals (${f.usd(sum.available)}). ` : ''}Sicher bis ca. ${f.lev(maxLev)} · Grenzen: ${CONFIG.signals.modes[r.mode]?.label || ''} ${styleMax}×${exchangeMax ? `, Hyperliquid ${exchangeMax}×` : ''}. Die Positionsgröße hängt nur vom Risiko ab, der Hebel ändert nur die Margin.</p>
+    <p class="empty" style="margin-top:8px">Der Hebel ändert nur die Margin, Positionsgröße und Risiko bleiben gleich. Grenzen: ${CONFIG.signals.modes[r.mode]?.label || ''} ${styleMax}×${exchangeMax ? `, Hyperliquid ${exchangeMax}×` : ''}, Liquidation hinter dem Stop bis ca. ${f.lev(maxLev)}.</p>
     ${rec && !rec.lev && !manualLev ? `<p class="warnline">Für ${riskPct} % Risiko wären mind. ${rec.need}× nötig, möglich sind nur ca. ${maxLev}×.</p>${fitHint(maxFit(p.entry, p.stop, sum.available, maxLev, CONFIG.rules.marginBudgetPct), sum.equity, CONFIG.rules.marginBudgetPct)}` : ''}`}
     ${p.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}${w.price ? ` (${f.price(w.price)})` : ''}</p>`).join('')}
     <div class="sheet-actions">
@@ -108,7 +101,7 @@ function renderLive() {
   const s = getState(), p = current.plan;
   const px = s.prices?.[current.coin], ts = s.priceTs?.[current.coin];
   const ch = $('sheet-chart');
-  if (ch && current.candles?.[chartTf]) ch.innerHTML = chartSvg({ candles: current.candles[chartTf], tf: chartTf, plan: p, price: px, events: current.events });
+  if (ch && current.candles?.[chartTf]) ch.innerHTML = chartSvg({ candles: current.candles[chartTf], tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current) });
   const age = ts ? Date.now() - ts : null;
   const pos = priceVsPlan(basePlan || p, px);
   const cls = pos ? { zone: 'ok', chasing: 'warn', early: 'warn', invalid: 'bad' }[pos.state] : 'warn';
@@ -150,22 +143,21 @@ export function closeTrade() {
 
 export function initTrade(stateGetter, onFull, onCalc) {
   getState = stateGetter;
+  // Hebel-Regler: beim Ziehen nur Margin und Ampel aktualisieren
+  $('sheet-body').addEventListener('input', (e) => {
+    if (!e.target.classList.contains('lev-range')) return;
+    manualLev = Number(e.target.value);
+    const { levCtx } = calc();
+    updateLevOut($('sheet-body'), manualLev, levCtx, (m) => { $('sheet-margin').textContent = f.usd(m); });
+  });
   $('sheet-close').addEventListener('click', closeTrade);
   $('sheet').addEventListener('click', (e) => { if (e.target.classList.contains('sheet-backdrop')) closeTrade(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('sheet').hidden) closeTrade(); });
   $('sheet-body').addEventListener('click', async (e) => {
     const rb = e.target.closest('button[data-risk]');
     if (rb) { riskPct = Number(rb.dataset.risk); render(); return; }
-    const lb = e.target.closest('button[data-lev]');
-    if (lb) {
-      const v = lb.dataset.lev;
-      if (v === 'auto') manualLev = null;
-      else {
-        const { lev, exchangeMax } = calc();
-        manualLev = Math.max(1, Math.min(exchangeMax || 50, (lev || 1) + Number(v)));
-      }
-      render(); renderLive(); return;
-    }
+    const rb2 = e.target.closest('button[data-lev-rec]');
+    if (rb2) { manualLev = null; render(); renderLive(); return; }
     const cb = e.target.closest('button[data-ctf]');
     if (cb) {
       chartTf = cb.dataset.ctf;

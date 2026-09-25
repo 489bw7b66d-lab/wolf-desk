@@ -1,5 +1,6 @@
 // Gemeinsame Anzeige-Bausteine für mehrere Bereiche.
 import * as f from './core-format.js';
+import { levStatus } from './core-risk.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const TFL = { '5m': '5M', '15m': '15M', '1h': '1H', '4h': '4H', '1d': '1D' };
@@ -73,4 +74,61 @@ export function fitHint(fit, equity, budgetPct) {
     <span>${f.size(fit.size)} Stück · Margin ${f.usd(fit.margin)} · Risiko ${f.usd(fit.riskAmt)} (${f.pct(pct)})</span>
     ${pct ? `<button type="button" class="small-btn" data-risk="${Math.floor(pct * 10) / 10}">Übernehmen</button>` : ''}
   </div>`;
+}
+
+// Bestätigungs-Siegel (Retest), nur in Signalrichtung
+export const confirmsFor = (r) => (r?.confirms || []).filter((c) => c.dir === r.dir);
+export function seal(r, compact = false) {
+  const c = confirmsFor(r);
+  if (!c.length || r.dir === 'neutral') return '';
+  if (compact) return '<span class="seal small" title="Retest bestätigt" aria-label="Retest bestätigt">🛡</span>';
+  return `<div class="seal-box"><span class="seal">🛡 Bestätigt</span>
+    <span>${c.map((x) => `${esc(x.type)} (${TFL[x.tf] || x.tf}) bei ${f.price(x.level)}${x.barsAgo ? `, vor ${x.barsAgo} K.` : ', frisch'}`).join(' · ')}</span></div>`;
+}
+
+// Hebel-Schieberegler mit Farbzonen. ctx: { notional, available, liqMax, exchangeMax, styleMax, budgetPct }
+const LEV_COL = { ok: '#4ADE9B', warn: '#F2B544', bad: '#FF7070' };
+const LEV_TXT = { ok: 'Sicher', warn: 'Grenzwertig', bad: 'Nicht machbar' };
+export function levRange(ctx) { return Math.max(2, Math.min(50, ctx.exchangeMax || 50)); }
+export function levInfo(lev, ctx) {
+  const st = levStatus(lev, ctx);
+  const why = st.issues.length ? st.issues.map((i) => i.text).join(' · ')
+    : st.status === 'warn' ? `Margin über ${ctx.budgetPct} % deines verfügbaren Kapitals` : 'Liquidation hinter dem Stop, Kapital reicht, innerhalb deiner Grenzen';
+  return { ...st, why };
+}
+export function levSlider(lev, rec, ctx) {
+  const max = levRange(ctx);
+  const stops = [];
+  for (let i = 1; i <= max; i++) {
+    const c = LEV_COL[levStatus(i, ctx).status];
+    const a = ((i - 1.5) / (max - 1)) * 100, b = ((i - 0.5) / (max - 1)) * 100;
+    stops.push(`${c} ${Math.max(0, a).toFixed(2)}%`, `${c} ${Math.min(100, b).toFixed(2)}%`);
+  }
+  const info = levInfo(lev, ctx);
+  const recPos = rec ? ((rec - 1) / (max - 1)) * 100 : null;
+  return `<div class="lev-box">
+    <div class="lev-head">
+      <span class="k">Hebel</span>
+      <b class="lev-now" data-lev-out="val">${lev}×</b>
+      <span class="lev-tag ${info.status}" data-lev-out="tag">${LEV_TXT[info.status]}</span>
+    </div>
+    <div class="lev-track-wrap">
+      ${recPos != null ? `<span class="lev-rec" style="left:calc(${recPos.toFixed(2)}% )" aria-hidden="true">▼ ${rec}×</span>` : ''}
+      <input type="range" class="lev-range" min="1" max="${max}" step="1" value="${lev}" aria-label="Hebel" aria-valuetext="${lev}-fach, ${LEV_TXT[info.status]}"
+        style="--track: linear-gradient(90deg, ${stops.join(', ')})">
+    </div>
+    <div class="lev-scale"><span>1×</span><span>${max}×</span></div>
+    <p class="lev-why ${info.status}" data-lev-out="why">${esc(info.why)}</p>
+    ${rec && rec !== lev ? `<button type="button" class="small-btn ghost" data-lev-rec="${rec}">Auf Empfehlung ${rec}× setzen</button>` : ''}
+  </div>`;
+}
+// Beim Ziehen nur Texte aktualisieren (kein Neuaufbau, damit der Regler nicht springt)
+export function updateLevOut(root, lev, ctx, onMargin) {
+  const info = levInfo(lev, ctx);
+  const q = (k) => root.querySelector(`[data-lev-out="${k}"]`);
+  if (q('val')) q('val').textContent = lev + '×';
+  if (q('tag')) { q('tag').textContent = LEV_TXT[info.status]; q('tag').className = 'lev-tag ' + info.status; }
+  if (q('why')) { q('why').textContent = info.why; q('why').className = 'lev-why ' + info.status; }
+  onMargin?.(info.margin, info.status);
+  return info;
 }

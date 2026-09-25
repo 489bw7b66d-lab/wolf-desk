@@ -5,6 +5,7 @@ import { zigzag, elliott } from './core-elliott.js';
 import { mapSymbols } from './core-universe.js';
 import { chartPatterns } from './core-patterns.js';
 import { candlePatterns } from './core-candlesticks.js';
+import { confirmations } from './core-confirm.js';
 import { heat, styleCheck, pickStyle, switchStyle } from './core-scanner.js';
 import { closedCandles, analyzeTimeframe, scoreTimeframe, combineScores, decide, tradePlan, keyLevels } from './core-signals.js';
 
@@ -181,4 +182,36 @@ export const tests = [
   }],
   ['Balance: voller Trend ohne Ereignisse = 70', () => scoreTimeframe({ stack: 'bull', above200: true, structure: 'up', macdHist: 1, macdHistPrev: 0.5, rsi: 60, events: [] }).long === 70],
   ['Balance: Trend + Ereignisse max. 100', () => scoreTimeframe({ stack: 'bull', above200: true, structure: 'up', macdHist: 1, macdHistPrev: 0.5, rsi: 60, events: [{ dir: 'long', bonus: 50 }] }).long === 100],
+  // Bestätigungen (Retests)
+  ['Retest: BOS mit Rücksetzer aufs Level', () => {
+    const c = Array.from({ length: 50 }, (_, i) => ({ o: 100, c: 100, h: i === 30 ? 110 : 101, l: 99 }));
+    c[40] = { o: 100, c: 112, h: 113, l: 100 };
+    for (let i = 41; i < 45; i++) c[i] = { o: 112, c: 112, h: 113, l: 111 };
+    c[45] = { o: 112, c: 111.5, h: 112.5, l: 110.3 };
+    for (let i = 46; i < 50; i++) c[i] = { o: 112, c: 113, h: 113, l: 112 };
+    const x = confirmations(c, 2).find((e) => e.dir === 'long' && e.type === 'BOS-Retest');
+    return x && x.level === 110 && x.barsAgo === 4;
+  }],
+  ['Retest: Bruch ohne Rücksetzer = kein Siegel', () => {
+    const c = Array.from({ length: 50 }, (_, i) => ({ o: 100, c: 100, h: i === 30 ? 110 : 101, l: 99 }));
+    c[40] = { o: 100, c: 112, h: 113, l: 100 };
+    for (let i = 41; i < 50; i++) c[i] = { o: 112, c: 115, h: 116, l: 114 };
+    return !confirmations(c, 2).some((e) => e.type === 'BOS-Retest');
+  }],
+  ['Retest: Level tief durchbrochen = kein Siegel', () => {
+    const c = Array.from({ length: 50 }, (_, i) => ({ o: 100, c: 100, h: i === 30 ? 110 : 101, l: 99 }));
+    c[40] = { o: 100, c: 112, h: 113, l: 100 };
+    for (let i = 41; i < 50; i++) c[i] = { o: 112, c: 108, h: 112, l: 106 };
+    return !confirmations(c, 2).some((e) => e.dir === 'long' && e.type.includes('Retest'));
+  }],
+  ['Abpraller an Key Level mit Docht', () => {
+    const c = Array.from({ length: 30 }, (_, i) => ({ o: 100, c: 100, h: 101, l: i === 10 ? 95 : i === 20 ? 95.3 : 99 }));
+    c[29] = { o: 100, c: 100.5, h: 100.8, l: 95.2 };
+    return confirmations(c, 2).some((e) => e.type === 'Key-Level-Abpraller' && e.dir === 'long' && e.barsAgo === 0);
+  }],
+  ['Kein Abpraller ohne Docht', () => {
+    const c = Array.from({ length: 30 }, (_, i) => ({ o: 100, c: 100, h: 101, l: i === 10 ? 95 : i === 20 ? 95.3 : 99 }));
+    c[29] = { o: 99, c: 95.4, h: 99.2, l: 95.2 };
+    return !confirmations(c, 2).some((e) => e.type === 'Key-Level-Abpraller' && e.dir === 'long');
+  }],
 ];

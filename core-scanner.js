@@ -91,10 +91,12 @@ export async function analyzeMarket(coin, modeKey, background = false) {
   const events = [...analyses.flatMap((a) => a.events.map((e) => ({ ...e, tf: a.tf }))), ...dailyStrong.map((e) => ({ ...e, tf: '1d' }))];
   const waves = [...analyses, ...(daily && !mode.tfs.includes('1d') ? [daily] : [])]
     .filter((a) => a.elliott).map((a) => ({ tf: a.tf, ...a.elliott }));
+  // Bestätigungen (Retests) auf Trend- und Setup-Timeframe, nur in Signalrichtung relevant
+  const confirms = analyses.slice(0, 2).flatMap((a) => (a.confirmations || []).map((c) => ({ ...c, tf: a.tf })));
   const candles = {};
   mode.tfs.forEach((tf, i) => { candles[tf] = series[i].slice(-120); });
   return {
-    coin, mode: modeKey, tfs: mode.tfs, analyses, daily, scores, total, dir, levels, events, waves, volume, candles,
+    coin, mode: modeKey, tfs: mode.tfs, analyses, daily, scores, total, dir, levels, events, waves, volume, candles, confirms,
     plan: plan && { ...plan, warnings: [...plan.warnings, ...warnings] },
     warnings: plan ? [] : warnings, at: Date.now(), lastClose: Math.max(...series.slice(0, 3).map((c) => c.at(-1).T)),
   };

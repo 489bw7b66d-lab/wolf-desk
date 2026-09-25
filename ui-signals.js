@@ -1,7 +1,8 @@
 // Signale-Bereich: Suche, Modus, Detail-Analyse, Watchlist-Scan.
 import { CONFIG } from './config.js';
+import { getWatchlist, addToWatchlist, removeFromWatchlist, onWatchlist, WATCHLIST_MAX } from './core-watchlist.js';
 import { analyzeMarket, analyzeAllModes, switchStyle } from './core-scanner.js';
-import { badge, ladder, esc, TFL, styleRow } from './ui-parts.js';
+import { badge, ladder, esc, TFL, styleRow, seal } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -16,7 +17,7 @@ const results = new Map(); // "mode|coin" -> Ergebnis
 
 function allMarkets() {
   const m = getState().markets || {};
-  return [...new Set([...CONFIG.watchlist, ...Object.values(m).flat()])];
+  return [...new Set([...getWatchlist(), ...Object.values(m).flat()])];
 }
 
 function scoreBars(total) {
@@ -62,6 +63,7 @@ export function showDetail(r) {
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · letzte Kerze ${new Date(r.lastClose).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span></div>
       ${badge(r.dir)}
     </div>
+    ${seal(r)}
     ${styleRow(r, CONFIG.signals.modes)}
     ${p ? `<button type="button" class="wide" id="sig-trade" style="margin:6px 0 16px">Trade-Karte öffnen</button>` : ''}
     ${scoreBars(r.total)}
@@ -114,16 +116,26 @@ function renderSuggest() {
   if (!q) { $('sig-suggest').innerHTML = ''; return; }
   const hits = allMarkets().filter((n) => n.toUpperCase().includes(q))
     .sort((a, b) => (a.toUpperCase().replace(/^XYZ:/, '').startsWith(q) ? 0 : 1) - (b.toUpperCase().replace(/^XYZ:/, '').startsWith(q) ? 0 : 1)).slice(0, 8);
+  const wl = getWatchlist();
   $('sig-suggest').innerHTML = hits.length
-    ? hits.map((n) => `<button type="button" class="suggest" data-coin="${esc(n)}">${esc(n)}</button>`).join('')
+    ? hits.map((n) => `<div class="suggest-row"><button type="button" class="suggest" data-coin="${esc(n)}">${esc(n)}</button>
+        ${wl.includes(n) ? '<span class="meta">auf Watchlist</span>' : `<button type="button" class="add-btn" data-add="${esc(n)}" aria-label="${esc(n)} zur Watchlist">＋</button>`}</div>`).join('')
     : '<p class="empty">Kein Markt gefunden.</p>';
 }
 
+let editing = false;
+function renderQuick() {
+  const wl = getWatchlist();
+  $('sig-quick').innerHTML = wl.map((c) => `<button type="button" class="chip-btn${editing ? ' edit' : ''}" data-coin="${esc(c)}" ${editing ? `aria-label="${esc(c)} entfernen"` : ''}>${esc(c.replace(/^xyz:/, ''))}${editing ? ' ✕' : ''}</button>`).join('')
+    + `<button type="button" class="chip-btn ghost-chip" id="wl-edit">${editing ? 'Fertig' : 'Bearbeiten'}</button>`;
+  $('wl-hint').textContent = editing ? `Tippe auf einen Coin zum Entfernen. Hinzufügen: oben suchen und „＋“ tippen. ${wl.length} von ${WATCHLIST_MAX}.` : '';
+}
+
 function renderList() {
-  $('sig-list').innerHTML = CONFIG.watchlist.map((c) => {
+  $('sig-list').innerHTML = getWatchlist().map((c) => {
     const r = results.get(mode + '|' + c);
     return `<button type="button" class="sig-row" data-coin="${esc(c)}">
-      <span class="sym">${esc(c)}</span>
+      <span class="sym">${esc(c)} ${r ? seal(r, true) : ''}</span>
       ${r ? `<span class="meta">${r.styles ? (r.best ? CONFIG.signals.modes[r.best].label + ' · ' + r.total[r.dir] : 'kein Stil passt') : `L ${r.total.long} · S ${r.total.short}`}</span>${badge(r.dir)}` : '<span class="meta">noch nicht gescannt</span>'}
     </button>`;
   }).join('');
@@ -132,8 +144,8 @@ function renderList() {
 async function scanWatchlist() {
   const btn = $('sig-scan');
   btn.disabled = true;
-  for (const [i, c] of CONFIG.watchlist.entries()) {
-    btn.textContent = `Scanne ${i + 1} von ${CONFIG.watchlist.length} …`;
+  for (const [i, c] of getWatchlist().entries()) {
+    btn.textContent = `Scanne ${i + 1} von ${getWatchlist().length} …`;
     try { results.set(mode + '|' + c, await run(c)); } catch { /* weiter */ }
     renderList();
   }
@@ -161,9 +173,25 @@ export function initSignals(stateGetter, openTrade) {
   $('sig-search').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); const first = $('sig-suggest').querySelector('button[data-coin]'); if (first) analyze(first.dataset.coin); }
   });
-  $('sig-suggest').addEventListener('click', (e) => { const b = e.target.closest('button[data-coin]'); if (b) analyze(b.dataset.coin); });
-  $('sig-quick').innerHTML = CONFIG.watchlist.map((c) => `<button type="button" class="chip-btn" data-coin="${esc(c)}">${esc(c.replace(/^xyz:/, ''))}</button>`).join('');
-  $('sig-quick').addEventListener('click', (e) => { const b = e.target.closest('button[data-coin]'); if (b) analyze(b.dataset.coin); });
+  $('sig-suggest').addEventListener('click', (e) => {
+    const add = e.target.closest('button[data-add]');
+    if (add) {
+      const err = addToWatchlist(add.dataset.add);
+      $('wl-hint').textContent = err || `${add.dataset.add} zur Watchlist hinzugefügt.`;
+      renderSuggest();
+      return;
+    }
+    const b = e.target.closest('button[data-coin]');
+    if (b) analyze(b.dataset.coin);
+  });
+  renderQuick();
+  onWatchlist(() => { renderQuick(); renderList(); });
+  $('sig-quick').addEventListener('click', (e) => {
+    if (e.target.closest('#wl-edit')) { editing = !editing; renderQuick(); renderSuggest(); return; }
+    const b = e.target.closest('button[data-coin]');
+    if (!b) return;
+    if (editing) removeFromWatchlist(b.dataset.coin); else analyze(b.dataset.coin);
+  });
   $('sig-scan').addEventListener('click', scanWatchlist);
   $('sig-list').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-coin]');

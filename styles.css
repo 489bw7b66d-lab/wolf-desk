@@ -264,3 +264,36 @@ body.no-scroll { overflow: hidden; }
 .stepper button { width: 48px; height: 48px; padding: 0; border-radius: 0; background: var(--line); color: var(--text); font-size: 22px; font-weight: 700; }
 .stepper .lev-val { min-width: 96px; text-align: center; font-size: 20px; font-weight: 800; display: flex; flex-direction: column; line-height: 1.1; }
 .stepper .lev-val small { font-size: 10px; font-weight: 700; color: var(--muted); }
+
+/* Watchlist bearbeiten */
+.chip-btn.edit { border-color: rgba(255,112,112,.5); color: var(--bad); }
+.chip-btn.ghost-chip { color: var(--gold); border-color: var(--gold); background: transparent; }
+.suggest-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); }
+.suggest-row:first-child { border-top: 0; }
+.suggest-row .suggest { flex: 1; border-top: 0; }
+.suggest-row .meta { color: var(--muted); font-size: 12px; padding-right: 6px; }
+.add-btn { width: 44px; height: 40px; padding: 0; font-size: 20px; background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+html, body { overflow-x: hidden; }
+
+/* Bestätigungs-Siegel */
+.seal-box { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; margin: 0 0 12px; border-radius: 14px; border: 1px solid var(--gold); background: linear-gradient(135deg, rgba(227,176,75,.14), rgba(227,176,75,.04)); font-size: 12px; line-height: 1.4; color: var(--text); }
+.seal { font-size: 13px; font-weight: 800; color: var(--gold); letter-spacing: .02em; }
+.seal.small { font-size: 14px; margin-left: 4px; }
+
+/* Hebel-Regler mit Farbzonen */
+.lev-box { margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); }
+.lev-head { display: flex; align-items: baseline; gap: 10px; }
+.lev-now { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.lev-tag { margin-left: auto; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px; }
+.lev-tag.ok { color: var(--ok); background: rgba(74,222,155,.12); } .lev-tag.warn { color: var(--warn); background: rgba(242,181,68,.12); } .lev-tag.bad { color: var(--bad); background: rgba(255,112,112,.12); }
+.lev-track-wrap { position: relative; padding-top: 18px; margin-top: 4px; }
+.lev-rec { position: absolute; top: 0; transform: translateX(-50%); font-size: 10px; font-weight: 800; color: var(--gold); white-space: nowrap; }
+.lev-range { -webkit-appearance: none; appearance: none; width: 100%; height: 36px; background: transparent; margin: 0; padding: 0; border: 0; }
+.lev-range::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; background: var(--track); }
+.lev-range::-moz-range-track { height: 10px; border-radius: 5px; background: var(--track); }
+.lev-range::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -10px; border-radius: 50%; background: var(--text); border: 3px solid var(--bg); box-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.lev-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: var(--text); border: 3px solid var(--bg); }
+.lev-range:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 8px; }
+.lev-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.lev-why { margin: 8px 0 10px; font-size: 13px; line-height: 1.4; }
+.lev-why.ok { color: var(--ok); } .lev-why.warn { color: var(--warn); } .lev-why.bad { color: var(--bad); }

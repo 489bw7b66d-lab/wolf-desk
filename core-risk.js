@@ -224,3 +224,12 @@ export function leverageIssues(lev, { liqMax, exchangeMax, styleMax, margin, ava
   if (styleMax && lev > styleMax) out.push({ status: 'warn', text: `Über deiner Obergrenze für diesen Stil (${styleMax}×)` });
   return out;
 }
+
+// Ampel für einen Hebel: 'ok' sicher, 'warn' über Stil-Grenze bzw. mehr als Budget, 'bad' Liquidation vor Stop / Börsenlimit / Kapital reicht nicht
+export function levStatus(lev, { notional, available, liqMax, exchangeMax, styleMax, budgetPct = 50 }) {
+  const margin = notional / lev;
+  const issues = leverageIssues(lev, { liqMax, exchangeMax, styleMax, margin, available });
+  if (issues.some((i) => i.status === 'bad')) return { status: 'bad', margin, issues };
+  if (issues.length || margin > (available * budgetPct) / 100) return { status: 'warn', margin, issues };
+  return { status: 'ok', margin, issues };
+}

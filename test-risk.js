@@ -1,5 +1,5 @@
 // Tests für core-risk.js
-import { leverageIssues, priceVsPlan, withEntry, maxFit, exitPlan, recommendLeverage, liqCheck, maxLeverageForStop, approxLiqDistPct, positionRisk, findStopLoss, lossToStop, liqBeforeStop, realizedPnl, positionSize, checkPosition, checkAccount } from './core-risk.js';
+import { levStatus, leverageIssues, priceVsPlan, withEntry, maxFit, exitPlan, recommendLeverage, liqCheck, maxLeverageForStop, approxLiqDistPct, positionRisk, findStopLoss, lossToStop, liqBeforeStop, realizedPnl, positionSize, checkPosition, checkAccount } from './core-risk.js';
 
 const near = (a, b, eps = 1e-6) => a != null && Math.abs(a - b) < eps;
 const R = { riskPerTradeWarnPct: 10, riskPerTradeMaxPct: 15, dailyLossLimitPct: 15, maxLeverage: 20, liqBufferPct: 1, liqNoStopMinShare: 0.5, maxOpenPositions: 5 };
@@ -71,4 +71,8 @@ export const tests = [
   ['Hebel manuell: Liquidation vor Stop = Verstoß', () => leverageIssues(12, { liqMax: 10 }).some((i) => i.text.includes('Liquidation'))],
   ['Hebel manuell: über Stil-Grenze = nur Warnung', () => { const x = leverageIssues(8, { styleMax: 5, liqMax: 20, exchangeMax: 20 }); return x.length === 1 && x[0].status === 'warn'; }],
   ['Hebel manuell: alles im Rahmen = keine Hinweise', () => leverageIssues(3, { styleMax: 5, liqMax: 20, exchangeMax: 20, margin: 100, available: 500 }).length === 0],
+  ['Hebel-Ampel: 10× bei 5.000 $ Position, 1.000 $ frei = grün', () => levStatus(10, { notional: 5000, available: 1000, liqMax: 20, exchangeMax: 20, styleMax: 10 }).status === 'ok'],
+  ['Hebel-Ampel: 5× braucht 100 % Kapital = gelb', () => levStatus(5, { notional: 5000, available: 1000, liqMax: 20, exchangeMax: 20, styleMax: 10 }).status === 'warn'],
+  ['Hebel-Ampel: 4× Kapital reicht nicht = rot', () => levStatus(4, { notional: 5000, available: 1000, liqMax: 20, exchangeMax: 20, styleMax: 10 }).status === 'bad'],
+  ['Hebel-Ampel: über Liquidationsgrenze = rot', () => levStatus(25, { notional: 5000, available: 1000, liqMax: 20, exchangeMax: 50, styleMax: 30 }).status === 'bad'],
 ];

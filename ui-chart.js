@@ -2,7 +2,7 @@
 import * as f from './core-format.js';
 import { TFL } from './ui-parts.js';
 
-const W = 360, H = 230, PAD_R = 58, PAD_T = 8, PAD_B = 16, SHOW = 80;
+const W = 360, H = 230, PAD_R = 58, PAD_T = 8, PAD_B = 16, SHOW = 70, GAP = 6; // GAP: leere Kerzenplätze vor der Preisachse
 let live = null; // laufende Kerze { tf, t, o, h, l, c }
 
 // Laufende Kerze aus Live-Kursen fortschreiben (beginnt am Schluss der letzten fertigen Kerze)
@@ -14,12 +14,12 @@ export function liveCandle(candles, tf, price) {
   return live;
 }
 
-export function chartSvg({ candles, tf, plan, price, events = [] }) {
+export function chartSvg({ candles, tf, plan, price, events = [], confirms = [] }) {
   if (!candles?.length) return '<p class="empty">Keine Kursdaten für den Chart.</p>';
   const cs = candles.slice(-SHOW);
   const lc = liveCandle(candles, tf, price);
   const all = lc ? [...cs, { ...lc, live: true }] : cs;
-  const plotW = W - PAD_R, n = all.length, cw = plotW / n;
+  const plotW = W - PAD_R, n = all.length, cw = plotW / (n + GAP);
 
   // Preisbereich: Kerzen plus Stop und TP2 (weitere Ziele werden am Rand angezeigt)
   let lo = Math.min(...all.map((c) => c.l)), hi = Math.max(...all.map((c) => c.h));
@@ -51,9 +51,12 @@ export function chartSvg({ candles, tf, plan, price, events = [] }) {
     if (off.length) marks += `<text x="6" y="${plan.dir === 'long' ? 14 : H - PAD_B - 4}" text-anchor="start" fill="var(--ok)" font-size="9" font-weight="700">${off.join(' ')} ${plan.dir === 'long' ? '↑' : '↓'}</text>`;
   }
   events.filter((e) => e.level && e.tf === tf).forEach((e) => { marks += line(e.level, 'var(--muted)', 'Bruch', '1 3'); });
+  confirms.filter((c) => c.tf === tf).forEach((c) => { marks += line(c.level, 'var(--gold)', '🛡 Retest', '1 2'); });
   if (price && inRange(price)) {
     const yy = y(price);
-    marks += `<line x1="0" x2="${plotW}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--text)" stroke-width=".6" opacity=".5"/>
+    const xLast = n * cw + cw * 0.6;
+    marks += `<line x1="${xLast.toFixed(1)}" x2="${plotW}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--text)" stroke-width=".8" stroke-dasharray="2 2" opacity=".8"/>
+      <polygon points="${plotW - 4},${yy.toFixed(1)} ${plotW + 1},${(yy - 7).toFixed(1)} ${plotW + 1},${(yy + 7).toFixed(1)}" fill="var(--text)"/>
       <rect x="${plotW + 1}" y="${(yy - 7).toFixed(1)}" width="${PAD_R - 2}" height="14" rx="3" fill="var(--text)"/>
       <text x="${plotW + 4}" y="${(yy + 3.5).toFixed(1)}" fill="var(--bg)" font-size="9" font-weight="800">${f.price(price)}</text>`;
   }

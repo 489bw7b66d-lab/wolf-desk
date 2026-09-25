@@ -1,6 +1,7 @@
 // Anzeige der Testseite. Liest nur aus dem Store, rechnet nichts selbst,
 // außer über die Funktionen aus core/calc.js.
 import { CONFIG } from './config.js';
+import { getWatchlist } from './core-watchlist.js';
 import { priceHealth, accountHealth, streamHealth } from './core-health.js';
 import { accountSummary } from './core-calc.js';
 import { enrichPositions } from './core-positions.js';
@@ -20,12 +21,12 @@ function renderHealth(s, now, hasAddr) {
   const sh = streamHealth(s);
   const freshest = Math.max(0, ...Object.values(s.priceTs));
   const ah = accountHealth(s, now);
-  const known = CONFIG.watchlist.filter((c) => s.priceTs[c]).length;
+  const known = getWatchlist().filter((c) => s.priceTs[c]).length;
   const mkCount = Object.values(s.markets).reduce((n, l) => n + l.length, 0);
   $('health').innerHTML =
     row(sh, 'Live-Kurse', `${STREAM_TEXT[s.stream]}, ${f.age(freshest ? now - freshest : null)}`) +
     row(hasAddr ? ah.status : 'fehlt', 'Kontodaten', hasAddr ? f.age(ah.age) : 'Adresse fehlt') +
-    row(known === CONFIG.watchlist.length ? 'ok' : known ? 'veraltet' : 'fehlt', 'Watchlist', `${known} von ${CONFIG.watchlist.length} Märkten gefunden`) +
+    row(known === getWatchlist().length ? 'ok' : known ? 'veraltet' : 'fehlt', 'Watchlist', `${known} von ${getWatchlist().length} Märkten gefunden`) +
     row(mkCount ? 'ok' : 'fehlt', 'Marktliste', `${mkCount} Märkte geladen`);
 }
 
@@ -81,7 +82,7 @@ function renderPositions(s, now) {
 
 function renderWatch(s, now) {
   const allNames = new Set(Object.values(s.markets).flat());
-  $('watch').innerHTML = `<div class="wl">${CONFIG.watchlist.map((c) => {
+  $('watch').innerHTML = `<div class="wl">${getWatchlist().map((c) => {
     const h = priceHealth(s, c, now);
     const unknown = allNames.size && !allNames.has(c);
     return `<div class="wl-row"><span class="dot s-${h.status}"></span><span class="sym">${esc(c)}</span>
