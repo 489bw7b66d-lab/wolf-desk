@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wolf Desk">
+<meta name="theme-color" content="#0E0D0B">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Wolf Desk – Daten-Kern</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="top-row">
+      <p class="kicker">Wolf Desk</p>
+      <button type="button" id="mini-health" class="mini-health" aria-label="Datenstatus anzeigen"></button>
+    </div>
+    <h1 id="page-title">Start</h1>
+  </header>
+
+  <section data-tab="start" class="card home-top" aria-label="Kontoübersicht">
+    <div id="home-top"></div>
+  </section>
+
+  <div data-tab="start" id="home-alerts"></div>
+
+  <section data-tab="start" class="card" aria-labelledby="h-hot">
+    <div class="card-head">
+      <h2 id="h-hot">🔥 Heiße Coins</h2>
+      <button type="button" id="hot-toggle" class="small-btn ghost"></button>
+    </div>
+    <div id="hot-status"></div>
+    <div id="hot-list" class="hot-list"></div>
+    <p class="empty" style="font-size:12px;margin-top:8px">Top 150 nach Market Cap, läuft, solange die App offen ist. Tipp auf einen Coin öffnet den fertigen Trade-Plan.</p>
+  </section>
+
+  <section data-tab="start" class="card" aria-labelledby="h-hpos">
+    <div class="card-head"><h2 id="h-hpos">Positionen</h2><a href="#konto" class="link">Details</a></div>
+    <div id="home-pos"></div>
+  </section>
+
+  <section data-tab="system" class="card" aria-labelledby="h-health">
+    <h2 id="h-health">Daten-Gesundheit</h2>
+    <div id="health" class="health"></div>
+  </section>
+
+  <section data-tab="system" class="card" aria-labelledby="h-addr">
+    <h2 id="h-addr">Wallet-Adresse</h2>
+    <form id="addr-form" class="addr">
+      <label for="addr">Deine öffentliche Adresse (0x…). Niemals Seed Phrase oder Private Key eingeben.</label>
+      <div class="row">
+        <input id="addr" name="addr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0x…">
+        <button type="submit">Speichern</button>
+      </div>
+      <p id="addr-msg" class="msg" role="status"></p>
+    </form>
+  </section>
+
+  <section data-tab="konto" class="card" aria-labelledby="h-acc">
+    <h2 id="h-acc">Konto</h2>
+    <div id="account"></div>
+  </section>
+
+  <section data-tab="konto" class="card" aria-labelledby="h-perf">
+    <h2 id="h-perf">Performance</h2>
+    <div id="perf"></div>
+    <div id="perf-tabs" class="tabs" role="group" aria-label="Zeitraum"></div>
+    <div id="perf-chart"></div>
+  </section>
+
+  <section data-tab="risiko" class="card" aria-labelledby="h-risk">
+    <h2 id="h-risk">Risiko-Check</h2>
+    <div id="risk"></div>
+  </section>
+
+  <section data-tab="konto" class="card" aria-labelledby="h-pos">
+    <h2 id="h-pos">Offene Positionen</h2>
+    <div id="positions"></div>
+  </section>
+
+  <section data-tab="risiko" class="card" id="stop-box" aria-labelledby="h-stop" hidden>
+    <h2 id="h-stop">Stop-Loss manuell eintragen</h2>
+    <form id="stop-form" class="addr">
+      <label for="stop-price">Nur für Positionen ohne Stop-Order bei Hyperliquid. Leer lassen und speichern löscht den Eintrag.</label>
+      <div class="row">
+        <select id="stop-coin" aria-label="Position"></select>
+        <input id="stop-price" inputmode="decimal" autocomplete="off" placeholder="Preis">
+        <button type="submit">Speichern</button>
+      </div>
+      <p id="stop-msg" class="msg" role="status"></p>
+    </form>
+  </section>
+
+  <section data-tab="risiko" class="card" id="calc" aria-labelledby="h-calc">
+    <h2 id="h-calc">Positionsgrößen-Rechner</h2>
+    <div class="calc-grid">
+      <label>Markt<select id="calc-coin"></select></label>
+      <label>Risiko %<input id="calc-risk" inputmode="decimal" autocomplete="off"></label>
+      <label>Einstieg<input id="calc-entry" inputmode="decimal" autocomplete="off"></label>
+      <label>Stop-Loss<input id="calc-stop" inputmode="decimal" autocomplete="off"></label>
+      <label>Hebel<input id="calc-lev" inputmode="decimal" autocomplete="off" placeholder="Auto"></label>
+    </div>
+    <div id="calc-out" style="margin-top:14px"></div>
+  </section>
+
+  <section data-tab="signale" class="card" id="sig-card" aria-labelledby="h-sig">
+    <h2 id="h-sig">Signalgeber</h2>
+    <div id="sig-modes" class="tabs modes" role="group" aria-label="Modus"></div>
+    <label for="sig-search" class="visually-hidden">Markt suchen</label>
+    <input id="sig-search" type="search" placeholder="Markt suchen, z. B. SOL oder GOLD" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:100%">
+    <div id="sig-suggest" class="suggest-list"></div>
+    <div id="sig-quick" class="quick"></div>
+    <div id="sig-detail" style="margin-top:16px"><p class="empty">Markt wählen und „Analysieren“ tippen.</p></div>
+  </section>
+
+  <section data-tab="signale" class="card" aria-labelledby="h-scan">
+    <h2 id="h-scan">Watchlist-Scan</h2>
+    <button type="button" id="sig-scan" class="wide">Watchlist scannen</button>
+    <div id="sig-list" class="sig-list"></div>
+  </section>
+
+  <section data-tab="system" class="card" aria-labelledby="h-watch">
+    <h2 id="h-watch">Watchlist-Kurse</h2>
+    <div id="watch"></div>
+  </section>
+
+  <section data-tab="system" class="card" aria-labelledby="h-err">
+    <h2 id="h-err">Fehlerprotokoll</h2>
+    <div id="errors"></div>
+  </section>
+
+  <details data-tab="system" class="card markets">
+    <summary>Verfügbare Märkte anzeigen</summary>
+    <label for="market-filter" class="visually-hidden">Märkte filtern</label>
+    <input id="market-filter" placeholder="Filtern, z. B. GOLD oder EUR" autocomplete="off" autocapitalize="characters">
+    <div id="markets"></div>
+  </details>
+
+  <p class="foot">Nur lesender Zugriff auf öffentliche Hyperliquid-Daten. Keine Anlageberatung.</p>
+</main>
+<nav class="tabbar" aria-label="Bereiche">
+  <a href="#start" data-nav="start"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg><span>Start</span></a>
+  <a href="#signale" data-nav="signale"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Signale</span></a>
+  <a href="#konto" data-nav="konto"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Konto</span></a>
+  <a href="#risiko" data-nav="risiko"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3z"/></svg><span>Risiko</span></a>
+</nav>
+<div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet-backdrop"></div>
+  <div class="sheet-panel">
+    <button type="button" id="sheet-close" class="sheet-close" aria-label="Schließen">✕</button>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
