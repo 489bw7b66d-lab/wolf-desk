@@ -5,7 +5,9 @@ import { loadAccount } from './core-account.js';
 import { startStream } from './core-stream.js';
 import { getState, update, subscribe, logError } from './core-store.js';
 import { render } from './ui-testpage.js';
-import { initRisk, renderRisk } from './ui-risk.js';
+import { initRisk, renderRisk, setCalc } from './ui-risk.js';
+import { initSignals, renderSignalMarkets } from './ui-signals.js';
+import { streamHealth, accountHealth } from './core-health.js';
 import { initPerformance, renderPerformance } from './ui-performance.js';
 
 const ADDR_KEY = 'wolfdesk.address';
@@ -69,11 +71,38 @@ async function loadMarkets() {
   update({ markets });
 }
 
-const renderAll = (s) => { render(s, !!address); renderRisk(s); renderPerformance(s); };
+// Navigation zwischen den Bereichen
+const TITLES = { konto: 'Konto', risiko: 'Risiko', signale: 'Signale', system: 'System' };
+function showTab(name) {
+  if (!TITLES[name]) name = address ? 'konto' : 'system';
+  document.querySelectorAll('[data-tab]').forEach((el) => el.classList.toggle('tab-off', el.dataset.tab !== name));
+  document.querySelectorAll('[data-nav]').forEach((a) => {
+    if (a.dataset.nav === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  document.getElementById('page-title').textContent = TITLES[name];
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+document.getElementById('mini-health').addEventListener('click', () => { location.hash = 'system'; });
+
+function renderMiniHealth(s) {
+  const a = address ? accountHealth(s).status : 'fehlt';
+  const st = streamHealth(s);
+  const worst = [st, a].includes('fehler') ? 'fehler' : [st, a].includes('veraltet') || [st, a].includes('fehlt') ? 'veraltet' : 'ok';
+  document.getElementById('mini-health').innerHTML = `<span class="dot s-${worst}"></span>${worst === 'ok' ? 'Live' : worst === 'fehler' ? 'Störung' : 'Prüfen'}`;
+}
+
+const renderAll = (s) => { render(s, !!address); renderRisk(s); renderPerformance(s); renderSignalMarkets(s); renderMiniHealth(s); };
+initSignals(getState, (coin, entry, stop) => {
+  setCalc(coin, entry, stop);
+  location.hash = 'risiko';
+  setTimeout(() => document.getElementById('calc').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+});
 initRisk(getState);
 initPerformance(() => renderAll(getState()));
 subscribe(renderAll);
 renderAll(getState());
+showTab(location.hash.slice(1));
 
 loadMarkets();
 startStream();

@@ -81,6 +81,17 @@ export function initRisk(stateGetter) {
   });
 }
 
+// Vom Signalgeber: Markt, Einstieg und Stop in den Rechner übernehmen.
+export function setCalc(coin, entry, stop) {
+  const sel = $('calc-coin');
+  if (![...sel.options].some((o) => o.value === coin)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(coin)}">${esc(coin)}</option>`);
+  sel.value = coin;
+  const dec = entry >= 1000 ? 1 : entry >= 10 ? 2 : 4;
+  $('calc-entry').value = entry.toFixed(dec).replace('.', ',');
+  $('calc-stop').value = stop.toFixed(dec).replace('.', ',');
+  renderCalc();
+}
+
 export function renderRisk(s) {
   const r = accountRisk(s);
   if (!r) { $('risk').innerHTML = '<p class="empty">Noch keine Kontodaten.</p>'; }
@@ -97,7 +108,7 @@ export function renderRisk(s) {
   const noOrderStop = r ? r.positions.filter((p) => p.stopSource !== 'Order').map((p) => p.coin) : [];
   lastStopKey = fillSelect($('stop-coin'), noOrderStop, noOrderStop.join(','), lastStopKey);
   $('stop-box').hidden = noOrderStop.length === 0;
-  const calcCoins = [...new Set([...CONFIG.watchlist, ...posCoins])];
+  const calcCoins = [...new Set([...CONFIG.watchlist, ...posCoins, $('calc-coin').value].filter(Boolean))];
   lastCalcKey = fillSelect($('calc-coin'), calcCoins, calcCoins.join(','), lastCalcKey);
   if (!$('calc-entry').value && s.prices[$('calc-coin').value]) $('calc-entry').value = String(s.prices[$('calc-coin').value]).replace('.', ',');
   if (document.activeElement?.closest?.('#calc') == null) renderCalc();

@@ -38,6 +38,20 @@ export const CONFIG = {
     maxOpenPositions: 5,      // maximal gleichzeitig offene Positionen
   },
 
+  // SIGNALGEBER
+  signals: {
+    modes: {
+      scalp: { label: 'Scalp', tfs: ['1h', '15m', '5m'] },     // Trend, Setup, Trigger
+      intraday: { label: 'Intraday', tfs: ['4h', '1h', '15m'] },
+      swing: { label: 'Swing', tfs: ['1d', '4h', '1h'] },
+    },
+    defaultMode: 'intraday',
+    candles: 260,              // Kerzen pro Timeframe (EMA 200 braucht Vorlauf)
+    minScore: 65,              // Mindest-Score für ein Signal
+    minGap: 20,                // Mindestabstand Long- zu Short-Score
+    minDayVolumeUsd: 1000000,  // darunter: Warnung "geringe Liquidität"
+  },
+
   // Wie oft das Konto neu geladen wird (Kurse kommen live per WebSocket)
   refresh: {
     accountMs: 15000,

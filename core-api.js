@@ -38,6 +38,7 @@ export const hl = {
   spot: (user) => info({ type: 'spotClearinghouseState', user }),
   openOrders: (user, dex = '') => info(withDex({ type: 'frontendOpenOrders', user }, dex)),
   fillsSince: (user, startTime) => info({ type: 'userFillsByTime', user, startTime, aggregateByTime: true }),
+  metaCtx: (dex = '') => info(withDex({ type: 'metaAndAssetCtxs' }, dex)),
   portfolio: (user) => info({ type: 'portfolio', user }),
   candles: (coin, interval, startTime, endTime = Date.now()) =>
     info({ type: 'candleSnapshot', req: { coin, interval, startTime, endTime } }),

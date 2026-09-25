@@ -19,7 +19,8 @@ li{padding:6px 0;border-top:1px solid #2A261C;list-style:none}ul{padding:0}
 import { tests as calc } from './test-calc.js';
 import { tests as risk } from './test-risk.js';
 import { tests as perf } from './test-performance.js';
-const tests = [...calc, ...risk, ...perf];
+import { tests as sig } from './test-signals.js';
+const tests = [...calc, ...risk, ...perf, ...sig];
 let pass = 0;
 const list = document.getElementById('list');
 for (const [name, fn] of tests) {
