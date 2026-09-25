@@ -6,7 +6,7 @@ import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
 const PERIODS = { day: '24 Std', week: 'Woche', month: 'Monat', allTime: 'Gesamt' };
-let period = 'month';
+let period = 'allTime';
 
 function chart(curve) {
   if (curve.length < 2) return '<p class="empty">Noch kein Verlauf für diesen Zeitraum.</p>';
@@ -49,7 +49,21 @@ export function renderPerformance(s) {
     <div><span class="k">Performance</span><span class="v big ${cls}">${perf.pct >= 0 ? '+' : ''}${f.pct(perf.pct, 2)}</span></div>
   </div>`;
 
-  const data = s.portfolio ? parsePortfolio(s.portfolio)[period] : null;
+  const all = s.portfolio ? parsePortfolio(s.portfolio) : null;
+  const life = all?.allTime?.pnl;
+  if (life?.length) {
+    const lifePnl = life.at(-1)[1];
+    const since = new Date(life[0][0]).toLocaleDateString('de-DE');
+    const diff = perf.pnl - lifePnl;
+    $('perf').innerHTML += `<div class="kv" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+      <div><span class="k">PnL seit Kontoeröffnung</span><span class="v ${lifePnl >= 0 ? 'long' : 'short'}">${f.signedUsd(lifePnl)}</span></div>
+      <div><span class="k">Daten ab</span><span class="v">${since}</span></div>
+    </div>
+    <p class="empty" style="margin-top:10px">${Math.abs(diff) > Math.max(25, Math.abs(lifePnl) * 0.05)
+      ? `Abweichung zur Startkapital-Rechnung: ${f.signedUsd(diff)}. Das kann an weiteren Ein- oder Auszahlungen liegen oder an Märkten, die Hyperliquid hier nicht mitzählt.`
+      : 'Stimmt mit der Rechnung ab Startkapital überein.'}</p>`;
+  }
+  const data = all ? all[period] : null;
   if (!data) { $('perf-chart').innerHTML = `<p class="empty">${s.portfolioError ? 'Verlauf konnte nicht geladen werden.' : 'Verlauf wird geladen …'}</p>`; return; }
   const curve = equityCurve(data.pnl, equity);
   const periodPnl = data.pnl.length ? data.pnl.at(-1)[1] - data.pnl[0][1] : null;
