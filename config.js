@@ -50,6 +50,15 @@ export const CONFIG = {
     minScore: 65,              // Mindest-Score für ein Signal
     minGap: 20,                // Mindestabstand Long- zu Short-Score
     minDayVolumeUsd: 1000000,  // darunter: Warnung "geringe Liquidität"
+    // Live-Überwachung der Top-Coins nach Market Cap
+    hot: {
+      topN: 150,               // Top 150 nach Market Cap (CoinGecko)
+      maxPicks: 5,             // höchstens so viele "heiße" Coins anzeigen
+      deepScan: 15,            // so viele Kandidaten werden auf allen Timeframes geprüft
+      mode: 'swing',           // Modus der Tiefenprüfung (1D, 4H, 1H – Elliott ab 4H)
+      requestGapMs: 1300,      // Abstand zwischen Hintergrund-Abrufen (Hyperliquid-Limit)
+      roundPauseMs: 300000,    // Pause zwischen zwei Durchläufen (5 Min.)
+    },
   },
 
   // Wie oft das Konto neu geladen wird (Kurse kommen live per WebSocket)

@@ -152,3 +152,26 @@ button.wide { width: 100%; margin-top: 14px; }
 .sig-row .meta { color: var(--muted); font-size: 12px; }
 button:disabled { opacity: .6; }
 #calc { scroll-margin-top: 16px; }
+
+/* Heiße Coins, Ereignisse, Elliott */
+button.ghost { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+.hot-list { display: flex; flex-direction: column; margin-top: 8px; }
+.hot-row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; width: 100%; height: auto; min-height: 60px; padding: 10px 0; background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; color: var(--text); text-align: left; }
+.hot-row:first-child { border-top: 0; }
+.hot-row .rank { font-weight: 800; color: var(--gold); font-size: 16px; }
+.hot-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hot-main .sym { font-weight: 800; font-size: 16px; }
+.hot-main .reasons { color: var(--muted); font-size: 12px; font-weight: 600; line-height: 1.35; }
+.hot-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.heat { font-size: 12px; font-weight: 800; color: var(--gold); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; font-weight: 700; padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.02); }
+.chip small { font-weight: 600; color: var(--muted); }
+.chip.strong { border-color: var(--gold); color: var(--gold); }
+.chip.long:not(.strong) { color: var(--ok); } .chip.short:not(.strong) { color: var(--bad); }
+.wave { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.wave .meta { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.plan-mode { margin: 0 0 10px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.plan-mode .chip { color: var(--gold); border-color: var(--gold); }
+.lvl { grid-template-columns: 10px 76px 1fr; }
+.lvl .pc { grid-column: 3; text-align: left; margin-top: -4px; }

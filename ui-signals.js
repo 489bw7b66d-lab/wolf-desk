@@ -1,6 +1,7 @@
 // Signalgeber-Anzeige: Modus, Marktauswahl, Detail-Analyse, Watchlist-Scan.
 import { CONFIG } from './config.js';
-import { analyzeMarket } from './core-scanner.js';
+import { analyzeMarket, heat } from './core-scanner.js';
+import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
 import { accountSummary } from './core-calc.js';
 import { positionSize, maxLeverageForStop } from './core-risk.js';
 import * as f from './core-format.js';
@@ -57,12 +58,13 @@ function planBlock(r) {
   const maxLev = maxLeverageForStop(p.stopDistPct, CONFIG.rules.liqBufferPct, CONFIG.rules.maxLeverage);
   const row = (label, price, cls, extra) => `<div class="lvl"><span class="dot" style="background:var(--${cls})"></span><span class="lbl">${label}</span><span class="px">${price}</span><span class="pc ${cls === 'gold' ? 'muted' : cls === 'ok' ? 'long' : 'short'}">${extra}</span></div>`;
   const levels = [
-    row('Stop-Loss', f.price(p.stop), 'bad', signedPct(pctFrom(p.entry, p.stop))),
-    row('Einstieg', `${f.price(p.zone[0])} – ${f.price(p.zone[1])}`, 'gold', 'Zone'),
-    ...p.tps.map((tp, i) => row(`TP${i + 1}`, f.price(tp), 'ok', `${signedPct(pctFrom(p.entry, tp))} · ${i + 1}R`)),
+    row('Stop-Loss', f.price(p.stop), 'bad', `${signedPct(pctFrom(p.entry, p.stop))} · ${esc(p.stopLabel)}`),
+    row('Einstieg', `${f.price(p.zone[0])} – ${f.price(p.zone[1])}`, 'gold', p.method === 'fib' ? 'Fib 0,5–0,618' : 'Zone'),
+    ...p.tps.map((tp, i) => row(`TP${i + 1}`, f.price(tp), 'ok', `${signedPct(pctFrom(p.entry, tp))}${p.method === 'fib' ? ' · ' + esc(p.tpLabels[i]) : ''} · ${((Math.abs(tp - p.entry)) / p.R).toFixed(1).replace('.', ',')}R`)),
   ];
   if (p.dir === 'long') levels.reverse();
-  return `<div class="ladder">${levels.join('')}</div>
+  return `<p class="plan-mode"><span class="chip">${p.method === 'fib' ? 'Fibonacci' : 'ATR'}</span> ${esc(p.entryMode)}</p>
+    <div class="ladder">${levels.join('')}</div>
     <div class="kv" style="margin-top:14px">
       <div><span class="k">Stop-Abstand</span><span class="v">${f.pct(p.stopDistPct, 2)}</span></div>
       <div><span class="k">Hebel bis ca.</span><span class="v">${f.lev(maxLev)}</span></div>
@@ -71,6 +73,21 @@ function planBlock(r) {
     </div>
     ${p.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}${w.price ? ` (${f.price(w.price)})` : ''}</p>`).join('')}
     <button type="button" class="wide" id="sig-use">In Rechner übernehmen</button>`;
+}
+
+function eventsBlock(r) {
+  if (!r.events.length) return '';
+  const sorted = [...r.events].sort((a, b) => (b.strong - a.strong) || (a.barsAgo - b.barsAgo));
+  return `<h3 class="sub-h">Ereignisse</h3><div class="chips">${sorted.map((e) =>
+    `<span class="chip ${e.dir === 'long' ? 'long' : 'short'}${e.strong ? ' strong' : ''}">${e.strong ? '★ ' : ''}${esc(e.name)} <small>${TFL[e.tf] || ''}${e.barsAgo ? ', vor ' + e.barsAgo + ' K.' : ', frisch'}</small></span>`).join('')}</div>`;
+}
+
+function wavesBlock(r) {
+  if (!r.waves.length) return `<h3 class="sub-h">Elliott (ab 4H)</h3><p class="empty">Keine regelkonforme Zählung erkennbar. Lieber keine Zählung als eine erzwungene.</p>`;
+  return `<h3 class="sub-h">Elliott (ab 4H)</h3>${r.waves.map((w) => `<div class="wave">
+    <div><b>${TFL[w.tf]}: ${esc(w.label)}</b> <span class="${w.bias === 'long' ? 'long' : 'short'}">${w.bias === 'long' ? '▲' : '▼'}</span></div>
+    <span class="meta">Ziel ca. ${f.price(w.target)} · ungültig bei ${f.price(w.invalidation)} · ${esc(w.note)}</span></div>`).join('')}
+    <p class="empty" style="margin-top:6px">Mögliche Zählung nach den harten Elliott-Regeln, keine Gewissheit.</p>`;
 }
 
 function renderDetail(r) {
@@ -82,6 +99,8 @@ function renderDetail(r) {
     </div>
     ${scoreBars(r.total)}
     ${mtfTable(r)}
+    ${eventsBlock(r)}
+    ${wavesBlock(r)}
     <h3 class="sub-h">Trade-Plan (${TFL[r.tfs[1]]})</h3>
     ${planBlock(r)}
     ${r.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}</p>`).join('')}
@@ -131,6 +150,41 @@ async function scanWatchlist() {
   btn.textContent = 'Watchlist scannen';
 }
 
+const HOT_KEY = 'wolfdesk.hotOn';
+// Gründe für die Auswahl: gleiche Ereignisse über Timeframes zusammenfassen, z. B. "Starkes Momentum (4H, 1H)"
+const topReasons = (r) => {
+  const groups = new Map();
+  [...r.events.filter((e) => e.dir === r.dir)].sort((a, b) => (b.strong - a.strong) || (a.barsAgo - b.barsAgo)).forEach((e) => {
+    const name = e.name.replace(/ \(.*\)$/, '').replace(/ ×.*$/, '');
+    if (!groups.has(name)) groups.set(name, []);
+    groups.get(name).push(TFL[e.tf] || e.tf);
+  });
+  const list = [...groups.entries()].slice(0, 3).map(([n, tfs]) => `${n} (${tfs.join(', ')})`);
+  const w = r.waves.find((x) => x.bias === r.dir);
+  if (w) list.push(`Elliott ${TFL[w.tf]}: ${w.label}`);
+  return list;
+};
+
+function renderHot() {
+  $('hot-toggle').textContent = hot.running ? 'Überwachung stoppen' : 'Live-Überwachung starten';
+  $('hot-toggle').classList.toggle('ghost', hot.running);
+  let status;
+  if (!hot.running && !hot.lastRound) status = `Scannt die Top ${CONFIG.signals.hot.topN} nach Market Cap und wählt bis zu ${CONFIG.signals.hot.maxPicks} Coins mit den stärksten Signalen.`;
+  else if (hot.phase === 'Pause') status = `Letzter Durchlauf ${new Date(hot.lastRound).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} · nächster in ${Math.max(0, Math.round((hot.nextRound - Date.now()) / 60000))} Min.`;
+  else if (hot.running) status = `${hot.phase}: ${hot.done} von ${hot.total}`;
+  else status = 'Gestoppt.';
+  const prog = hot.running && hot.total && hot.phase !== 'Pause' ? `<div class="bar" style="margin-top:8px"><span style="width:${(hot.done / hot.total) * 100}%;background:var(--gold)"></span></div>` : '';
+  $('hot-status').innerHTML = `<p class="empty">${esc(status)}</p>${prog}
+    ${hot.source ? `<p class="empty" style="font-size:12px;margin-top:6px">Quelle: ${esc(hot.source)}${hot.skipped ? ` · ${hot.skipped} wegen geringer Liquidität übersprungen` : ''}</p>` : ''}
+    ${hot.error ? `<p class="warnline">${esc(hot.error)}</p>` : ''}`;
+  $('hot-list').innerHTML = hot.picks.length ? hot.picks.map(({ r, heat: h }, i) => `<button type="button" class="hot-row" data-hot="${esc(r.coin)}">
+      <span class="rank">${i + 1}</span>
+      <span class="hot-main"><span class="sym">${esc(r.coin)}</span><span class="reasons">${topReasons(r).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
+      <span class="hot-side">${badge(r.dir)}<span class="heat">Score ${r.total[r.dir]}</span></span>
+    </button>`).join('')
+    : hot.lastRound ? '<p class="empty">Aktuell kein Coin mit klarem Signal. Kein Trade ist auch eine Entscheidung.</p>' : '';
+}
+
 export function initSignals(stateGetter, usePlan) {
   getState = stateGetter;
   onUsePlan = usePlan;
@@ -148,6 +202,29 @@ export function initSignals(stateGetter, usePlan) {
   });
   $('sig-go').addEventListener('click', () => analyze($('sig-market').value));
   $('sig-scan').addEventListener('click', scanWatchlist);
+  const markets = () => (getState().markets?.[''] || []);
+  $('hot-toggle').addEventListener('click', () => {
+    if (hot.running) { stopHot(); try { localStorage.setItem(HOT_KEY, '0'); } catch { /* egal */ } }
+    else { startHot(markets); try { localStorage.setItem(HOT_KEY, '1'); } catch { /* egal */ } }
+    renderHot();
+  });
+  $('hot-list').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-hot]');
+    if (!b) return;
+    const r = hot.results.get(b.dataset.hot) || hot.picks.find((p) => p.r.coin === b.dataset.hot)?.r;
+    if (!r) return;
+    renderDetail(r);
+    $('sig-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  onHot(renderHot);
+  setInterval(() => { if (hot.phase === 'Pause') renderHot(); }, 30000);
+  renderHot();
+  // Überwachung automatisch fortsetzen, sobald die Marktliste da ist
+  let on = false;
+  try { on = localStorage.getItem(HOT_KEY) === '1'; } catch { /* egal */ }
+  if (on) {
+    const wait = setInterval(() => { if (markets().length) { clearInterval(wait); startHot(markets); } }, 1000);
+  }
   $('sig-list').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-coin]');
     if (!b) return;

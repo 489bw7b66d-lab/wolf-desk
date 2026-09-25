@@ -8,6 +8,7 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `ui-*.js` – Anzeige-Module (lesen nur aus dem Store)
 - `core-performance.js`, `ui-performance.js` – Performance ab Startkapital, Verlauf, Drawdown
 - `core-indicators.js`, `core-signals.js`, `core-scanner.js`, `ui-signals.js` – Signalgeber (EMA, RSI, MACD, ATR, Struktur, Scores, Trade-Plan)
+- `core-fib.js`, `core-elliott.js`, `core-universe.js`, `core-hotscan.js` – Fibonacci, Elliott-Regeln, Top-150-Liste, Live-Überwachung
 - `core-risk.js`, `core-positions.js`, `core-stops.js` – Risiko-Regeln, Zusammenführung, manuelle Stops
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
@@ -15,3 +16,4 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 Etappe 1: Daten-Kern (fertig)
 Etappe 2: Risiko-Modul (hebelangepasst), Stop-Loss-Erkennung, Positionsgrößen-Rechner, Performance (fertig)
 Etappe 3: Signalgeber mit Scalp/Intraday/Swing, Watchlist-Scan, Navigation
+Etappe 3b: Heiße Coins (Top 150 Market Cap), EMA-Kreuzungen inkl. Golden/Death Cross, RSI-Zonen, Momentum, Volumen-Spikes, Elliott ab 4H, Fibonacci-Stops und -Ziele

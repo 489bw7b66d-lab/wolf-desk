@@ -77,3 +77,49 @@ export function pivots(candles, side = 3) {
   }
   return { highs, lows };
 }
+
+// Letzte Kreuzung zweier Linien innerhalb der letzten `lookback` Kerzen.
+// Ergebnis: { dir: 'up' | 'down', barsAgo } oder null
+export function lastCross(fast, slow, lookback) {
+  const n = fast.length;
+  for (let i = n - 1; i >= Math.max(1, n - lookback); i--) {
+    const a = fast[i], b = slow[i], pa = fast[i - 1], pb = slow[i - 1];
+    if ([a, b, pa, pb].some((v) => v == null)) return null;
+    if (a > b && pa <= pb) return { dir: 'up', barsAgo: n - 1 - i };
+    if (a < b && pa >= pb) return { dir: 'down', barsAgo: n - 1 - i };
+  }
+  return null;
+}
+
+// Momentum: Kursänderung über `period` Kerzen, gemessen in ATR (vergleichbar über alle Märkte).
+export function momentumAtr(closes, atrNow, period = 10) {
+  if (closes.length <= period || !atrNow) return null;
+  return (closes.at(-1) - closes.at(-1 - period)) / atrNow;
+}
+
+// Volumen der jüngsten Kerzen im Verhältnis zum Durchschnitt davor.
+// Liefert die stärkste der letzten `recent` Kerzen: { ratio, barsAgo, up }
+export function volumeSpike(candles, avgLen = 20, recent = 3) {
+  if (candles.length < avgLen + recent) return null;
+  let best = null;
+  for (let k = 0; k < recent; k++) {
+    const i = candles.length - 1 - k;
+    const base = candles.slice(i - avgLen, i).reduce((n, c) => n + c.v, 0) / avgLen;
+    if (!(base > 0)) continue;
+    const ratio = candles[i].v / base;
+    if (!best || ratio > best.ratio) best = { ratio, barsAgo: k, up: candles[i].c >= candles[i].o };
+  }
+  return best;
+}
+
+// RSI verlässt eine Extremzone innerhalb der letzten `lookback` Kerzen.
+export function rsiZoneExit(rsiArr, lookback = 3, low = 30, high = 70) {
+  const n = rsiArr.length;
+  for (let i = n - 1; i >= Math.max(1, n - lookback); i--) {
+    const a = rsiArr[i], p = rsiArr[i - 1];
+    if (a == null || p == null) return null;
+    if (p < low && a >= low) return { dir: 'long', barsAgo: n - 1 - i };
+    if (p > high && a <= high) return { dir: 'short', barsAgo: n - 1 - i };
+  }
+  return null;
+}
