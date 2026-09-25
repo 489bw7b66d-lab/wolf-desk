@@ -66,9 +66,12 @@ function renderPositions(s, now) {
         <div><span class="k">Stop-Loss${p.stopSource ? ' (' + p.stopSource + ')' : ''}</span>${f.price(p.stop)}</div>
         <div><span class="k">Liquidation</span>${f.price(p.liq)}</div>
         <div><span class="k">Abstand Liq.</span>${f.pct(p.liqDist)}</div>
-        <div><span class="k">Verlust bis Stop</span>${ev.loss == null ? '–' : f.usd(ev.loss)}</div>
+        <div><span class="k">Risiko ab Einstieg</span>${ev.fromEntry == null ? '–' : f.usd(ev.fromEntry)}</div>
         <div><span class="k">vom Konto</span>${f.pct(ev.riskPct)}</div>
         <div><span class="k">Margin</span>${f.usd(p.marginUsed)}</div>
+        <div><span class="k">${ev.liqFirst ? 'Verlust bis Liq.' : 'Verlust bis Stop'}</span>${ev.fromNow == null ? '–' : f.usd(ev.fromNow)}</div>
+        <div><span class="k">davon Buchgewinn</span>${ev.giveBack == null ? '–' : f.usd(ev.giveBack)}</div>
+        <div></div>
       </div>
       <div class="bar"><span style="width:${barW}%;background:${COLOR[ev.checks.find((c) => c.rule === 'Abstand Liquidation')?.status || 'ok']}"></span></div>
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}

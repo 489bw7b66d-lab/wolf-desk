@@ -1,7 +1,7 @@
 // Risiko-Modul: Regel-Check, manuelle Stop-Losses, Positionsgrößen-Rechner.
 import { CONFIG } from './config.js';
 import { accountRisk } from './core-positions.js';
-import { positionSize } from './core-risk.js';
+import { positionSize, maxLeverageForStop } from './core-risk.js';
 import { setManualStop, getManualStop } from './core-stops.js';
 import * as f from './core-format.js';
 
@@ -41,6 +41,7 @@ function renderCalc() {
   if (!equity) { out.innerHTML = '<p class="empty">Kontodaten fehlen noch.</p>'; return; }
   if (!res) { out.innerHTML = `<p class="empty">Einstieg und Stop-Loss eintragen. Rechenbasis: Kontowert ${f.usd(equity)}.</p>`; return; }
   const minLev = r.summary.available > 0 ? res.notional / r.summary.available : null;
+  const maxLev = maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, CONFIG.rules.maxLeverage);
   const riskPct = parse($('calc-risk').value);
   const st = riskPct >= CONFIG.rules.riskPerTradeMaxPct ? 'bad' : riskPct >= CONFIG.rules.riskPerTradeWarnPct ? 'warn' : 'ok';
   out.innerHTML = `<div class="kv">
@@ -49,10 +50,11 @@ function renderCalc() {
     <div><span class="k">Positionswert</span><span class="v">${f.usd(res.notional)}</span></div>
     <div><span class="k">Stop-Abstand</span><span class="v">${f.pct(res.stopDistPct, 2)}</span></div>
     <div><span class="k">Mindesthebel</span><span class="v">${f.lev(minLev)}</span></div>
+    <div class="span2"><span class="k">Hebel-Spanne für diesen Stop</span><span class="v" style="color:var(--gold)">${f.lev(Math.max(1, Math.ceil(minLev || 1)))} bis ca. ${f.lev(maxLev)}</span></div>
   </div>
-  ${minLev > CONFIG.rules.maxLeverage ? `<p class="warnline">Dafür wären mehr als ${CONFIG.rules.maxLeverage}× nötig, das verfügbare Kapital reicht nicht.</p>` : ''}
+  ${minLev > maxLev ? `<p class="warnline">Bei diesem Stop läge die Liquidation schon ab ca. ${f.lev(maxLev)} vor dem Stop. Für die gewünschte Größe reicht das verfügbare Kapital nicht, also Risiko oder Größe verringern.</p>` : ''}
   ${st !== 'ok' ? `<p class="warnline" style="color:${st === 'bad' ? 'var(--bad)' : 'var(--warn)'}">${riskPct} % Risiko liegt ${st === 'bad' ? 'über deinem Maximum' : 'im Warnbereich'}.</p>` : ''}
-  <p class="empty" style="margin-top:10px">Mindesthebel = Positionswert geteilt durch verfügbares Kapital (${f.usd(r.summary.available)}).</p>`;
+  <p class="empty" style="margin-top:10px">Mindesthebel: Positionswert geteilt durch verfügbares Kapital (${f.usd(r.summary.available)}). Höchsthebel: Die Liquidation liegt noch mind. ${String(CONFIG.rules.liqBufferPct).replace('.', ',')} % hinter dem Stop (isoliert, Näherung).</p>`;
 }
 
 export function initRisk(stateGetter) {

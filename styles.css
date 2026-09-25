@@ -102,3 +102,10 @@ select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .calc-grid label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .calc-grid input, .calc-grid select { width: 100%; }
 .warnline { margin: 10px 0 0; }
+
+/* Performance */
+.tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 16px 0 10px; }
+.tabs button { height: 38px; padding: 0; background: transparent; color: var(--muted); font-weight: 700; font-size: 13px; border: 1px solid var(--line); }
+.tabs button[aria-pressed="true"] { background: var(--line); color: var(--text); }
+.chart-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 4px; }
+.calc-grid input { flex: none; }

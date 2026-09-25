@@ -6,6 +6,7 @@ import { startStream } from './core-stream.js';
 import { getState, update, subscribe, logError } from './core-store.js';
 import { render } from './ui-testpage.js';
 import { initRisk, renderRisk } from './ui-risk.js';
+import { initPerformance, renderPerformance } from './ui-performance.js';
 
 const ADDR_KEY = 'wolfdesk.address';
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -28,6 +29,7 @@ document.getElementById('addr-form').addEventListener('submit', (e) => {
   msg.textContent = 'Gespeichert. Konto wird geladen …';
   update({ account: null, accountTs: 0, accountError: null });
   refreshAccount();
+  refreshPortfolio();
 });
 
 document.getElementById('market-filter').addEventListener('input', () => renderAll(getState()));
@@ -44,6 +46,16 @@ async function refreshAccount() {
   }
 }
 
+async function refreshPortfolio() {
+  if (!address) return;
+  try {
+    update({ portfolio: await hl.portfolio(address), portfolioError: null });
+  } catch (e) {
+    update({ portfolioError: e.message });
+    logError('Performance', e);
+  }
+}
+
 async function loadMarkets() {
   const res = await Promise.allSettled(CONFIG.dexes.map((d) => hl.meta(d)));
   const markets = {};
@@ -57,14 +69,17 @@ async function loadMarkets() {
   update({ markets });
 }
 
-const renderAll = (s) => { render(s, !!address); renderRisk(s); };
+const renderAll = (s) => { render(s, !!address); renderRisk(s); renderPerformance(s); };
 initRisk(getState);
+initPerformance(() => renderAll(getState()));
 subscribe(renderAll);
 renderAll(getState());
 
 loadMarkets();
 startStream();
 refreshAccount();
+refreshPortfolio();
 setInterval(refreshAccount, CONFIG.refresh.accountMs);
+setInterval(refreshPortfolio, CONFIG.refresh.performanceMs);
 setInterval(() => renderAll(getState()), 1000); // Alter der Daten live mitzählen
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAccount(); });

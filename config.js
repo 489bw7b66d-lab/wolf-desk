@@ -24,19 +24,24 @@ export const CONFIG = {
   // Falls ein Name nicht stimmt, zeigt die Testseite das an und listet die echten Namen.
   watchlist: ['BTC', 'ETH', 'SOL', 'LINK', 'xyz:GOLD', 'xyz:SILVER', 'xyz:EUR'],
 
+  // PERFORMANCE: dein eingezahltes Startkapital
+  startCapital: 1500,
+
   // DEINE RISIKO-REGELN (Prozentwerte beziehen sich auf den Kontowert)
   rules: {
     riskPerTradeWarnPct: 10,  // ab hier gelbe Warnung (Verlust bis Stop-Loss)
     riskPerTradeMaxPct: 15,   // ab hier roter Regelverstoß
     dailyLossLimitPct: 15,    // realisierter Tagesverlust, ab dem Schluss ist
     maxLeverage: 20,          // maximaler Hebel pro Position
-    minLiqDistancePct: 10,    // Mindestabstand Kurs zur Liquidation
+    liqBufferPct: 1,          // Liquidation muss mind. so viel % (vom Kurs) HINTER dem Stop liegen
+    liqNoStopMinShare: 0.5,   // ohne Stop: Warnung, wenn mehr als die Hälfte des Anfangsabstands verbraucht ist
     maxOpenPositions: 5,      // maximal gleichzeitig offene Positionen
   },
 
   // Wie oft das Konto neu geladen wird (Kurse kommen live per WebSocket)
   refresh: {
     accountMs: 15000,
+    performanceMs: 60000,
     pricesFallbackMs: 5000, // nur falls WebSocket ausfällt
   },
 

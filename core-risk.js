@@ -47,18 +47,74 @@ export function positionSize(equity, riskPct, entry, stop) {
 
 const level = (bad, warn) => (bad ? 'bad' : warn ? 'warn' : 'ok');
 
+// Risiko einer Position, zwei Sichtweisen:
+// fromEntry = geplantes Risiko ab Einstieg (Basis für die Regel)
+// fromNow   = was ab dem aktuellen Kurs noch verloren gehen kann (inkl. Buchgewinn)
+// Greift die Liquidation vor dem Stop, zählt bei isolierten Positionen die Margin als Maximalverlust.
+export function positionRisk(p, mark, stop) {
+  if (stop == null) return { fromEntry: null, fromNow: null, giveBack: null, liqFirst: false };
+  const liqFirst = liqBeforeStop(p.side, p.liq, stop);
+  const isolated = p.leverageType === 'isoliert';
+  let fromEntry, fromNow;
+  if (liqFirst && isolated) {
+    fromEntry = p.entry && p.leverage ? (p.entry * Math.abs(p.size)) / p.leverage : null; // Anfangs-Margin
+    fromNow = p.marginUsed ?? null;
+  } else {
+    const exit = liqFirst ? p.liq : stop;
+    fromEntry = lossToStop(p.side, p.size, p.entry, exit);
+    fromNow = lossToStop(p.side, p.size, mark, exit);
+  }
+  const giveBack = fromNow != null && fromEntry != null ? Math.max(0, fromNow - fromEntry) : null;
+  return { fromEntry, fromNow, giveBack, liqFirst };
+}
+
+const fmt1 = (v) => v.toFixed(1).replace('.', ',');
+
+// Ungefährer Abstand Einstieg → Liquidation bei isoliertem Hebel (in %).
+// 90 statt 100, weil die Wartungs-Margin die Liquidation etwas näher rückt.
+export const approxLiqDistPct = (leverage) => (leverage > 0 ? 90 / leverage : null);
+
+// Höchster Hebel, bei dem die Liquidation noch hinter dem Stop plus Puffer liegt.
+export function maxLeverageForStop(stopDistPct, bufferPct, maxLeverage) {
+  if (!(stopDistPct > 0)) return null;
+  return Math.max(1, Math.min(maxLeverage, Math.floor(90 / (stopDistPct + bufferPct))));
+}
+
+// Liquidations-Prüfung, an den Hebel angepasst:
+// mit Stop: Liegt die Liquidation weit genug hinter dem Stop?
+// ohne Stop: Wie viel vom hebelabhängigen Anfangsabstand ist schon verbraucht?
+export function liqCheck(p, mark, stop, liqDist, rules, liqFirst) {
+  if (liqDist == null || !mark || !p.liq) return null;
+  if (stop != null) {
+    if (liqFirst) return null; // wird schon beim Stop-Loss als Verstoß gemeldet
+    const buffer = (p.side === 'long' ? stop - p.liq : p.liq - stop) / mark * 100;
+    return {
+      rule: 'Liquidations-Puffer',
+      status: level(false, buffer < rules.liqBufferPct),
+      text: `Liquidation ${fmt1(buffer)} % hinter dem Stop (mind. ${fmt1(rules.liqBufferPct)} %)`,
+    };
+  }
+  const start = approxLiqDistPct(p.leverage);
+  const share = start ? liqDist / start : 1;
+  return {
+    rule: 'Abstand Liquidation',
+    status: level(share < rules.liqNoStopMinShare * 0.5, share < rules.liqNoStopMinShare),
+    text: `${fmt1(liqDist)} % von anfangs ca. ${fmt1(start)} % bei ${p.leverage}×`,
+  };
+}
+
 // Prüft eine Position gegen die Regeln. mark = aktueller Kurs, stop = SL (Order oder manuell).
 export function checkPosition(p, mark, stop, liqDist, equity, rules) {
-  const loss = lossToStop(p.side, p.size, mark, stop);
-  const riskPct = loss != null && equity > 0 ? (loss / equity) * 100 : null;
+  const risk = positionRisk(p, mark, stop);
+  const riskPct = risk.fromEntry != null && equity > 0 ? (risk.fromEntry / equity) * 100 : null;
   const checks = [];
   checks.push({
     rule: 'Stop-Loss',
-    status: stop == null ? 'warn' : liqBeforeStop(p.side, p.liq, stop) ? 'bad' : 'ok',
-    text: stop == null ? 'Kein Stop-Loss hinterlegt, Risiko unbegrenzt' : liqBeforeStop(p.side, p.liq, stop) ? 'Liquidation greift vor dem Stop-Loss' : 'Stop liegt vor der Liquidation',
+    status: stop == null ? 'warn' : risk.liqFirst ? 'bad' : 'ok',
+    text: stop == null ? 'Kein Stop-Loss hinterlegt, Risiko unbegrenzt' : risk.liqFirst ? 'Liquidation greift vor dem Stop-Loss' : 'Stop liegt vor der Liquidation',
   });
   if (riskPct != null) checks.push({
-    rule: 'Risiko bis Stop',
+    rule: 'Risiko ab Einstieg',
     status: level(riskPct >= rules.riskPerTradeMaxPct, riskPct >= rules.riskPerTradeWarnPct),
     text: `${riskPct.toFixed(1).replace('.', ',')} % vom Konto (Warnung ab ${rules.riskPerTradeWarnPct} %, max. ${rules.riskPerTradeMaxPct} %)`,
   });
@@ -67,13 +123,10 @@ export function checkPosition(p, mark, stop, liqDist, equity, rules) {
     status: level(p.leverage > rules.maxLeverage, p.leverage === rules.maxLeverage),
     text: `${p.leverage}× (max. ${rules.maxLeverage}×)`,
   });
-  if (liqDist != null) checks.push({
-    rule: 'Abstand Liquidation',
-    status: level(liqDist < rules.minLiqDistancePct, liqDist < rules.minLiqDistancePct * 1.5),
-    text: `${liqDist.toFixed(1).replace('.', ',')} % (mind. ${rules.minLiqDistancePct} %)`,
-  });
+  const lc = liqCheck(p, mark, stop, liqDist, rules, risk.liqFirst);
+  if (lc) checks.push(lc);
   const worst = checks.some((c) => c.status === 'bad') ? 'bad' : checks.some((c) => c.status === 'warn') ? 'warn' : 'ok';
-  return { loss, riskPct, checks, worst };
+  return { ...risk, loss: risk.fromNow, riskPct, checks, worst };
 }
 
 // Prüft kontoweite Regeln.
