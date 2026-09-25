@@ -5,8 +5,10 @@ import { loadAccount } from './core-account.js';
 import { startStream } from './core-stream.js';
 import { getState, update, subscribe, logError } from './core-store.js';
 import { render } from './ui-testpage.js';
-import { initRisk, renderRisk, setCalc } from './ui-risk.js';
-import { initSignals, renderSignalMarkets } from './ui-signals.js';
+import { initRisk, renderRisk } from './ui-risk.js';
+import { initSignals, showDetail } from './ui-signals.js';
+import { initHome, renderHome } from './ui-home.js';
+import { initTrade, openTrade } from './ui-trade.js';
 import { streamHealth, accountHealth } from './core-health.js';
 import { initPerformance, renderPerformance } from './ui-performance.js';
 
@@ -29,6 +31,7 @@ document.getElementById('addr-form').addEventListener('submit', (e) => {
   address = v.toLowerCase();
   try { localStorage.setItem(ADDR_KEY, address); } catch { /* ignorieren */ }
   msg.textContent = 'Gespeichert. Konto wird geladen …';
+  setTimeout(() => { location.hash = 'start'; }, 800);
   update({ account: null, accountTs: 0, accountError: null });
   refreshAccount();
   refreshPortfolio();
@@ -72,9 +75,9 @@ async function loadMarkets() {
 }
 
 // Navigation zwischen den Bereichen
-const TITLES = { konto: 'Konto', risiko: 'Risiko', signale: 'Signale', system: 'System' };
+const TITLES = { start: 'Start', signale: 'Signale', konto: 'Konto', risiko: 'Risiko', system: 'System' };
 function showTab(name) {
-  if (!TITLES[name]) name = address ? 'konto' : 'system';
+  if (!TITLES[name]) name = address ? 'start' : 'system';
   document.querySelectorAll('[data-tab]').forEach((el) => el.classList.toggle('tab-off', el.dataset.tab !== name));
   document.querySelectorAll('[data-nav]').forEach((a) => {
     if (a.dataset.nav === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -92,12 +95,11 @@ function renderMiniHealth(s) {
   document.getElementById('mini-health').innerHTML = `<span class="dot s-${worst}"></span>${worst === 'ok' ? 'Live' : worst === 'fehler' ? 'Störung' : 'Prüfen'}`;
 }
 
-const renderAll = (s) => { render(s, !!address); renderRisk(s); renderPerformance(s); renderSignalMarkets(s); renderMiniHealth(s); };
-initSignals(getState, (coin, entry, stop) => {
-  setCalc(coin, entry, stop);
-  location.hash = 'risiko';
-  setTimeout(() => document.getElementById('calc').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
-});
+const renderAll = (s) => { render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderMiniHealth(s); };
+const openFull = (r) => { location.hash = 'signale'; setTimeout(() => showDetail(r), 50); };
+initTrade(getState, openFull);
+initSignals(getState, openTrade);
+initHome(getState, openTrade, openFull);
 initRisk(getState);
 initPerformance(() => renderAll(getState()));
 subscribe(renderAll);

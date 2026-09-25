@@ -36,6 +36,7 @@ export const CONFIG = {
     liqBufferPct: 1,          // Liquidation muss mind. so viel % (vom Kurs) HINTER dem Stop liegen
     liqNoStopMinShare: 0.5,   // ohne Stop: Warnung, wenn mehr als die Hälfte des Anfangsabstands verbraucht ist
     maxOpenPositions: 5,      // maximal gleichzeitig offene Positionen
+    marginBudgetPct: 50,      // Hebel-Empfehlung: pro Trade höchstens so viel % des verfügbaren Kapitals als Margin
   },
 
   // SIGNALGEBER

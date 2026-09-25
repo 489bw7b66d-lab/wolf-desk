@@ -152,3 +152,16 @@ export function checkAccount({ equity, positionsCount, realizedToday, openRiskTo
     },
   ];
 }
+
+// Hebel-Empfehlung: so niedrig wie möglich, dabei höchstens `budgetPct` % des verfügbaren Kapitals als Margin.
+// Reicht das Budget nicht, darf die Margin bis zum gesamten verfügbaren Kapital gehen.
+// Obergrenze ist immer der Hebel, bei dem die Liquidation noch hinter dem Stop liegt.
+export function recommendLeverage(notional, available, maxLev, budgetPct = 50) {
+  if (!(notional > 0) || !(available > 0) || !maxLev) return null;
+  const inBudget = Math.max(1, Math.ceil(notional / (available * budgetPct / 100)));
+  const minimum = Math.max(1, Math.ceil(notional / available));
+  if (minimum > maxLev) return { lev: null, need: minimum, maxLev };
+  const lev = Math.min(inBudget, maxLev);
+  const margin = notional / lev;
+  return { lev, need: minimum, maxLev, margin, budgetPct: (margin / available) * 100 };
+}

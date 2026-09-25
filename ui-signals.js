@@ -1,30 +1,22 @@
-// Signalgeber-Anzeige: Modus, Marktauswahl, Detail-Analyse, Watchlist-Scan.
+// Signale-Bereich: Suche, Modus, Detail-Analyse, Watchlist-Scan.
 import { CONFIG } from './config.js';
-import { analyzeMarket, heat } from './core-scanner.js';
-import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
-import { accountSummary } from './core-calc.js';
-import { positionSize, maxLeverageForStop } from './core-risk.js';
+import { analyzeMarket } from './core-scanner.js';
+import { badge, ladder, esc, TFL } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const DIR = { long: ['LONG', 'long'], short: ['SHORT', 'short'], neutral: ['KEIN SIGNAL', 'muted'] };
 const STACK = { bull: ['Bullisch', 'long'], bear: ['Bärisch', 'short'], mixed: ['Gemischt', 'muted'] };
 const STRUCT = { up: ['Höhere Hochs', 'long'], down: ['Tiefere Tiefs', 'short'], range: ['Seitwärts', 'muted'] };
-const TFL = { '5m': '5M', '15m': '15M', '1h': '1H', '4h': '4H', '1d': '1D' };
 
 let mode = CONFIG.signals.defaultMode;
 let getState = () => ({});
-let onUsePlan = () => {};
-let lastMarketsKey = '';
+let onTrade = () => {};
+let shown = null;
 const results = new Map(); // "mode|coin" -> Ergebnis
 
-const pctFrom = (from, to) => ((to - from) / from) * 100;
-const signedPct = (v) => (v >= 0 ? '+' : '−') + f.pct(Math.abs(v), 2);
-
-function badge(dir) {
-  const [t, c] = DIR[dir];
-  return `<span class="sig-badge ${c}">${t}${dir === 'long' ? ' ▲' : dir === 'short' ? ' ▼' : ''}</span>`;
+function allMarkets() {
+  const m = getState().markets || {};
+  return [...new Set([...CONFIG.watchlist, ...Object.values(m).flat()])];
 }
 
 function scoreBars(total) {
@@ -47,34 +39,6 @@ function mtfTable(r) {
   </div>`;
 }
 
-function planBlock(r) {
-  const p = r.plan;
-  if (!p) {
-    return `<p class="empty">Kein klares Setup: Long- oder Short-Score liegt unter ${CONFIG.signals.minScore} oder zu nah am Gegenwert (Abstand mind. ${CONFIG.signals.minGap}). Abwarten ist auch eine Position.</p>`;
-  }
-  const s = getState();
-  const equity = s.account ? accountSummary(s.account, CONFIG.accountMode).equity : null;
-  const size = positionSize(equity, CONFIG.rules.riskPerTradeWarnPct, p.entry, p.stop);
-  const maxLev = maxLeverageForStop(p.stopDistPct, CONFIG.rules.liqBufferPct, CONFIG.rules.maxLeverage);
-  const row = (label, price, cls, extra) => `<div class="lvl"><span class="dot" style="background:var(--${cls})"></span><span class="lbl">${label}</span><span class="px">${price}</span><span class="pc ${cls === 'gold' ? 'muted' : cls === 'ok' ? 'long' : 'short'}">${extra}</span></div>`;
-  const levels = [
-    row('Stop-Loss', f.price(p.stop), 'bad', `${signedPct(pctFrom(p.entry, p.stop))} · ${esc(p.stopLabel)}`),
-    row('Einstieg', `${f.price(p.zone[0])} – ${f.price(p.zone[1])}`, 'gold', p.method === 'fib' ? 'Fib 0,5–0,618' : 'Zone'),
-    ...p.tps.map((tp, i) => row(`TP${i + 1}`, f.price(tp), 'ok', `${signedPct(pctFrom(p.entry, tp))}${p.method === 'fib' ? ' · ' + esc(p.tpLabels[i]) : ''} · ${((Math.abs(tp - p.entry)) / p.R).toFixed(1).replace('.', ',')}R`)),
-  ];
-  if (p.dir === 'long') levels.reverse();
-  return `<p class="plan-mode"><span class="chip">${p.method === 'fib' ? 'Fibonacci' : 'ATR'}</span> ${esc(p.entryMode)}</p>
-    <div class="ladder">${levels.join('')}</div>
-    <div class="kv" style="margin-top:14px">
-      <div><span class="k">Stop-Abstand</span><span class="v">${f.pct(p.stopDistPct, 2)}</span></div>
-      <div><span class="k">Hebel bis ca.</span><span class="v">${f.lev(maxLev)}</span></div>
-      <div><span class="k">Größe bei ${CONFIG.rules.riskPerTradeWarnPct} % Risiko</span><span class="v">${size ? f.size(size.size) : '–'}</span></div>
-      <div><span class="k">Risiko</span><span class="v">${size ? f.usd(size.riskAmt) : '–'}</span></div>
-    </div>
-    ${p.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}${w.price ? ` (${f.price(w.price)})` : ''}</p>`).join('')}
-    <button type="button" class="wide" id="sig-use">In Rechner übernehmen</button>`;
-}
-
 function eventsBlock(r) {
   if (!r.events.length) return '';
   const sorted = [...r.events].sort((a, b) => (b.strong - a.strong) || (a.barsAgo - b.barsAgo));
@@ -90,42 +54,60 @@ function wavesBlock(r) {
     <p class="empty" style="margin-top:6px">Mögliche Zählung nach den harten Elliott-Regeln, keine Gewissheit.</p>`;
 }
 
-function renderDetail(r) {
-  const lv = r.levels;
+export function showDetail(r) {
+  shown = r;
+  const lv = r.levels, p = r.plan;
   $('sig-detail').innerHTML = `<div class="sig-head">
       <div><div class="coin" style="font-size:22px">${esc(r.coin)}</div>
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · letzte Kerze ${new Date(r.lastClose).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span></div>
       ${badge(r.dir)}
     </div>
+    ${p ? `<button type="button" class="wide" id="sig-trade" style="margin:0 0 16px">Trade-Karte öffnen</button>` : ''}
     ${scoreBars(r.total)}
     ${mtfTable(r)}
     ${eventsBlock(r)}
     ${wavesBlock(r)}
     <h3 class="sub-h">Trade-Plan (${TFL[r.tfs[1]]})</h3>
-    ${planBlock(r)}
+    ${p ? `<p class="plan-mode"><span class="chip">${p.method === 'fib' ? 'Fibonacci' : 'ATR'}</span> ${esc(p.entryMode)}</p>${ladder(p)}
+      ${p.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}${w.price ? ` (${f.price(w.price)})` : ''}</p>`).join('')}`
+    : `<p class="empty">Kein klares Setup: Score unter ${CONFIG.signals.minScore} oder zu nah an der Gegenrichtung (Abstand mind. ${CONFIG.signals.minGap}). Abwarten ist auch eine Position.</p>`}
     ${r.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}</p>`).join('')}
     <h3 class="sub-h">Key Levels</h3>
     <div class="kv">
-      <div><span class="k">Widerstände</span>${lv.resistance.map((p) => `<span class="v small">${f.price(p)}</span>`).join('') || '–'}</div>
-      <div><span class="k">Unterstützungen</span>${lv.support.map((p) => `<span class="v small">${f.price(p)}</span>`).join('') || '–'}</div>
+      <div><span class="k">Widerstände</span>${lv.resistance.map((x) => `<span class="v small">${f.price(x)}</span>`).join('') || '–'}</div>
+      <div><span class="k">Unterstützungen</span>${lv.support.map((x) => `<span class="v small">${f.price(x)}</span>`).join('') || '–'}</div>
     </div>
-    <p class="empty" style="margin-top:14px">Regelbasierte Auswertung abgeschlossener Kerzen, keine Anlageberatung. Ob die Regeln etwas taugen, zeigt erst das Backtesting.</p>`;
-  const use = $('sig-use');
-  if (use) use.addEventListener('click', () => onUsePlan(r.coin, r.plan.entry, r.plan.stop));
+    <p class="empty" style="margin-top:14px">Regelbasierte Auswertung abgeschlossener Kerzen, keine Anlageberatung.</p>`;
+  $('sig-trade')?.addEventListener('click', () => onTrade(r));
+  // Modus-Auswahl an das angezeigte Ergebnis anpassen
+  mode = r.mode;
+  $('sig-modes').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.m === mode)));
+  $('sig-search').value = r.coin;
 }
 
-async function analyze(coin) {
+export async function analyze(coin) {
   if (!coin) return;
-  const key = mode + '|' + coin;
-  $('sig-detail').innerHTML = `<p class="empty">Analysiere ${esc(coin)} auf ${CONFIG.signals.modes[mode].tfs.map((t) => TFL[t]).join(', ')} …</p>`;
+  $('sig-suggest').innerHTML = '';
+  $('sig-search').value = coin;
+  $('sig-detail').innerHTML = `<p class="empty">Analysiere ${esc(coin)} (${CONFIG.signals.modes[mode].tfs.map((t) => TFL[t]).join(', ')}) …</p>`;
   try {
     const r = await analyzeMarket(coin, mode);
-    results.set(key, r);
-    renderDetail(r);
+    results.set(mode + '|' + coin, r);
+    showDetail(r);
     renderList();
   } catch (e) {
     $('sig-detail').innerHTML = `<p class="empty" style="color:var(--bad)">Analyse fehlgeschlagen: ${esc(e.message)}</p>`;
   }
+}
+
+function renderSuggest() {
+  const q = $('sig-search').value.trim().toUpperCase();
+  if (!q) { $('sig-suggest').innerHTML = ''; return; }
+  const hits = allMarkets().filter((n) => n.toUpperCase().includes(q))
+    .sort((a, b) => (a.toUpperCase().replace(/^XYZ:/, '').startsWith(q) ? 0 : 1) - (b.toUpperCase().replace(/^XYZ:/, '').startsWith(q) ? 0 : 1)).slice(0, 8);
+  $('sig-suggest').innerHTML = hits.length
+    ? hits.map((n) => `<button type="button" class="suggest" data-coin="${esc(n)}">${esc(n)}</button>`).join('')
+    : '<p class="empty">Kein Markt gefunden.</p>';
 }
 
 function renderList() {
@@ -143,51 +125,16 @@ async function scanWatchlist() {
   btn.disabled = true;
   for (const [i, c] of CONFIG.watchlist.entries()) {
     btn.textContent = `Scanne ${i + 1} von ${CONFIG.watchlist.length} …`;
-    try { results.set(mode + '|' + c, await analyzeMarket(c, mode)); } catch { /* einzelner Markt fehlgeschlagen */ }
+    try { results.set(mode + '|' + c, await analyzeMarket(c, mode)); } catch { /* weiter */ }
     renderList();
   }
   btn.disabled = false;
   btn.textContent = 'Watchlist scannen';
 }
 
-const HOT_KEY = 'wolfdesk.hotOn';
-// Gründe für die Auswahl: gleiche Ereignisse über Timeframes zusammenfassen, z. B. "Starkes Momentum (4H, 1H)"
-const topReasons = (r) => {
-  const groups = new Map();
-  [...r.events.filter((e) => e.dir === r.dir)].sort((a, b) => (b.strong - a.strong) || (a.barsAgo - b.barsAgo)).forEach((e) => {
-    const name = e.name.replace(/ \(.*\)$/, '').replace(/ ×.*$/, '');
-    if (!groups.has(name)) groups.set(name, []);
-    groups.get(name).push(TFL[e.tf] || e.tf);
-  });
-  const list = [...groups.entries()].slice(0, 3).map(([n, tfs]) => `${n} (${tfs.join(', ')})`);
-  const w = r.waves.find((x) => x.bias === r.dir);
-  if (w) list.push(`Elliott ${TFL[w.tf]}: ${w.label}`);
-  return list;
-};
-
-function renderHot() {
-  $('hot-toggle').textContent = hot.running ? 'Überwachung stoppen' : 'Live-Überwachung starten';
-  $('hot-toggle').classList.toggle('ghost', hot.running);
-  let status;
-  if (!hot.running && !hot.lastRound) status = `Scannt die Top ${CONFIG.signals.hot.topN} nach Market Cap und wählt bis zu ${CONFIG.signals.hot.maxPicks} Coins mit den stärksten Signalen.`;
-  else if (hot.phase === 'Pause') status = `Letzter Durchlauf ${new Date(hot.lastRound).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} · nächster in ${Math.max(0, Math.round((hot.nextRound - Date.now()) / 60000))} Min.`;
-  else if (hot.running) status = `${hot.phase}: ${hot.done} von ${hot.total}`;
-  else status = 'Gestoppt.';
-  const prog = hot.running && hot.total && hot.phase !== 'Pause' ? `<div class="bar" style="margin-top:8px"><span style="width:${(hot.done / hot.total) * 100}%;background:var(--gold)"></span></div>` : '';
-  $('hot-status').innerHTML = `<p class="empty">${esc(status)}</p>${prog}
-    ${hot.source ? `<p class="empty" style="font-size:12px;margin-top:6px">Quelle: ${esc(hot.source)}${hot.skipped ? ` · ${hot.skipped} wegen geringer Liquidität übersprungen` : ''}</p>` : ''}
-    ${hot.error ? `<p class="warnline">${esc(hot.error)}</p>` : ''}`;
-  $('hot-list').innerHTML = hot.picks.length ? hot.picks.map(({ r, heat: h }, i) => `<button type="button" class="hot-row" data-hot="${esc(r.coin)}">
-      <span class="rank">${i + 1}</span>
-      <span class="hot-main"><span class="sym">${esc(r.coin)}</span><span class="reasons">${topReasons(r).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
-      <span class="hot-side">${badge(r.dir)}<span class="heat">Score ${r.total[r.dir]}</span></span>
-    </button>`).join('')
-    : hot.lastRound ? '<p class="empty">Aktuell kein Coin mit klarem Signal. Kein Trade ist auch eine Entscheidung.</p>' : '';
-}
-
-export function initSignals(stateGetter, usePlan) {
+export function initSignals(stateGetter, openTrade) {
   getState = stateGetter;
-  onUsePlan = usePlan;
+  onTrade = openTrade;
   const modes = CONFIG.signals.modes;
   $('sig-modes').innerHTML = Object.entries(modes).map(([k, m]) => `<button type="button" data-m="${k}" aria-pressed="${k === mode}">${m.label}<small>${m.tfs.map((t) => TFL[t]).join(' · ')}</small></button>`).join('');
   $('sig-modes').addEventListener('click', (e) => {
@@ -196,56 +143,24 @@ export function initSignals(stateGetter, usePlan) {
     mode = b.dataset.m;
     $('sig-modes').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.m === mode)));
     renderList();
-    const coin = $('sig-market').value;
-    const r = results.get(mode + '|' + coin);
-    if (r) renderDetail(r); else $('sig-detail').innerHTML = '<p class="empty">Markt wählen und „Analysieren“ tippen.</p>';
+    const coin = shown?.coin;
+    if (coin) { const r = results.get(mode + '|' + coin); if (r) showDetail(r); else analyze(coin); }
   });
-  $('sig-go').addEventListener('click', () => analyze($('sig-market').value));
+  $('sig-search').addEventListener('input', renderSuggest);
+  $('sig-search').addEventListener('focus', () => { $('sig-search').select(); });
+  $('sig-search').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); const first = $('sig-suggest').querySelector('button[data-coin]'); if (first) analyze(first.dataset.coin); }
+  });
+  $('sig-suggest').addEventListener('click', (e) => { const b = e.target.closest('button[data-coin]'); if (b) analyze(b.dataset.coin); });
+  $('sig-quick').innerHTML = CONFIG.watchlist.map((c) => `<button type="button" class="chip-btn" data-coin="${esc(c)}">${esc(c.replace(/^xyz:/, ''))}</button>`).join('');
+  $('sig-quick').addEventListener('click', (e) => { const b = e.target.closest('button[data-coin]'); if (b) analyze(b.dataset.coin); });
   $('sig-scan').addEventListener('click', scanWatchlist);
-  const markets = () => (getState().markets?.[''] || []);
-  $('hot-toggle').addEventListener('click', () => {
-    if (hot.running) { stopHot(); try { localStorage.setItem(HOT_KEY, '0'); } catch { /* egal */ } }
-    else { startHot(markets); try { localStorage.setItem(HOT_KEY, '1'); } catch { /* egal */ } }
-    renderHot();
-  });
-  $('hot-list').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-hot]');
-    if (!b) return;
-    const r = hot.results.get(b.dataset.hot) || hot.picks.find((p) => p.r.coin === b.dataset.hot)?.r;
-    if (!r) return;
-    renderDetail(r);
-    $('sig-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-  onHot(renderHot);
-  setInterval(() => { if (hot.phase === 'Pause') renderHot(); }, 30000);
-  renderHot();
-  // Überwachung automatisch fortsetzen, sobald die Marktliste da ist
-  let on = false;
-  try { on = localStorage.getItem(HOT_KEY) === '1'; } catch { /* egal */ }
-  if (on) {
-    const wait = setInterval(() => { if (markets().length) { clearInterval(wait); startHot(markets); } }, 1000);
-  }
   $('sig-list').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-coin]');
     if (!b) return;
-    const coin = b.dataset.coin;
-    if ([...$('sig-market').options].some((o) => o.value === coin)) $('sig-market').value = coin;
-    const r = results.get(mode + '|' + coin);
-    if (r) renderDetail(r); else analyze(coin);
+    const r = results.get(mode + '|' + b.dataset.coin);
+    if (r) showDetail(r); else analyze(b.dataset.coin);
     $('sig-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   renderList();
-}
-
-// Marktauswahl füllen, sobald die Marktliste da ist (Watchlist zuerst, dann alle Märkte).
-export function renderSignalMarkets(s) {
-  const key = Object.values(s.markets).map((l) => l.length).join(',');
-  if (key === lastMarketsKey || !key) return;
-  lastMarketsKey = key;
-  const sel = $('sig-market');
-  const cur = sel.value;
-  const group = (label, list) => `<optgroup label="${esc(label)}">${list.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}</optgroup>`;
-  sel.innerHTML = group('Watchlist', CONFIG.watchlist) + Object.entries(s.markets)
-    .map(([dex, list]) => group(dex ? `Bereich ${dex}` : 'Krypto (Hauptbörse)', [...list].sort())).join('');
-  sel.value = cur || CONFIG.watchlist[0];
 }

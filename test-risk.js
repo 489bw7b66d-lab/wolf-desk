@@ -1,5 +1,5 @@
 // Tests für core-risk.js
-import { liqCheck, maxLeverageForStop, approxLiqDistPct, positionRisk, findStopLoss, lossToStop, liqBeforeStop, realizedPnl, positionSize, checkPosition, checkAccount } from './core-risk.js';
+import { recommendLeverage, liqCheck, maxLeverageForStop, approxLiqDistPct, positionRisk, findStopLoss, lossToStop, liqBeforeStop, realizedPnl, positionSize, checkPosition, checkAccount } from './core-risk.js';
 
 const near = (a, b, eps = 1e-6) => a != null && Math.abs(a - b) < eps;
 const R = { riskPerTradeWarnPct: 10, riskPerTradeMaxPct: 15, dailyLossLimitPct: 15, maxLeverage: 20, liqBufferPct: 1, liqNoStopMinShare: 0.5, maxOpenPositions: 5 };
@@ -44,4 +44,8 @@ export const tests = [
   ['Max. Hebel: 5 % Stop + 1 % Puffer = 15×', () => maxLeverageForStop(5, 1, 20) === 15],
   ['Max. Hebel: enger Stop wird bei Regel-Max. gedeckelt', () => maxLeverageForStop(1, 1, 20) === 20],
   ['Max. Hebel: weiter Stop 40 % = 2×', () => maxLeverageForStop(40, 1, 20) === 2],
+  ['Hebel-Empfehlung: 10.000 $ bei 1.000 $ frei, Budget 50 % = 20×', () => recommendLeverage(10000, 1000, 20, 50).lev === 20],
+  ['Hebel-Empfehlung: 2.000 $ bei 1.000 $ frei = 4× (500 $ Margin)', () => { const r = recommendLeverage(2000, 1000, 20, 50); return r.lev === 4 && near(r.margin, 500); }],
+  ['Hebel-Empfehlung: Budget reicht nicht → Max.-Hebel', () => recommendLeverage(10000, 1000, 16, 50).lev === 16],
+  ['Hebel-Empfehlung: Kapital reicht nicht = kein Hebel', () => recommendLeverage(10000, 400, 20, 50).lev === null],
 ];
