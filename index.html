@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wolf Desk">
+<meta name="theme-color" content="#0E0D0B">
+<title>Wolf Desk – Daten-Kern</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <p class="kicker">Wolf Desk</p>
+    <h1>Daten-Kern</h1>
+    <p class="sub">Testseite für Etappe 1: Kommen die Daten live und vollständig an?</p>
+  </header>
+
+  <section class="card" aria-labelledby="h-health">
+    <h2 id="h-health">Daten-Gesundheit</h2>
+    <div id="health" class="health"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-addr">
+    <h2 id="h-addr">Wallet-Adresse</h2>
+    <form id="addr-form" class="addr">
+      <label for="addr">Deine öffentliche Adresse (0x…). Niemals Seed Phrase oder Private Key eingeben.</label>
+      <div class="row">
+        <input id="addr" name="addr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0x…">
+        <button type="submit">Speichern</button>
+      </div>
+      <p id="addr-msg" class="msg" role="status"></p>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="h-acc">
+    <h2 id="h-acc">Konto</h2>
+    <div id="account"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-pos">
+    <h2 id="h-pos">Offene Positionen</h2>
+    <div id="positions"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-watch">
+    <h2 id="h-watch">Watchlist-Kurse</h2>
+    <div id="watch"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-err">
+    <h2 id="h-err">Fehlerprotokoll</h2>
+    <div id="errors"></div>
+  </section>
+
+  <details class="card markets">
+    <summary>Verfügbare Märkte anzeigen</summary>
+    <label for="market-filter" class="visually-hidden">Märkte filtern</label>
+    <input id="market-filter" placeholder="Filtern, z. B. GOLD oder EUR" autocomplete="off" autocapitalize="characters">
+    <div id="markets"></div>
+  </details>
+
+  <p class="foot">Nur lesender Zugriff auf öffentliche Hyperliquid-Daten. Keine Anlageberatung.</p>
+</main>
+<script type="module" src="main.js"></script>
+</body>
+</html>
