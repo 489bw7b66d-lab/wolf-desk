@@ -16,8 +16,8 @@
 <main class="app">
   <header class="top">
     <p class="kicker">Wolf Desk</p>
-    <h1>Daten-Kern</h1>
-    <p class="sub">Testseite für Etappe 1: Kommen die Daten live und vollständig an?</p>
+    <h1>Daten &amp; Risiko</h1>
+    <p class="sub">Etappe 2: Live-Daten, Regel-Check und Positionsgrößen.</p>
   </header>
 
   <section class="card" aria-labelledby="h-health">
@@ -42,9 +42,38 @@
     <div id="account"></div>
   </section>
 
+  <section class="card" aria-labelledby="h-risk">
+    <h2 id="h-risk">Risiko-Check</h2>
+    <div id="risk"></div>
+  </section>
+
   <section class="card" aria-labelledby="h-pos">
     <h2 id="h-pos">Offene Positionen</h2>
     <div id="positions"></div>
+  </section>
+
+  <section class="card" id="stop-box" aria-labelledby="h-stop" hidden>
+    <h2 id="h-stop">Stop-Loss manuell eintragen</h2>
+    <form id="stop-form" class="addr">
+      <label for="stop-price">Nur für Positionen ohne Stop-Order bei Hyperliquid. Leer lassen und speichern löscht den Eintrag.</label>
+      <div class="row">
+        <select id="stop-coin" aria-label="Position"></select>
+        <input id="stop-price" inputmode="decimal" autocomplete="off" placeholder="Preis">
+        <button type="submit">Speichern</button>
+      </div>
+      <p id="stop-msg" class="msg" role="status"></p>
+    </form>
+  </section>
+
+  <section class="card" id="calc" aria-labelledby="h-calc">
+    <h2 id="h-calc">Positionsgrößen-Rechner</h2>
+    <div class="calc-grid">
+      <label>Markt<select id="calc-coin"></select></label>
+      <label>Risiko %<input id="calc-risk" inputmode="decimal" autocomplete="off"></label>
+      <label>Einstieg<input id="calc-entry" inputmode="decimal" autocomplete="off"></label>
+      <label>Stop-Loss<input id="calc-stop" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <div id="calc-out" style="margin-top:14px"></div>
   </section>
 
   <section class="card" aria-labelledby="h-watch">

@@ -2,14 +2,14 @@
 // außer über die Funktionen aus core/calc.js.
 import { CONFIG } from './config.js';
 import { priceHealth, accountHealth, streamHealth } from './core-health.js';
-import { liqDistancePct, accountSummary } from './core-calc.js';
+import { accountSummary } from './core-calc.js';
+import { enrichPositions } from './core-positions.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const STATUS_TEXT = { ok: 'OK', veraltet: 'Veraltet', fehler: 'Fehler', fehlt: 'Keine Daten' };
 const STREAM_TEXT = { verbunden: 'Live verbunden', verbinde: 'Verbinde …', getrennt: 'Getrennt', fallback: 'Ersatzbetrieb (Abfrage alle 5 s)' };
-const MIN_LIQ_DIST = 10; // Vorschau der späteren Risiko-Regel
 
 function row(status, label, meta) {
   return `<div class="hrow"><span class="dot s-${status}"></span><span class="label">${esc(label)}</span>
@@ -49,13 +49,11 @@ function renderPositions(s, now) {
   const a = s.account;
   if (!a) { $('positions').innerHTML = '<p class="empty">Keine Kontodaten.</p>'; return; }
   if (!a.positions.length) { $('positions').innerHTML = '<p class="empty">Aktuell keine offenen Positionen.</p>'; return; }
-  $('positions').innerHTML = a.positions.map((p) => {
-    const ph = priceHealth(s, p.coin, now);
-    const live = ph.status === 'ok' ? s.prices[p.coin] : null;
-    const mark = live ?? p.markSnapshot;
-    const dist = liqDistancePct(p.side, mark, p.liq);
-    const danger = dist != null && dist < MIN_LIQ_DIST;
-    const barW = dist == null ? 0 : Math.max(3, Math.min(100, dist * 3));
+  const COLOR = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)' };
+  $('positions').innerHTML = enrichPositions(s, now).map((p) => {
+    const ev = p.evaluation;
+    const barW = p.liqDist == null ? 0 : Math.max(3, Math.min(100, p.liqDist * 3));
+    const issues = ev.checks.filter((c) => c.status !== 'ok');
     return `<article class="pos">
       <div class="pos-head">
         <span><span class="coin">${esc(p.coin)}</span><span class="side ${p.side}">${p.side === 'long' ? 'LONG' : 'SHORT'} ${f.lev(p.leverage)} ${p.leverageType}</span></span>
@@ -63,14 +61,17 @@ function renderPositions(s, now) {
       </div>
       <div class="pos-grid">
         <div><span class="k">Einstieg</span>${f.price(p.entry)}</div>
-        <div><span class="k">${live ? 'Live-Kurs' : 'Mark (Snapshot)'}</span>${f.price(mark)}</div>
+        <div><span class="k">${p.live ? 'Live-Kurs' : 'Mark (Snapshot)'}</span>${f.price(p.mark)}</div>
         <div><span class="k">Größe</span>${f.size(p.size)}</div>
+        <div><span class="k">Stop-Loss${p.stopSource ? ' (' + p.stopSource + ')' : ''}</span>${f.price(p.stop)}</div>
         <div><span class="k">Liquidation</span>${f.price(p.liq)}</div>
-        <div><span class="k">Abstand Liq.</span><b class="${danger ? 'short' : ''}">${f.pct(dist)}</b></div>
+        <div><span class="k">Abstand Liq.</span>${f.pct(p.liqDist)}</div>
+        <div><span class="k">Verlust bis Stop</span>${ev.loss == null ? '–' : f.usd(ev.loss)}</div>
+        <div><span class="k">vom Konto</span>${f.pct(ev.riskPct)}</div>
         <div><span class="k">Margin</span>${f.usd(p.marginUsed)}</div>
       </div>
-      <div class="bar"><span style="width:${barW}%;background:${danger ? 'var(--bad)' : 'var(--ok)'}"></span></div>
-      ${danger ? `<p class="warnline" style="margin:0">Weniger als ${MIN_LIQ_DIST} % Abstand zur Liquidation</p>` : ''}
+      <div class="bar"><span style="width:${barW}%;background:${COLOR[ev.checks.find((c) => c.rule === 'Abstand Liquidation')?.status || 'ok']}"></span></div>
+      ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
     </article>`;
   }).join('');
 }

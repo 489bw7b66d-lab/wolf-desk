@@ -24,10 +24,17 @@ function normalizePosition(ap, dex) {
   };
 }
 
+function localMidnight() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
 export async function loadAccount(user, dexes) {
-  const results = await Promise.allSettled([
-    ...dexes.map((d) => hl.account(user, d)),
-    hl.spot(user),
+  const [results, orderRes, fillsRes] = await Promise.all([
+    Promise.allSettled([...dexes.map((d) => hl.account(user, d)), hl.spot(user)]),
+    Promise.allSettled(dexes.map((d) => hl.openOrders(user, d))),
+    Promise.allSettled([hl.fillsSince(user, localMidnight())]),
   ]);
 
   const errors = [];
@@ -60,5 +67,13 @@ export async function loadAccount(user, dexes) {
 
   if (errors.length === dexes.length + 1) throw new Error(errors.join(' | '));
 
-  return { accountValue, marginUsed, withdrawable, notional, spotUsdc, positions, partialErrors: errors };
+  const orders = [];
+  orderRes.forEach((r, i) => {
+    if (r.status === 'fulfilled' && Array.isArray(r.value)) orders.push(...r.value);
+    else if (r.status !== 'fulfilled') errors.push(`Orders ${dexes[i] || 'Haupt'}: ${r.reason.message}`);
+  });
+  const fills = fillsRes[0].status === 'fulfilled' && Array.isArray(fillsRes[0].value) ? fillsRes[0].value : null;
+  if (!fills) errors.push('Fills: ' + (fillsRes[0].reason?.message || 'unbekannt'));
+
+  return { orders, fillsToday: fills, accountValue, marginUsed, withdrawable, notional, spotUsdc, positions, partialErrors: errors };
 }

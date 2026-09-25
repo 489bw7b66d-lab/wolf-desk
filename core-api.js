@@ -36,6 +36,8 @@ export const hl = {
   meta: (dex = '') => info(withDex({ type: 'meta' }, dex)),
   account: (user, dex = '') => info(withDex({ type: 'clearinghouseState', user }, dex)),
   spot: (user) => info({ type: 'spotClearinghouseState', user }),
+  openOrders: (user, dex = '') => info(withDex({ type: 'frontendOpenOrders', user }, dex)),
+  fillsSince: (user, startTime) => info({ type: 'userFillsByTime', user, startTime, aggregateByTime: true }),
   candles: (coin, interval, startTime, endTime = Date.now()) =>
     info({ type: 'candleSnapshot', req: { coin, interval, startTime, endTime } }),
 };

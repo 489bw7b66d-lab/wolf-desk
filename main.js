@@ -5,6 +5,7 @@ import { loadAccount } from './core-account.js';
 import { startStream } from './core-stream.js';
 import { getState, update, subscribe, logError } from './core-store.js';
 import { render } from './ui-testpage.js';
+import { initRisk, renderRisk } from './ui-risk.js';
 
 const ADDR_KEY = 'wolfdesk.address';
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -29,7 +30,7 @@ document.getElementById('addr-form').addEventListener('submit', (e) => {
   refreshAccount();
 });
 
-document.getElementById('market-filter').addEventListener('input', () => render(getState(), !!address));
+document.getElementById('market-filter').addEventListener('input', () => renderAll(getState()));
 
 async function refreshAccount() {
   if (!address) return;
@@ -56,12 +57,14 @@ async function loadMarkets() {
   update({ markets });
 }
 
-subscribe((s) => render(s, !!address));
-render(getState(), !!address);
+const renderAll = (s) => { render(s, !!address); renderRisk(s); };
+initRisk(getState);
+subscribe(renderAll);
+renderAll(getState());
 
 loadMarkets();
 startStream();
 refreshAccount();
 setInterval(refreshAccount, CONFIG.refresh.accountMs);
-setInterval(() => render(getState(), !!address), 1000); // Alter der Daten live mitzählen
+setInterval(() => renderAll(getState()), 1000); // Alter der Daten live mitzählen
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAccount(); });

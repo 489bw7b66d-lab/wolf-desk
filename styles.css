@@ -87,3 +87,18 @@ button { height: 46px; padding: 0 16px; border: 0; border-radius: var(--radius-s
 .foot { color: var(--muted); font-size: 12px; text-align: center; margin: 6px 0 0; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Risiko-Modul */
+.r-ok { background: var(--ok); } .r-warn { background: var(--warn); } .r-bad { background: var(--bad); }
+.rt-ok { color: var(--ok); background: rgba(74,222,155,.12); } .rt-warn { color: var(--warn); background: rgba(242,181,68,.12); } .rt-bad { color: var(--bad); background: rgba(255,112,112,.12); }
+.hrow .label .meta { display: inline-block; margin-top: 2px; }
+.hrow .tag { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; }
+select { height: 46px; min-width: 0; padding: 0 10px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--text); font: 600 15px var(--font); }
+select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+#stop-form .row { flex-wrap: wrap; }
+#stop-form select { flex: 1 1 110px; }
+#stop-form input { flex: 1 1 110px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.calc-grid label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.calc-grid input, .calc-grid select { width: 100%; }
+.warnline { margin: 10px 0 0; }
