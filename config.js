@@ -15,6 +15,11 @@ export const CONFIG = {
   // 'xyz' = trade.xyz (Rohstoffe, Forex, Aktien, Indizes)
   dexes: ['', 'xyz'],
 
+  // Kontomodus bei Hyperliquid:
+  // 'unified' = Guthaben liegt im Spot-Konto, Positionen sind darin enthalten (Ledger-Standard)
+  // 'classic' = Perps-Konto und Spot-Konto getrennt
+  accountMode: 'unified',
+
   // Beobachtete Märkte. HIP-3-Märkte tragen den Börsen-Namen als Präfix.
   // Falls ein Name nicht stimmt, zeigt die Testseite das an und listet die echten Namen.
   watchlist: ['BTC', 'ETH', 'SOL', 'LINK', 'xyz:GOLD', 'xyz:SILVER', 'xyz:EUR'],

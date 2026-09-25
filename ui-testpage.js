@@ -2,7 +2,7 @@
 // außer über die Funktionen aus core/calc.js.
 import { CONFIG } from './config.js';
 import { priceHealth, accountHealth, streamHealth } from './core-health.js';
-import { liqDistancePct } from './core-calc.js';
+import { liqDistancePct, accountSummary } from './core-calc.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -35,15 +35,13 @@ function renderAccount(s) {
     $('account').innerHTML = `<p class="empty">${s.accountError ? 'Konto konnte nicht geladen werden: ' + esc(s.accountError) : 'Noch keine Daten. Gib oben deine Adresse ein.'}</p>`;
     return;
   }
-  const usage = a.accountValue > 0 ? (a.marginUsed / a.accountValue) * 100 : null;
-  const lev = a.accountValue > 0 ? a.notional / a.accountValue : null;
+  const sum = accountSummary(a, CONFIG.accountMode);
   $('account').innerHTML = `<div class="kv">
-    <div class="span2"><span class="k">Kontowert Perps</span><span class="v big">${f.usd(a.accountValue)}</span></div>
-    <div><span class="k">Margin genutzt</span><span class="v">${f.usd(a.marginUsed)}</span></div>
-    <div><span class="k">Margin-Auslastung</span><span class="v">${f.pct(usage)}</span></div>
-    <div><span class="k">Auszahlbar</span><span class="v">${f.usd(a.withdrawable)}</span></div>
-    <div><span class="k">Effektiver Hebel</span><span class="v">${f.lev(lev)}</span></div>
-    <div class="span2"><span class="k">USDC im Spot-Konto</span><span class="v">${f.usd(a.spotUsdc)}</span></div>
+    <div class="span2"><span class="k">Kontowert</span><span class="v big">${f.usd(sum.equity)}</span></div>
+    <div><span class="k">Verfügbar</span><span class="v">${f.usd(sum.available)}</span></div>
+    <div><span class="k">In Positionen</span><span class="v">${f.usd(sum.inPositions)}</span></div>
+    <div><span class="k">Kapital-Auslastung</span><span class="v">${f.pct(sum.usagePct)}</span></div>
+    <div><span class="k">Effektiver Hebel</span><span class="v">${f.lev(sum.leverage)}</span></div>
   </div>${a.partialErrors.length ? `<p class="empty" style="margin-top:12px">Teilweise nicht geladen: ${esc(a.partialErrors.join(', '))}</p>` : ''}`;
 }
 

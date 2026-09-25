@@ -27,3 +27,22 @@ export function markFromPosition(positionValue, size) {
   if (!positionValue || !size) return null;
   return Math.abs(positionValue / size);
 }
+
+// Kontoübersicht je nach Kontomodus.
+// unified: Spot-USDC ist der Gesamtwert, Perps-Wert (Margin inkl. PnL) steckt darin.
+// classic: Perps-Konto und Spot werden addiert.
+export function accountSummary(a, mode = 'unified') {
+  if (!a) return null;
+  const perps = a.accountValue || 0;
+  const spot = a.spotUsdc || 0;
+  const unified = mode === 'unified';
+  const equity = unified ? spot : perps + spot;
+  const available = unified ? spot - perps : (a.withdrawable || 0);
+  return {
+    equity,
+    available,
+    inPositions: perps,
+    usagePct: equity > 0 ? (perps / equity) * 100 : null,
+    leverage: equity > 0 ? a.notional / equity : null,
+  };
+}
