@@ -75,7 +75,7 @@ const fmt1 = (v) => v.toFixed(1).replace('.', ',');
 export const approxLiqDistPct = (leverage) => (leverage > 0 ? 90 / leverage : null);
 
 // Höchster Hebel, bei dem die Liquidation noch hinter dem Stop plus Puffer liegt.
-export function maxLeverageForStop(stopDistPct, bufferPct, maxLeverage) {
+export function maxLeverageForStop(stopDistPct, bufferPct, maxLeverage) { // maxLeverage = Regel- bzw. Stil-Obergrenze
   if (!(stopDistPct > 0)) return null;
   return Math.max(1, Math.min(maxLeverage, Math.floor(90 / (stopDistPct + bufferPct))));
 }
@@ -164,4 +164,28 @@ export function recommendLeverage(notional, available, maxLev, budgetPct = 50) {
   const lev = Math.min(inBudget, maxLev);
   const margin = notional / lev;
   return { lev, need: minimum, maxLev, margin, budgetPct: (margin / available) * 100 };
+}
+
+// Ausstiegsplan: Position auf Ziele verteilen. splits: [{label, pct}], letzter Eintrag ohne Ziel = Runner.
+// Ergebnis je Stufe: Preis, Stückzahl, Gewinn in $; dazu Summe, wenn alle festen Ziele erreicht werden.
+export function exitPlan(dir, entry, tps, size, splits) {
+  if (!(size > 0) || !entry) return null;
+  const s = dir === 'long' ? 1 : -1;
+  const rows = splits.map((sp, i) => {
+    const price = tps[i] ?? null;
+    const qty = (size * sp.pct) / 100;
+    return { label: sp.label, pct: sp.pct, price, qty, profit: price != null ? s * (price - entry) * qty : null };
+  });
+  const fixed = rows.filter((x) => x.profit != null);
+  return { rows, totalFixed: fixed.reduce((n, x) => n + x.profit, 0), pctFixed: fixed.reduce((n, x) => n + x.pct, 0) };
+}
+
+// Größte machbare Position, wenn das Wunschrisiko nicht ins Kapital passt:
+// Margin = budgetPct % vom verfügbaren Kapital, Hebel = maxLev.
+export function maxFit(entry, stop, available, maxLev, budgetPct = 50) {
+  if (!(entry > 0) || !(stop > 0) || !(available > 0) || !(maxLev > 0)) return null;
+  const margin = (available * budgetPct) / 100;
+  const notional = margin * maxLev;
+  const size = notional / entry;
+  return { size, notional, margin, lev: maxLev, riskAmt: size * Math.abs(entry - stop) };
 }

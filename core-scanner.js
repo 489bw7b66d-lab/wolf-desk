@@ -105,3 +105,45 @@ export function heat(r) {
   const gap = r.total[r.dir] - r.total[r.dir === 'long' ? 'short' : 'long'];
   return Math.round(score + Math.min(ev, 25) + ew + gap * 0.2);
 }
+
+// Lohnt sich dieser Stil? Klare Richtung, übergeordneter Trend widerspricht nicht, TP1 deckt die Gebühren.
+export function styleCheck(r, modeCfg) {
+  if (!r || r.error) return { ok: false, reason: r?.error || 'Keine Daten' };
+  if (r.dir === 'neutral' || !r.plan) return { ok: false, dir: 'neutral', reason: 'Kein klares Signal' };
+  const tp1Pct = (Math.abs(r.plan.tps[0] - r.plan.entry) / r.plan.entry) * 100;
+  if (tp1Pct < modeCfg.minTp1Pct) {
+    return { ok: false, dir: r.dir, reason: `TP1 nur ${tp1Pct.toFixed(2).replace('.', ',')} % entfernt, lohnt nach Gebühren kaum` };
+  }
+  const trend = r.scores[0], opp = r.dir === 'long' ? 'short' : 'long';
+  if (trend[r.dir] < trend[opp]) return { ok: false, dir: r.dir, reason: 'Übergeordneter Trend widerspricht' };
+  return { ok: true, dir: r.dir, score: r.total[r.dir] };
+}
+
+// Bester Stil: höchster Score unter den geeigneten; bei Gleichstand der höhere Timeframe.
+export const STYLE_ORDER = ['swing', 'intraday', 'scalp'];
+export function pickStyle(styles) {
+  return STYLE_ORDER.filter((k) => styles[k]?.ok).sort((a, b) => styles[b].score - styles[a].score)[0] || null;
+}
+
+// Alle drei Stile prüfen. Ergebnis hat die Form eines normalen Ergebnisses (bester Stil)
+// plus styles (Bewertung je Stil), all (alle Ergebnisse) und best (Schlüssel oder null).
+export async function analyzeAllModes(coin, background = false) {
+  const all = {};
+  for (const k of STYLE_ORDER) {
+    try { all[k] = await analyzeMarket(coin, k, background); } catch (e) { all[k] = { error: e.message }; }
+  }
+  const styles = {};
+  STYLE_ORDER.forEach((k) => { styles[k] = styleCheck(all[k], CONFIG.signals.modes[k]); });
+  const best = pickStyle(styles);
+  const baseKey = best || STYLE_ORDER.find((k) => !all[k].error);
+  if (!baseKey) throw new Error(all.swing.error);
+  const withMeta = (r) => ({ ...r, styles, all, best });
+  return withMeta(best ? all[best] : { ...all[baseKey], dir: 'neutral', plan: null });
+}
+
+// Ergebnis auf einen anderen Stil umschalten (für Trade-Karte und Detailansicht)
+export function switchStyle(r, key) {
+  const t = r.all?.[key];
+  if (!t || t.error) return null;
+  return { ...t, styles: r.styles, all: r.all, best: r.best };
+}

@@ -19,3 +19,4 @@ export function age(ms) {
   return `vor ${Math.round(ms / 60000)} min`;
 }
 export const lev = (v) => (v == null ? '–' : new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(v) + '×');
+export const usdShort = (v) => (v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + new Intl.NumberFormat('de-DE', { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 2, minimumFractionDigits: Math.abs(v) >= 100 ? 0 : 2 }).format(Math.abs(v)) + ' $');

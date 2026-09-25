@@ -1,5 +1,5 @@
 // Tests für core-risk.js
-import { recommendLeverage, liqCheck, maxLeverageForStop, approxLiqDistPct, positionRisk, findStopLoss, lossToStop, liqBeforeStop, realizedPnl, positionSize, checkPosition, checkAccount } from './core-risk.js';
+import { maxFit, exitPlan, recommendLeverage, liqCheck, maxLeverageForStop, approxLiqDistPct, positionRisk, findStopLoss, lossToStop, liqBeforeStop, realizedPnl, positionSize, checkPosition, checkAccount } from './core-risk.js';
 
 const near = (a, b, eps = 1e-6) => a != null && Math.abs(a - b) < eps;
 const R = { riskPerTradeWarnPct: 10, riskPerTradeMaxPct: 15, dailyLossLimitPct: 15, maxLeverage: 20, liqBufferPct: 1, liqNoStopMinShare: 0.5, maxOpenPositions: 5 };
@@ -48,4 +48,16 @@ export const tests = [
   ['Hebel-Empfehlung: 2.000 $ bei 1.000 $ frei = 4× (500 $ Margin)', () => { const r = recommendLeverage(2000, 1000, 20, 50); return r.lev === 4 && near(r.margin, 500); }],
   ['Hebel-Empfehlung: Budget reicht nicht → Max.-Hebel', () => recommendLeverage(10000, 1000, 16, 50).lev === 16],
   ['Hebel-Empfehlung: Kapital reicht nicht = kein Hebel', () => recommendLeverage(10000, 400, 20, 50).lev === null],
+  // Ausstiegsplan 20/25/25/15 + Runner 15
+  ['Ausstieg: 10 Stk. → TP1 2 Stk., Runner 1,5 Stk.', () => {
+    const e = exitPlan('long', 100, [110, 120, 130, 140], 10, [{ label: 'TP1', pct: 20 }, { label: 'TP2', pct: 25 }, { label: 'TP3', pct: 25 }, { label: 'TP4', pct: 15 }, { label: 'Runner', pct: 15 }]);
+    return near(e.rows[0].qty, 2) && near(e.rows[4].qty, 1.5) && e.rows[4].price === null;
+  }],
+  ['Ausstieg: Gewinn bis TP4 = 20+50+75+60 = 205', () => {
+    const e = exitPlan('long', 100, [110, 120, 130, 140], 10, [{ label: 'TP1', pct: 20 }, { label: 'TP2', pct: 25 }, { label: 'TP3', pct: 25 }, { label: 'TP4', pct: 15 }, { label: 'Runner', pct: 15 }]);
+    return near(e.totalFixed, 205) && e.pctFixed === 85;
+  }],
+  ['Ausstieg Short: Gewinn positiv bei fallenden Zielen', () => exitPlan('short', 100, [90], 1, [{ label: 'TP1', pct: 100 }]).rows[0].profit === 10],
+  ['Machbar: 600 $ frei, 50 %, 5×, Einstieg 100 → 15 Stk.', () => near(maxFit(100, 95, 600, 5, 50).size, 15)],
+  ['Machbar: Risiko = Größe × Stop-Abstand', () => near(maxFit(100, 95, 600, 5, 50).riskAmt, 75)],
 ];

@@ -3,7 +3,7 @@ import { ema, rsi, macd, atr, pivots, lastCross, momentumAtr, volumeSpike, rsiZo
 import { lastLeg, fibFns, fibPlan } from './core-fib.js';
 import { zigzag, elliott } from './core-elliott.js';
 import { mapSymbols } from './core-universe.js';
-import { heat } from './core-scanner.js';
+import { heat, styleCheck, pickStyle, switchStyle } from './core-scanner.js';
 import { closedCandles, analyzeTimeframe, scoreTimeframe, combineScores, decide, tradePlan, keyLevels } from './core-signals.js';
 
 const near = (a, b, eps = 1e-6) => a != null && Math.abs(a - b) < eps;
@@ -119,4 +119,16 @@ export const tests = [
     const base = { dir: 'long', total: { long: 70, short: 20 }, waves: [], events: [] };
     return heat({ ...base, events: [{ dir: 'long', strong: true, barsAgo: 3 }] }) > heat(base);
   }],
+  // Vier Ziele
+  ['Fib-Plan: TP4 = Extension 2,0', () => near(fibPlan('long', { low: 100, high: 200 }, 145, 10).tps[3], 300)],
+  ['ATR-Plan: vier Ziele bis 4R', () => { const p = tradePlan('long', { ...analyzeTimeframe(up), pivots: { highs: [], lows: [] } }, { resistance: [], support: [] }); return p.tps.length === 4 && near(p.tps[3] - p.entry, 4 * p.R); }],
+  // Stil-Auswahl
+  ['Stil: kein Signal = ungeeignet', () => styleCheck({ dir: 'neutral', plan: null }, { minTp1Pct: 1 }).ok === false],
+  ['Stil: TP1 zu nah = ungeeignet', () => styleCheck({ dir: 'long', plan: { entry: 100, tps: [100.2] }, scores: [{ long: 60, short: 10 }], total: { long: 80 } }, { minTp1Pct: 0.4 }).ok === false],
+  ['Stil: Trend widerspricht = ungeeignet', () => styleCheck({ dir: 'long', plan: { entry: 100, tps: [103] }, scores: [{ long: 10, short: 60 }], total: { long: 80 } }, { minTp1Pct: 0.4 }).ok === false],
+  ['Stil: alles passt = geeignet mit Score', () => styleCheck({ dir: 'long', plan: { entry: 100, tps: [103] }, scores: [{ long: 60, short: 10 }], total: { long: 80 } }, { minTp1Pct: 0.4 }).score === 80],
+  ['Bester Stil: höchster Score', () => pickStyle({ swing: { ok: true, score: 70 }, intraday: { ok: true, score: 85 }, scalp: { ok: false } }) === 'intraday'],
+  ['Bester Stil: Gleichstand → Swing', () => pickStyle({ swing: { ok: true, score: 80 }, intraday: { ok: true, score: 80 }, scalp: { ok: true, score: 80 } }) === 'swing'],
+  ['Bester Stil: keiner passt = null', () => pickStyle({ swing: { ok: false }, intraday: { ok: false }, scalp: { ok: false } }) === null],
+  ['Stil umschalten behält Auswahl-Infos', () => { const r = { styles: { a: 1 }, best: 'swing', all: { scalp: { coin: 'X', mode: 'scalp' } } }; const n = switchStyle(r, 'scalp'); return n.mode === 'scalp' && n.best === 'swing' && n.styles.a === 1; }],
 ];

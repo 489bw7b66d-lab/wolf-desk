@@ -1,7 +1,7 @@
 // Signale-Bereich: Suche, Modus, Detail-Analyse, Watchlist-Scan.
 import { CONFIG } from './config.js';
-import { analyzeMarket } from './core-scanner.js';
-import { badge, ladder, esc, TFL } from './ui-parts.js';
+import { analyzeMarket, analyzeAllModes, switchStyle } from './core-scanner.js';
+import { badge, ladder, esc, TFL, styleRow } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -62,7 +62,8 @@ export function showDetail(r) {
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · letzte Kerze ${new Date(r.lastClose).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span></div>
       ${badge(r.dir)}
     </div>
-    ${p ? `<button type="button" class="wide" id="sig-trade" style="margin:0 0 16px">Trade-Karte öffnen</button>` : ''}
+    ${styleRow(r, CONFIG.signals.modes)}
+    ${p ? `<button type="button" class="wide" id="sig-trade" style="margin:6px 0 16px">Trade-Karte öffnen</button>` : ''}
     ${scoreBars(r.total)}
     ${mtfTable(r)}
     ${eventsBlock(r)}
@@ -79,9 +80,15 @@ export function showDetail(r) {
     </div>
     <p class="empty" style="margin-top:14px">Regelbasierte Auswertung abgeschlossener Kerzen, keine Anlageberatung.</p>`;
   $('sig-trade')?.addEventListener('click', () => onTrade(r));
-  // Modus-Auswahl an das angezeigte Ergebnis anpassen
-  mode = r.mode;
-  $('sig-modes').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.m === mode)));
+  $('sig-detail').querySelectorAll('button[data-style]').forEach((b) => b.addEventListener('click', () => {
+    const next = switchStyle(r, b.dataset.style);
+    if (next) showDetail(next);
+  }));
+  // Bei Einzel-Stil-Ergebnissen die Modus-Auswahl anpassen (Auto bleibt Auto)
+  if (!r.styles) {
+    mode = r.mode;
+    $('sig-modes').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.m === mode)));
+  }
   $('sig-search').value = r.coin;
 }
 
@@ -89,9 +96,9 @@ export async function analyze(coin) {
   if (!coin) return;
   $('sig-suggest').innerHTML = '';
   $('sig-search').value = coin;
-  $('sig-detail').innerHTML = `<p class="empty">Analysiere ${esc(coin)} (${CONFIG.signals.modes[mode].tfs.map((t) => TFL[t]).join(', ')}) …</p>`;
+  $('sig-detail').innerHTML = `<p class="empty">Analysiere ${esc(coin)} ${mode === 'auto' ? 'in allen drei Stilen' : '(' + CONFIG.signals.modes[mode].tfs.map((t) => TFL[t]).join(', ') + ')'} …</p>`;
   try {
-    const r = await analyzeMarket(coin, mode);
+    const r = await run(coin);
     results.set(mode + '|' + coin, r);
     showDetail(r);
     renderList();
@@ -99,6 +106,8 @@ export async function analyze(coin) {
     $('sig-detail').innerHTML = `<p class="empty" style="color:var(--bad)">Analyse fehlgeschlagen: ${esc(e.message)}</p>`;
   }
 }
+
+const run = (coin) => (mode === 'auto' ? analyzeAllModes(coin) : analyzeMarket(coin, mode));
 
 function renderSuggest() {
   const q = $('sig-search').value.trim().toUpperCase();
@@ -115,7 +124,7 @@ function renderList() {
     const r = results.get(mode + '|' + c);
     return `<button type="button" class="sig-row" data-coin="${esc(c)}">
       <span class="sym">${esc(c)}</span>
-      ${r ? `<span class="meta">L ${r.total.long} · S ${r.total.short}</span>${badge(r.dir)}` : '<span class="meta">noch nicht gescannt</span>'}
+      ${r ? `<span class="meta">${r.styles ? (r.best ? CONFIG.signals.modes[r.best].label + ' · ' + r.total[r.dir] : 'kein Stil passt') : `L ${r.total.long} · S ${r.total.short}`}</span>${badge(r.dir)}` : '<span class="meta">noch nicht gescannt</span>'}
     </button>`;
   }).join('');
 }
@@ -125,7 +134,7 @@ async function scanWatchlist() {
   btn.disabled = true;
   for (const [i, c] of CONFIG.watchlist.entries()) {
     btn.textContent = `Scanne ${i + 1} von ${CONFIG.watchlist.length} …`;
-    try { results.set(mode + '|' + c, await analyzeMarket(c, mode)); } catch { /* weiter */ }
+    try { results.set(mode + '|' + c, await run(c)); } catch { /* weiter */ }
     renderList();
   }
   btn.disabled = false;
@@ -136,7 +145,8 @@ export function initSignals(stateGetter, openTrade) {
   getState = stateGetter;
   onTrade = openTrade;
   const modes = CONFIG.signals.modes;
-  $('sig-modes').innerHTML = Object.entries(modes).map(([k, m]) => `<button type="button" data-m="${k}" aria-pressed="${k === mode}">${m.label}<small>${m.tfs.map((t) => TFL[t]).join(' · ')}</small></button>`).join('');
+  $('sig-modes').innerHTML = `<button type="button" data-m="auto" aria-pressed="${mode === 'auto'}">Auto<small>bester Stil</small></button>`
+    + Object.entries(modes).map(([k, m]) => `<button type="button" data-m="${k}" aria-pressed="${k === mode}">${m.label}<small>${m.tfs.map((t) => TFL[t]).join(' · ')}</small></button>`).join('');
   $('sig-modes').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-m]');
     if (!b) return;

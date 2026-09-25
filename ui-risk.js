@@ -1,7 +1,8 @@
 // Risiko-Modul: Regel-Check, manuelle Stop-Losses, Positionsgrößen-Rechner.
 import { CONFIG } from './config.js';
 import { accountRisk } from './core-positions.js';
-import { positionSize, maxLeverageForStop } from './core-risk.js';
+import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit } from './core-risk.js';
+import { exitTable, fitHint } from './ui-parts.js';
 import { setManualStop, getManualStop } from './core-stops.js';
 import * as f from './core-format.js';
 
@@ -32,35 +33,60 @@ function fillSelect(el, coins, key, keyRef) {
   return key;
 }
 
+// Plan aus dem Signalgeber (Ziele + Stil), gilt nur, solange Einstieg und Stop unverändert sind
+let calcPlan = null;
+
 function renderCalc() {
   const s = getState();
   const r = accountRisk(s);
   const out = $('calc-out');
   const equity = r?.summary.equity;
-  const res = positionSize(equity, parse($('calc-risk').value), parse($('calc-entry').value), parse($('calc-stop').value));
+  const entry = parse($('calc-entry').value), stop = parse($('calc-stop').value), riskPct = parse($('calc-risk').value);
+  const res = positionSize(equity, riskPct, entry, stop);
   if (!equity) { out.innerHTML = '<p class="empty">Kontodaten fehlen noch.</p>'; return; }
   if (!res) { out.innerHTML = `<p class="empty">Einstieg und Stop-Loss eintragen. Rechenbasis: Kontowert ${f.usd(equity)}.</p>`; return; }
-  const minLev = r.summary.available > 0 ? res.notional / r.summary.available : null;
-  const maxLev = maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, CONFIG.rules.maxLeverage);
-  const riskPct = parse($('calc-risk').value);
+
+  const dir = entry > stop ? 'long' : 'short';
+  const fromPlan = calcPlan && Math.abs(calcPlan.entry - entry) / entry < 1e-4 && Math.abs(calcPlan.stop - stop) / stop < 1e-4;
+  const mode = fromPlan ? CONFIG.signals.modes[calcPlan.mode] : null;
+  const cap = Math.min(CONFIG.rules.maxLeverage, mode?.maxLeverage ?? CONFIG.rules.maxLeverage);
+  const maxLev = maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, cap);
+  const rec = recommendLeverage(res.notional, r.summary.available, maxLev, CONFIG.rules.marginBudgetPct);
+  const levIn = parse($('calc-lev').value);
+  const lev = levIn || rec?.lev || null;
+  const margin = lev ? res.notional / lev : null;
+  const R = Math.abs(entry - stop), sg = dir === 'long' ? 1 : -1;
+  const tps = fromPlan ? calcPlan.tps : [1, 2, 3, 4].map((m) => entry + sg * m * R);
+  const exits = exitPlan(dir, entry, tps, res.size, CONFIG.exitPlan);
   const st = riskPct >= CONFIG.rules.riskPerTradeMaxPct ? 'bad' : riskPct >= CONFIG.rules.riskPerTradeWarnPct ? 'warn' : 'ok';
+  const levWarn = levIn && levIn > maxLev ? `Bei ${f.lev(levIn)} läge die Liquidation vor dem Stop (möglich bis ca. ${f.lev(maxLev)}).`
+    : margin && margin > r.summary.available ? `Margin ${f.usd(margin)} ist mehr als verfügbar (${f.usd(r.summary.available)}). Hebel erhöhen oder Risiko senken.` : '';
+
   out.innerHTML = `<div class="kv">
-    <div class="span2"><span class="k">Positionsgröße</span><span class="v big" style="color:var(--gold)">${f.size(res.size)}</span></div>
+    <div class="span2"><span class="k">Positionsgröße (${dir === 'long' ? 'Long' : 'Short'})</span><span class="v big" style="color:var(--gold)">${f.size(res.size)}</span></div>
+    <div><span class="k">Margin (dein Einsatz)</span><span class="v" style="color:var(--gold)">${margin ? f.usd(margin) : '–'}</span></div>
+    <div><span class="k">Hebel</span><span class="v">${lev ? f.lev(lev) : '–'}${levIn ? '' : ' <small class="muted">Empf.</small>'}</span></div>
     <div><span class="k">Risiko</span><span class="v">${f.usd(res.riskAmt)}</span></div>
     <div><span class="k">Positionswert</span><span class="v">${f.usd(res.notional)}</span></div>
     <div><span class="k">Stop-Abstand</span><span class="v">${f.pct(res.stopDistPct, 2)}</span></div>
-    <div><span class="k">Mindesthebel</span><span class="v">${f.lev(minLev)}</span></div>
-    <div class="span2"><span class="k">Hebel-Spanne für diesen Stop</span><span class="v" style="color:var(--gold)">${f.lev(Math.max(1, Math.ceil(minLev || 1)))} bis ca. ${f.lev(maxLev)}</span></div>
+    <div><span class="k">Hebel möglich bis</span><span class="v">${f.lev(maxLev)}</span></div>
   </div>
-  ${minLev > maxLev ? `<p class="warnline">Bei diesem Stop läge die Liquidation schon ab ca. ${f.lev(maxLev)} vor dem Stop. Für die gewünschte Größe reicht das verfügbare Kapital nicht, also Risiko oder Größe verringern.</p>` : ''}
+  ${levWarn ? `<p class="warnline">${esc(levWarn)}</p>` : ''}
+  ${rec && !rec.lev && !levIn ? `<p class="warnline">Für diese Größe wären mind. ${rec.need}× nötig, möglich sind ca. ${maxLev}×.</p>${fitHint(maxFit(entry, stop, r.summary.available, maxLev, CONFIG.rules.marginBudgetPct), equity, CONFIG.rules.marginBudgetPct)}` : ''}
   ${st !== 'ok' ? `<p class="warnline" style="color:${st === 'bad' ? 'var(--bad)' : 'var(--warn)'}">${riskPct} % Risiko liegt ${st === 'bad' ? 'über deinem Maximum' : 'im Warnbereich'}.</p>` : ''}
-  <p class="empty" style="margin-top:10px">Mindesthebel: Positionswert geteilt durch verfügbares Kapital (${f.usd(r.summary.available)}). Höchsthebel: Die Liquidation liegt noch mind. ${String(CONFIG.rules.liqBufferPct).replace('.', ',')} % hinter dem Stop (isoliert, Näherung).</p>`;
+  <h3 class="sub-h">Ausstiegsplan <small class="muted" style="font-weight:600">${fromPlan ? `aus Signal (${esc(mode.label)})` : 'Ziele als 1R bis 4R'}</small></h3>
+  ${exitTable(exits, CONFIG.runnerNote)}
+  <p class="empty" style="margin-top:10px">Hebel leer lassen für die Empfehlung (so niedrig wie möglich, Margin höchstens ${CONFIG.rules.marginBudgetPct} % vom verfügbaren Kapital ${f.usd(r.summary.available)}). Höchsthebel: Liquidation mind. ${String(CONFIG.rules.liqBufferPct).replace('.', ',')} % hinter dem Stop${mode ? `, ${esc(mode.label)} max. ${mode.maxLeverage}×` : ''}.</p>`;
 }
 
 export function initRisk(stateGetter) {
   getState = stateGetter;
   $('calc-risk').value = String(CONFIG.rules.riskPerTradeWarnPct);
-  ['calc-risk', 'calc-entry', 'calc-stop'].forEach((id) => $(id).addEventListener('input', renderCalc));
+  ['calc-risk', 'calc-entry', 'calc-stop', 'calc-lev'].forEach((id) => $(id).addEventListener('input', renderCalc));
+  $('calc-out').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-risk]');
+    if (b) { $('calc-risk').value = b.dataset.risk.replace('.', ','); renderCalc(); }
+  });
   $('calc-coin').addEventListener('change', () => {
     const px = getState().prices[$('calc-coin').value];
     if (px) $('calc-entry').value = String(px).replace('.', ',');
@@ -82,13 +108,16 @@ export function initRisk(stateGetter) {
 }
 
 // Vom Signalgeber: Markt, Einstieg und Stop in den Rechner übernehmen.
-export function setCalc(coin, entry, stop) {
+export function setCalc(coin, entry, stop, tps = null, mode = null) {
+  calcPlan = tps ? { entry, stop, tps, mode } : null;
+  $('calc-lev').value = '';
   const sel = $('calc-coin');
   if (![...sel.options].some((o) => o.value === coin)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(coin)}">${esc(coin)}</option>`);
   sel.value = coin;
   const dec = entry >= 1000 ? 1 : entry >= 10 ? 2 : 4;
   $('calc-entry').value = entry.toFixed(dec).replace('.', ',');
   $('calc-stop').value = stop.toFixed(dec).replace('.', ',');
+  if (calcPlan) { calcPlan.entry = parse($('calc-entry').value); calcPlan.stop = parse($('calc-stop').value); }
   renderCalc();
 }
 

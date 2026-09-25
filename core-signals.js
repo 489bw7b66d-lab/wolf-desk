@@ -151,8 +151,8 @@ function atrTradePlan(dir, a) {
   if (dist < atrV) stop = entry - s * atrV;
   if (dist > 3 * atrV) stop = entry - s * 3 * atrV;
   const R = Math.abs(entry - stop);
-  const tps = [1, 2, 3].map((m) => entry + s * m * R);
-  return { method: 'atr', dir, zone, entry, stop, tps, R, stopLabel: 'hinter Struktur / ATR', tpLabels: ['1R', '2R', '3R'],
+  const tps = [1, 2, 3, 4].map((m) => entry + s * m * R);
+  return { method: 'atr', dir, zone, entry, stop, tps, R, stopLabel: 'hinter Struktur / ATR', tpLabels: ['1R', '2R', '3R', '4R'],
     entryMode: 'Zone am aktuellen Kurs', stopDistPct: (R / entry) * 100 };
 }
 

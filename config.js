@@ -24,6 +24,16 @@ export const CONFIG = {
   // Falls ein Name nicht stimmt, zeigt die Testseite das an und listet die echten Namen.
   watchlist: ['BTC', 'ETH', 'SOL', 'LINK', 'xyz:GOLD', 'xyz:SILVER', 'xyz:EUR'],
 
+  // AUSSTIEGSPLAN: Anteil der Position je Ziel (Summe 100 %)
+  exitPlan: [
+    { label: 'TP1', pct: 20 },
+    { label: 'TP2', pct: 25 },
+    { label: 'TP3', pct: 25 },
+    { label: 'TP4', pct: 15 },
+    { label: 'Runner', pct: 15 },  // ohne festes Ziel, läuft mit Nachzieh-Stop
+  ],
+  runnerNote: 'Stop auf Einstieg ab TP2, danach unter das jeweils letzte erreichte Ziel nachziehen',
+
   // PERFORMANCE: dein eingezahltes Startkapital
   startCapital: 1500,
 
@@ -42,11 +52,12 @@ export const CONFIG = {
   // SIGNALGEBER
   signals: {
     modes: {
-      scalp: { label: 'Scalp', tfs: ['1h', '15m', '5m'] },     // Trend, Setup, Trigger
-      intraday: { label: 'Intraday', tfs: ['4h', '1h', '15m'] },
-      swing: { label: 'Swing', tfs: ['1d', '4h', '1h'] },
+      // tfs: Trend, Setup, Trigger · maxLeverage: Obergrenze für diesen Stil · minTp1Pct: TP1 muss mind. so weit weg sein (Gebühren)
+      scalp: { label: 'Scalp', tfs: ['1h', '15m', '5m'], maxLeverage: 20, minTp1Pct: 0.4 },
+      intraday: { label: 'Daytrade', tfs: ['4h', '1h', '15m'], maxLeverage: 10, minTp1Pct: 0.8 },
+      swing: { label: 'Swing', tfs: ['1d', '4h', '1h'], maxLeverage: 5, minTp1Pct: 2 },
     },
-    defaultMode: 'intraday',
+    defaultMode: 'auto',       // 'auto' = alle drei Stile prüfen und den besten wählen
     candles: 260,              // Kerzen pro Timeframe (EMA 200 braucht Vorlauf)
     minScore: 65,              // Mindest-Score für ein Signal
     minGap: 20,                // Mindestabstand Long- zu Short-Score
@@ -56,7 +67,7 @@ export const CONFIG = {
       topN: 150,               // Top 150 nach Market Cap (CoinGecko)
       maxPicks: 5,             // höchstens so viele "heiße" Coins anzeigen
       deepScan: 15,            // so viele Kandidaten werden auf allen Timeframes geprüft
-      mode: 'swing',           // Modus der Tiefenprüfung (1D, 4H, 1H – Elliott ab 4H)
+      mode: 'auto',            // Tiefenprüfung in allen Stilen, bester wird gewählt
       requestGapMs: 1300,      // Abstand zwischen Hintergrund-Abrufen (Hyperliquid-Limit)
       roundPauseMs: 300000,    // Pause zwischen zwei Durchläufen (5 Min.)
     },

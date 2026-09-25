@@ -5,7 +5,7 @@ import { loadAccount } from './core-account.js';
 import { startStream } from './core-stream.js';
 import { getState, update, subscribe, logError } from './core-store.js';
 import { render } from './ui-testpage.js';
-import { initRisk, renderRisk } from './ui-risk.js';
+import { initRisk, renderRisk, setCalc } from './ui-risk.js';
 import { initSignals, showDetail } from './ui-signals.js';
 import { initHome, renderHome } from './ui-home.js';
 import { initTrade, openTrade } from './ui-trade.js';
@@ -97,7 +97,12 @@ function renderMiniHealth(s) {
 
 const renderAll = (s) => { render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderMiniHealth(s); };
 const openFull = (r) => { location.hash = 'signale'; setTimeout(() => showDetail(r), 50); };
-initTrade(getState, openFull);
+const openCalc = (r) => {
+  setCalc(r.coin, r.plan.entry, r.plan.stop, r.plan.tps, r.mode);
+  location.hash = 'risiko';
+  setTimeout(() => document.getElementById('calc').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+};
+initTrade(getState, openFull, openCalc);
 initSignals(getState, openTrade);
 initHome(getState, openTrade, openFull);
 initRisk(getState);

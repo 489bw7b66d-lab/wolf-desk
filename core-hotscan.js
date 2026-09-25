@@ -2,7 +2,7 @@
 // Stufe 1: Tageschart aller Coins (ein Abruf je Coin). Stufe 2: Tiefenprüfung der besten Kandidaten.
 // Läuft nur, solange die App geöffnet und sichtbar ist.
 import { CONFIG } from './config.js';
-import { getCandles, getMarketCtx, analyzeMarket, heat } from './core-scanner.js';
+import { getCandles, getMarketCtx, analyzeMarket, analyzeAllModes, heat } from './core-scanner.js';
 import { analyzeTimeframe, scoreTimeframe } from './core-signals.js';
 import { getUniverse } from './core-universe.js';
 
@@ -22,7 +22,7 @@ async function whileHidden() { while (hot.running && !visible()) await sleep(200
 
 // Top-Auswahl: nur echte Signale, sortiert nach Hitze, höchstens maxPicks
 export function pickHot(results, max) {
-  return [...results.values()].filter((r) => r.dir !== 'neutral').map((r) => ({ r, heat: heat(r) }))
+  return [...results.values()].filter((r) => r.dir !== 'neutral' && r.best !== null).map((r) => ({ r, heat: heat(r) }))
     .sort((a, b) => b.heat - a.heat).slice(0, max);
 }
 
@@ -58,7 +58,7 @@ async function round() {
   for (const c of cands) {
     if (!hot.running) return;
     await whileHidden();
-    try { results.set(c, await analyzeMarket(c, H().mode, true)); } catch { /* weiter */ }
+    try { results.set(c, H().mode === 'auto' ? await analyzeAllModes(c, true) : await analyzeMarket(c, H().mode, true)); } catch { /* weiter */ }
     hot.done++;
     hot.picks = pickHot(results, H().maxPicks);
     emit();

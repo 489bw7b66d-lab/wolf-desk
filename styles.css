@@ -122,7 +122,7 @@ select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .tabbar a:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; border-radius: 10px; }
 
 /* Signalgeber */
-.modes { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 12px; }
+.modes { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 0 12px; }
 .modes button { height: auto; padding: 8px 4px; display: flex; flex-direction: column; gap: 2px; }
 .modes small { font-size: 10px; font-weight: 600; opacity: .8; }
 .sig-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
@@ -220,3 +220,24 @@ input[type="search"] { -webkit-appearance: none; appearance: none; }
 .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
 body.no-scroll { overflow: hidden; }
 .alert-box b.who { font-size: 13px; color: var(--text); }
+
+/* Stil-Auswahl und Ausstiegsplan */
+.styles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 4px 0 10px; }
+.styles button { height: auto; min-height: 48px; padding: 6px 4px; display: flex; flex-direction: column; gap: 2px; background: transparent; border: 1px solid var(--line); color: var(--muted); font-size: 13px; font-weight: 800; }
+.styles button small { font-size: 11px; font-weight: 700; }
+.styles button.ok small { color: var(--ok); }
+.styles button.no { opacity: .7; }
+.styles button[aria-pressed="true"] { background: var(--line); color: var(--text); border-color: var(--gold); opacity: 1; }
+.shake { animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.exit { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: 13px; }
+.exit-row { display: grid; grid-template-columns: 62px 1fr 48px 1fr 1fr; gap: 6px; padding: 9px 12px; border-top: 1px solid var(--line); align-items: center; }
+.exit-row:first-child { border-top: 0; }
+.exit-row.head { color: var(--muted); font-size: 11px; font-weight: 700; background: rgba(255,255,255,.02); }
+.exit-row span:last-child { text-align: right; }
+.exit-row.total { background: rgba(255,255,255,.02); }
+.sheet-actions .span-2 { grid-column: span 2; }
+
+.fit-box { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; margin-top: 10px; padding: 12px 14px; border: 1px solid var(--gold); border-radius: 14px; background: rgba(227,176,75,.06); font-size: 13px; line-height: 1.4; }
+.fit-box b { color: var(--gold); font-size: 14px; }
+.exit-row { grid-template-columns: 58px 1fr 44px 1fr 72px; }

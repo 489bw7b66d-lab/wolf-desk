@@ -38,3 +38,39 @@ export function topReasons(r, max = 3) {
   if (w) list.push(`Elliott ${TFL[w.tf]}: ${w.label}`);
   return list;
 }
+
+// Stil-Auswahl: Scalp / Daytrade / Swing mit Bewertung, aktiver Stil hervorgehoben, bester mit ★
+export function styleRow(r, modes) {
+  if (!r.styles) return '';
+  return `<div class="styles" role="group" aria-label="Trade-Stil">${['scalp', 'intraday', 'swing'].map((k) => {
+    const s = r.styles[k];
+    const txt = s.ok ? `✓ ${s.score}` : '✗';
+    return `<button type="button" data-style="${k}" aria-pressed="${r.mode === k}" class="${s.ok ? 'ok' : 'no'}" title="${esc(s.ok ? 'Geeignet' : s.reason)}">
+      <span>${r.best === k ? '★ ' : ''}${esc(modes[k].label)}</span><small>${txt}</small></button>`;
+  }).join('')}</div>
+  ${r.styles[r.mode] && !r.styles[r.mode].ok ? `<p class="warnline" style="color:var(--warn);margin-top:6px">${esc(modes[r.mode].label)}: ${esc(r.styles[r.mode].reason)}</p>` : ''}`;
+}
+
+// Ausstiegsplan als Tabelle
+export function exitTable(plan, runnerNote) {
+  if (!plan) return '';
+  return `<div class="exit" role="table" aria-label="Ausstiegsplan">
+    <div class="exit-row head" role="row"><span>Ziel</span><span>Preis</span><span>Anteil</span><span>Stück</span><span>Gewinn</span></div>
+    ${plan.rows.map((x) => `<div class="exit-row" role="row"><span><b>${esc(x.label)}</b></span>
+      <span>${x.price != null ? f.price(x.price) : 'offen'}</span><span>${x.pct} %</span><span>${f.size(x.qty)}</span>
+      <span class="${x.profit == null ? 'muted' : x.profit >= 0 ? 'long' : 'short'}">${x.profit != null ? f.usdShort(x.profit) : 'Trailing'}</span></div>`).join('')}
+    <div class="exit-row total" role="row"><span><b>Summe</b></span><span></span><span>${plan.pctFixed} %</span><span></span><span class="long"><b>${f.usdShort(plan.totalFixed)}</b></span></div>
+  </div>
+  <p class="empty" style="font-size:12px;margin-top:6px">Summe, wenn TP1 bis TP4 erreicht werden, Runner zusätzlich. Runner: ${esc(runnerNote)}.</p>`;
+}
+
+// Vorschlag, wenn das Kapital für das Wunschrisiko nicht reicht
+export function fitHint(fit, equity, budgetPct) {
+  if (!fit) return '';
+  const pct = equity > 0 ? (fit.riskAmt / equity) * 100 : null;
+  return `<div class="fit-box">
+    <b>Machbar bei ${f.lev(fit.lev)} mit ${budgetPct} % deines verfügbaren Kapitals</b>
+    <span>${f.size(fit.size)} Stück · Margin ${f.usd(fit.margin)} · Risiko ${f.usd(fit.riskAmt)} (${f.pct(pct)})</span>
+    ${pct ? `<button type="button" class="small-btn" data-risk="${Math.floor(pct * 10) / 10}">Übernehmen</button>` : ''}
+  </div>`;
+}

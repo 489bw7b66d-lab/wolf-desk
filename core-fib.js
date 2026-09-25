@@ -20,7 +20,7 @@ export function fibFns(leg, dir) {
     : { retr: (x) => leg.low + x * d, ext: (x) => leg.high - x * d };
 }
 
-const EXTS = [1, 1.272, 1.618, 2, 2.618];
+const EXTS = [1, 1.272, 1.618, 2, 2.618, 3.618];
 const fmt = (x) => String(x).replace('.', ',');
 
 // Trade-Plan nach Fibonacci. null, wenn die Bewegung kein sauberes Setup hergibt.
@@ -42,8 +42,8 @@ export function fibPlan(dir, leg, close, atr) {
   if (Math.abs(entry - stop) < 0.5 * atr) { stop = entry - s * atr; stopLabel = '1 ATR (Fib zu eng)'; }
   const R = Math.abs(entry - stop);
 
-  const targets = EXTS.map((x) => ({ x, price: ext(x) })).filter((t) => (long ? t.price > entry : t.price < entry)).slice(0, 3);
-  if (targets.length < 3) return null;
+  const targets = EXTS.map((x) => ({ x, price: ext(x) })).filter((t) => (long ? t.price > entry : t.price < entry)).slice(0, 4);
+  if (targets.length < 4) return null;
 
   return {
     method: 'fib', dir, zone, entry, stop, R, stopLabel,
