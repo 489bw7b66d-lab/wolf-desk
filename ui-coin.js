@@ -4,7 +4,7 @@ import { accountRisk } from './core-positions.js';
 import { getCandles } from './core-scanner.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { chartSvg } from './ui-chart.js';
-import { esc, TFL, CHART_TFS } from './ui-parts.js';
+import { esc, dn, TFL, CHART_TFS } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -95,7 +95,7 @@ export function openCoin(name) {
   tf = p ? '1h' : '4h';
   $('sheet-body').innerHTML = `<div id="coin-view">
     <div class="sheet-head">
-      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${esc(coin)}</h2>
+      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${esc(dn(coin))}</h2>
       <span class="meta">${p ? 'Offene Position' : 'Markt'}</span></div>
       ${p ? `<span class="sig-badge ${p.side}">${p.side === 'long' ? 'LONG ▲' : 'SHORT ▼'}</span>` : ''}
     </div>

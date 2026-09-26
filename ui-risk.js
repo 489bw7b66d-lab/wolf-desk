@@ -29,7 +29,7 @@ let lastStopKey = '', lastCalcKey = '';
 function fillSelect(el, coins, key, keyRef) {
   if (key === keyRef) return keyRef;
   const current = el.value;
-  el.innerHTML = coins.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  el.innerHTML = coins.map((c) => `<option value="${esc(c)}">${esc(c.replace(/^[a-z]+:/, ''))}</option>`).join('');
   if (coins.includes(current)) el.value = current;
   return key;
 }
@@ -138,7 +138,7 @@ export function renderRisk(s) {
     const rt = r.realizedToday;
     $('risk').innerHTML = `<div class="kv" style="margin-bottom:14px">
       <div><span class="k">Realisiert heute</span><span class="v ${rt > 0 ? 'long' : rt < 0 ? 'short' : ''}">${f.signedUsd(rt)}</span></div>
-      <div><span class="k">Risiko bis Stops</span><span class="v">${r.openRiskTotal == null ? '–' : f.usd(r.openRiskTotal)}</span></div>
+      <div><span class="k">Risiko bis Stops</span><span class="v ${r.openRiskTotal == null ? 'short' : ''}">${r.openRiskTotal == null ? 'Stop fehlt' : f.usd(r.openRiskTotal)}</span></div>
     </div><div class="health">${r.checks.map(checkRow).join('')}</div>
     <p class="empty" style="margin-top:12px">Tagesergebnis ab 0:00 Uhr, abzüglich Gebühren, ohne Funding.</p>`;
   }

@@ -6,7 +6,7 @@ import { startStream } from './core-stream.js';
 import { getState, update, subscribe, logError } from './core-store.js';
 import { render } from './ui-testpage.js';
 import { initRisk, renderRisk, setCalc } from './ui-risk.js';
-import { initSignals, showDetail, analyze, renderWatchLive } from './ui-signals.js';
+import { initSignals, showDetail, analyze, renderWatchLive, autoScan } from './ui-signals.js';
 import { initHome, renderHome } from './ui-home.js';
 import { initTrade, openTrade } from './ui-trade.js';
 import { streamHealth, accountHealth } from './core-health.js';
@@ -109,7 +109,7 @@ async function loadMarkets() {
 }
 
 // Navigation zwischen den Bereichen
-const TITLES = { start: 'Start', signale: 'Signale', konto: 'Konto', risiko: 'Risiko', system: 'System' };
+const TITLES = { start: 'Start', signale: 'Signale', backtest: 'Backtest', konto: 'Konto', risiko: 'Risiko', system: 'System' };
 function showTab(name) {
   if (!TITLES[name]) name = address ? 'start' : 'system';
   document.querySelectorAll('[data-tab]').forEach((el) => el.classList.toggle('tab-off', el.dataset.tab !== name));
@@ -118,6 +118,7 @@ function showTab(name) {
   });
   document.getElementById('page-title').textContent = TITLES[name];
   window.scrollTo(0, 0);
+  if (name === 'signale') autoScan();
 }
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 document.getElementById('mini-health').addEventListener('click', () => { location.hash = 'system'; });
@@ -213,7 +214,7 @@ if (standalone) {
 }
 // Positionen im Konto: Tipp öffnet das Markt-Blatt mit Chart und Teilverkäufen
 const posBox = document.getElementById('positions');
-posBox.addEventListener('click', (e) => { const a = e.target.closest('[data-coin]'); if (a) openCoin(a.dataset.coin); });
+posBox.addEventListener('click', (e) => { if (e.target.closest('details')) return; const a = e.target.closest('[data-coin]'); if (a) openCoin(a.dataset.coin); });
 posBox.addEventListener('keydown', (e) => { const a = e.target.closest('[data-coin]'); if (a && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCoin(a.dataset.coin); } });
 initRisk(getState);
 initPerformance(() => renderAll(getState()));

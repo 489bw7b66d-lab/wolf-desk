@@ -115,7 +115,7 @@ select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .top-row { display: flex; justify-content: space-between; align-items: center; }
 .mini-health { height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
 .mini-health .dot { width: 8px; height: 8px; }
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(14,13,11,.94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 10; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); background: rgba(14,13,11,.94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 10; }
 .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 50px; justify-content: center; color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 700; }
 .tabbar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tabbar a[aria-current="page"] { color: var(--gold); }
@@ -379,3 +379,14 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .ptr.busy .ptr-spin { animation: ptr-spin .8s linear infinite; }
 @keyframes ptr-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ptr.busy .ptr-spin { animation: none; } }
+
+/* ===== Etappe 3l ===== */
+.cap-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; line-height: 1.4; border: 1px solid var(--line); }
+.cap-note.bad { color: var(--bad); border-color: rgba(255,112,112,.55); background: rgba(255,112,112,.06); }
+.cap-note.warn { color: var(--warn); border-color: rgba(242,181,68,.5); }
+.sheet-body .cap-note, #sheet-body .cap-note { margin: 0 0 12px; }
+.pos-more summary { color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; list-style: none; padding: 2px 0; }
+.pos-more summary::-webkit-details-marker { display: none; }
+.pos-more summary::after { content: ' ▾'; }
+.pos-more[open] summary::after { content: ' ▴'; }
+.pos-more .pos-grid { margin-top: 10px; }

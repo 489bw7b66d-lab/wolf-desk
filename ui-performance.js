@@ -2,8 +2,9 @@
 import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
 import { parsePortfolio, equityCurve, maxDrawdown } from './core-performance.js';
-import { perfSplit, tradeHistory, closedTrades } from './core-trades.js';
+import { perfSplit, tradeHistory, closedTrades, tradeStats } from './core-trades.js';
 import * as f from './core-format.js';
+import { dn } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
 const PERIODS = { day: '24 Std', week: 'Woche', month: 'Monat', allTime: 'Gesamt' };
@@ -40,6 +41,7 @@ export function initPerformance(onChange) {
 export function renderPerformance(s) {
   const a = s.account;
   renderTrades(s);
+  renderStats(s);
   if (!a) { $('perf').innerHTML = '<p class="empty">Noch keine Kontodaten.</p>'; $('perf-chart').innerHTML = ''; return; }
   const equity = accountSummary(a, CONFIG.accountMode).equity;
   const upnl = a.positions.reduce((n, p) => n + (p.upnl || 0), 0);
@@ -67,10 +69,14 @@ export function renderPerformance(s) {
   if (!data) { $('perf-chart').innerHTML = `<p class="empty">${s.portfolioError ? 'Verlauf konnte nicht geladen werden.' : 'Verlauf wird geladen …'}</p>`; return; }
   const curve = equityCurve(data.pnl, equity);
   const periodPnl = data.pnl.length ? data.pnl.at(-1)[1] - data.pnl[0][1] : null;
+  const dd = maxDrawdown(curve.map((c) => c[1]));
+  const ddCls = dd >= 35 ? 'short' : dd >= 20 ? 'warn-t' : '';
+  // Für „Gesamt“ kein eigenes Ergebnis: das steht schon oben (Kontowert minus Startkapital)
   $('perf-chart').innerHTML = chart(curve) + `<div class="kv" style="margin-top:12px">
-    <div><span class="k">Ergebnis ${PERIODS[period]}</span><span class="v ${periodPnl >= 0 ? 'long' : 'short'}">${f.signedUsd(periodPnl)}</span></div>
-    <div><span class="k">Max. Drawdown</span><span class="v">${f.pct(maxDrawdown(curve.map((c) => c[1])))}</span></div>
-  </div>`;
+    ${period === 'allTime' ? '' : `<div><span class="k">Ergebnis ${PERIODS[period]}</span><span class="v ${periodPnl >= 0 ? 'long' : 'short'}">${f.signedUsd(periodPnl)}</span></div>`}
+    <div><span class="k">Max. Drawdown</span><span class="v ${ddCls}">${f.pct(dd)}</span></div>
+  </div>
+  ${dd >= 20 ? `<p class="empty" style="font-size:12px;margin-top:8px">Größter Rückgang vom bisherigen Höchststand in diesem Zeitraum. ${dd >= 35 ? 'Das ist viel: Bei so einem Einbruch braucht es danach ' + f.pct((1 / (1 - dd / 100) - 1) * 100, 0) + ' Gewinn, nur um wieder aufzuholen.' : ''}</p>` : ''}`;
 }
 
 // Abgeschlossene Trades der letzten 90 Tage mit Teilverkäufen
@@ -85,14 +91,48 @@ function renderTrades(s) {
   box.innerHTML = list.map((t) => {
     const key = t.coin + t.closedAt;
     return `<details class="trade" data-key="${key}"${open.has(key) ? ' open' : ''}>
-      <summary><span class="sym">${t.coin} <small class="${t.side}">${t.side === 'long' ? 'L' : 'S'}</small></span>
+      <summary><span class="sym">${dn(t.coin)} <small class="${t.side}">${t.side === 'long' ? 'L' : 'S'}</small></span>
         <span class="meta">${dt(t.openedAt)} – ${dt(t.closedAt)} · ${t.exits.length} Verk.</span>
         <b class="${t.realized >= 0 ? 'long' : 'short'}">${f.signedUsd(t.realized)}</b></summary>
-      <div class="exit part" role="table" aria-label="Verkäufe ${t.coin}">
+      <div class="exit part" role="table" aria-label="Verkäufe ${dn(t.coin)}">
         <div class="exit-row head" role="row"><span>Nr.</span><span>Kurs</span><span>Anteil</span><span>PnL</span><span>Datum</span></div>
         ${t.exits.map((x, i) => `<div class="exit-row" role="row"><span><b>${i + 1}.</b></span><span>${f.price(x.px)}</span><span>${x.sharePct == null ? '–' : f.pct(x.sharePct, 0)}</span><span class="${x.pnl >= 0 ? 'long' : 'short'}">${f.usdShort(x.pnl)}</span><span class="muted">${dt(x.time)}</span></div>`).join('')}
       </div>
       <p class="empty" style="font-size:12px;margin:6px 0 0">Einstieg Ø ${t.entryAvg ? f.price(t.entryAvg) : 'vor dem Zeitraum'} · Gebühren ${f.usd(t.fees)}</p>
     </details>`;
   }).join('');
+}
+
+// Deine Statistik: Auswertung der eigenen abgeschlossenen Trades (90 Tage)
+const cl = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
+const pc = (v) => (v == null ? '–' : f.pct(v, 0));
+function renderStats(s) {
+  const box = $('stats');
+  if (!box) return;
+  if (!s.fills) { box.innerHTML = `<p class="empty">${s.fillsError ? 'Trades konnten nicht geladen werden.' : 'Wird geladen …'}</p>`; return; }
+  const st = tradeStats(tradeHistory(s.fills));
+  if (!st.n) { box.innerHTML = '<p class="empty">Noch keine abgeschlossenen Trades in den letzten 90 Tagen.</p>'; return; }
+  // Kernaussage: Ausstiegsplan (in Teilen verkauft) gegen alles auf einmal
+  let insight = '';
+  if (st.split.n >= 2 && st.single.n >= 2) {
+    const better = st.split.avg > st.single.avg;
+    insight = `<p class="bt-verdict ${better ? 'ok' : 'warn'}">${better
+      ? `In Teilen verkauft: im Schnitt ${f.signedUsd(st.split.avg)} pro Trade, Treffer ${pc(st.split.winRate)}. Alles auf einmal: ${f.signedUsd(st.single.avg)}, Treffer ${pc(st.single.winRate)}. Dein Ausstiegsplan zahlt sich aus.`
+      : `Alles auf einmal verkauft schneidet bei dir gerade besser ab (${f.signedUsd(st.single.avg)} gegen ${f.signedUsd(st.split.avg)} pro Trade). Beobachten, ob das so bleibt.`}${st.n < 30 ? ' Bei ' + st.n + ' Trades noch ein vorläufiges Bild.' : ''}</p>`;
+  }
+  const row = (name, x) => x.n ? `<div class="bt-row" role="row"><span>${name}</span><span>${x.n}</span><span>${pc(x.winRate)}</span><span class="${cl(x.avg)}">${f.usdShort(x.avg)}</span></div>` : '';
+  box.innerHTML = `${insight}
+    <div class="kv">
+      <div><span class="k">Trades (90 Tage)</span><span class="v">${st.n}</span></div>
+      <div><span class="k">Trefferquote</span><span class="v">${pc(st.winRate)}</span></div>
+      <div><span class="k">Ø Gewinn</span><span class="v long">${f.signedUsd(st.avgWin)}</span></div>
+      <div><span class="k">Ø Verlust</span><span class="v short">${f.signedUsd(st.avgLoss)}</span></div>
+      <div><span class="k">Gewinn : Verlust</span><span class="v">${st.payoff == null ? '–' : st.payoff.toFixed(2).replace('.', ',') + ' : 1'}</span></div>
+      <div><span class="k">Summe</span><span class="v ${cl(st.total)}">${f.signedUsd(st.total)}</span></div>
+    </div>
+    <h3 class="sub-h">Wie du verkaufst</h3>
+    <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Gruppe</span><span>Trades</span><span>Treffer</span><span>Ø PnL</span></div>
+      ${row('In Teilen verkauft', st.split)}${row('Alles auf einmal', st.single)}${row('Long', st.long)}${row('Short', st.short)}
+    </div>
+    <p class="empty" style="font-size:12px;margin-top:8px">Bester Trade: ${dn(st.best.coin)} ${f.signedUsd(st.best.realized)} · schlechtester: ${dn(st.worst.coin)} ${f.signedUsd(st.worst.realized)}. Nach Gebühren, ohne Funding.</p>`;
 }

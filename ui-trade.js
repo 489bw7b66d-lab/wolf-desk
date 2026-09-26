@@ -4,7 +4,7 @@ import { accountSummary } from './core-calc.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, priceVsPlan, withEntry, leverageIssues } from './core-risk.js';
 import { chartSvg } from './ui-chart.js';
 import { switchStyle, getCandles } from './core-scanner.js';
-import { badge, ladder, esc, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
+import { badge, ladder, esc, dn, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -35,7 +35,7 @@ function calc() {
 function planText() {
   const r = current, p = r.plan, { size, lev, margin, exits } = calc();
   return [
-    `${r.coin} ${p.dir === 'long' ? 'LONG' : 'SHORT'} (${CONFIG.signals.modes[r.mode].label})`,
+    `${dn(r.coin)} ${p.dir === 'long' ? 'LONG' : 'SHORT'} (${CONFIG.signals.modes[r.mode].label})`,
     p.liveEntry ? `Einstieg: ${f.price(p.entry)} (Live-Kurs)` : `Einstieg: ${f.price(p.zone[0])} – ${f.price(p.zone[1])}`,
     ...(exits ? exits.rows.map((x) => `${x.label} (${x.pct} % = ${f.usd(x.value)}): ${x.price != null ? f.price(x.price) : 'Trailing'}`) : p.tps.map((tp, i) => `TP${i + 1}: ${f.price(tp)}`)),
     `Stop-Loss: ${f.price(p.stop)}`,
@@ -51,10 +51,12 @@ function render() {
   const riskState = riskPct >= CONFIG.rules.riskPerTradeMaxPct ? 'bad' : riskPct >= CONFIG.rules.riskPerTradeWarnPct ? 'warn' : 'ok';
   $('sheet-body').innerHTML = `
     <div class="sheet-head">
-      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${esc(r.coin)}</h2>
+      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${esc(dn(r.coin))}</h2>
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]} · ${esc(p.entryMode)}</span></div>
       ${badge(p.dir)}
     </div>
+    ${sum && sum.equity > 0 && (sum.available / sum.equity) * 100 < (CONFIG.rules.freeCapitalMinPct ?? 2)
+      ? `<p class="cap-note bad">Kein Kapital frei (${f.pct(Math.max(0, (sum.available / sum.equity) * 100), 1)}). Dieser Plan ist nur zur Beobachtung, erst eine Position schließen oder verkleinern.</p>` : ''}
     ${seal(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((tf) => `<button type="button" data-ctf="${tf}" aria-pressed="${tf === chartTf}">${TFL[tf]}</button>`).join('')}</div>

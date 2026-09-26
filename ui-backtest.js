@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { getWatchlist, onWatchlist } from './core-watchlist.js';
 import { BT, loadHistory, runBacktest, summarize } from './core-backtest.js';
-import { esc } from './ui-parts.js';
+import { esc, dn } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -19,7 +19,7 @@ const OUT = { stop: 'Stop', einstieg: 'Stop auf Einstieg', nachgezogen: 'Nachzie
 function renderControls() {
   const wl = getWatchlist();
   const sel = $('bt-coin'), cur = sel.value;
-  sel.innerHTML = `<option value="${ALL}">Ganze Watchlist (${wl.length})</option>` + wl.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.innerHTML = `<option value="${ALL}">Ganze Watchlist (${wl.length})</option>` + wl.map((c) => `<option value="${esc(c)}">${esc(dn(c))}</option>`).join('');
   sel.value = [ALL, ...wl].includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
   $('bt-styles').innerHTML = STYLES.map((k) => `<button type="button" data-bts="${k}" aria-pressed="${k === style}">${CONFIG.signals.modes[k].label}<small>${BT.days[k]} Tage</small></button>`).join('');
 }
@@ -86,9 +86,9 @@ function renderResult() {
     ${table(['Gruppe', 'Trades', 'Gewinn', 'Ø R'], [
       ['🛡 mit Siegel', sm.seal.with], ['ohne Siegel', sm.seal.without], ['Long', sm.long], ['Short', sm.short],
     ].filter(([, x]) => x.n).map(([n, x]) => `<div class="bt-row" role="row"><span>${n}</span><span>${x.n}</span><span>${P(x.winRate)}</span><span class="${cls(x.avgR)}">${R(x.avgR)}</span></div>`))}
-    ${perCoin.length ? `<h3 class="sub-h">Nach Markt</h3>${table(['Markt', 'Trades', 'Gewinn', 'Ø R'], perCoin.map((c) => `<div class="bt-row" role="row"><span><b>${esc(c.coin)}</b></span><span>${c.err ? '–' : c.n}</span><span>${c.err ? '' : P(c.winRate)}</span><span class="${cls(c.avgR)}">${c.err ? 'Fehler' : R(c.avgR)}</span></div>`))}` : ''}
+    ${perCoin.length ? `<h3 class="sub-h">Nach Markt</h3>${table(['Markt', 'Trades', 'Gewinn', 'Ø R'], perCoin.map((c) => `<div class="bt-row" role="row"><span><b>${esc(dn(c.coin))}</b></span><span>${c.err ? '–' : c.n}</span><span>${c.err ? '' : P(c.winRate)}</span><span class="${cls(c.avgR)}">${c.err ? 'Fehler' : R(c.avgR)}</span></div>`))}` : ''}
     <h3 class="sub-h">Letzte Trades</h3>
-    ${table(['Datum', 'Markt', 'Ausgang', 'R'], trades.slice(-8).reverse().map((t) => `<div class="bt-row" role="row"><span>${date(t.time)}</span><span>${esc(t.coin)} <small class="${t.dir}">${t.dir === 'long' ? 'L' : 'S'}</small></span><span class="muted">${OUT[t.outcome] || t.outcome}${t.hits ? ` · TP${t.hits}` : ''}</span><span class="${cls(t.r)}">${R(t.r)}</span></div>`))}
+    ${table(['Datum', 'Markt', 'Ausgang', 'R'], trades.slice(-8).reverse().map((t) => `<div class="bt-row" role="row"><span>${date(t.time)}</span><span>${esc(dn(t.coin))} <small class="${t.dir}">${t.dir === 'long' ? 'L' : 'S'}</small></span><span class="muted">${OUT[t.outcome] || t.outcome}${t.hits ? ` · TP${t.hits}` : ''}</span><span class="${cls(t.r)}">${R(t.r)}</span></div>`))}
     <p class="empty" style="font-size:12px;margin-top:12px">1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen, Slippage und Funding nicht. Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.</p>`;
 }
 
@@ -118,7 +118,7 @@ async function start() {
       runs.push({ coin, trades: [], missed: [], error: e.message });
     }
   }
-  const label = `${sel === ALL ? 'Watchlist' : sel} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage`;
+  const label = `${sel === ALL ? 'Watchlist' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage`;
   last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + r.missed.length, 0) };
   const errs = runs.filter((r) => r.error);
   status(stopFlag ? 'Abgebrochen, Teilergebnis:' : errs.length ? `Fertig. Nicht geladen: ${errs.map((r) => r.coin).join(', ')}` : 'Fertig.', null);

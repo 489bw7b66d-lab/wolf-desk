@@ -13,7 +13,7 @@
 <title>Wolf Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=3k">
+<link rel="stylesheet" href="styles.css?v=3l">
 </head>
 <body>
 <div id="ptr" class="ptr" aria-hidden="true"><span class="ptr-spin"></span><span id="ptr-text">Zum Aktualisieren ziehen</span></div>
@@ -46,6 +46,7 @@
     </div>
     <div id="hot-status"></div>
     <div id="hot-list" class="hot-list"></div>
+    <p id="hot-cap" class="cap-note" hidden></p>
     <p class="empty" style="font-size:12px;margin-top:8px">Top 150 nach Market Cap, läuft, solange die App offen ist. Tipp auf einen Coin öffnet den fertigen Trade-Plan.</p>
   </section>
 
@@ -81,6 +82,11 @@
     <div id="perf"></div>
     <div id="perf-tabs" class="tabs" role="group" aria-label="Zeitraum"></div>
     <div id="perf-chart"></div>
+  </section>
+
+  <section data-tab="konto" class="card" aria-labelledby="h-stats">
+    <h2 id="h-stats">Deine Statistik</h2>
+    <div id="stats"></div>
   </section>
 
   <section data-tab="risiko" class="card" aria-labelledby="h-risk">
@@ -130,7 +136,7 @@
     <div id="sig-suggest" class="suggest-list"></div>
     <div id="sig-quick" class="quick"></div>
     <p id="wl-hint" class="empty" role="status" style="font-size:12px;margin:4px 0 0"></p>
-    <div id="sig-detail" style="margin-top:16px"><p class="empty">Markt wählen und „Analysieren“ tippen.</p></div>
+    <div id="sig-detail" style="margin-top:16px"><p class="empty">Tippe auf einen Markt oder such oben, die Analyse erscheint hier.</p></div>
   </section>
 
   <section data-tab="signale" class="card" aria-labelledby="h-scan">
@@ -139,7 +145,7 @@
     <div id="sig-list" class="sig-list"></div>
   </section>
 
-  <section data-tab="signale" class="card" id="bt-card" aria-labelledby="h-bt">
+  <section data-tab="backtest" class="card" id="bt-card" aria-labelledby="h-bt">
     <h2 id="h-bt">Backtest</h2>
     <p class="empty" style="font-size:13px;margin:-6px 0 12px">Spielt den Signalgeber auf vergangenen Kerzen nach, so als hättest du jedes Signal nach Plan gehandelt.</p>
     <label for="bt-coin" class="k">Markt</label>
@@ -172,6 +178,7 @@
 <nav class="tabbar" aria-label="Bereiche">
   <a href="#start" data-nav="start"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg><span>Start</span></a>
   <a href="#signale" data-nav="signale"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Signale</span></a>
+  <a href="#backtest" data-nav="backtest"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><path d="M15 8h4v4"/></svg><span>Backtest</span></a>
   <a href="#konto" data-nav="konto"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Konto</span></a>
   <a href="#risiko" data-nav="risiko"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3z"/></svg><span>Risiko</span></a>
 </nav>
@@ -186,54 +193,54 @@
 <script type="importmap">
 {
  "imports": {
-  "./config.js": "./config.js?v=3k",
-  "./core-account.js": "./core-account.js?v=3k",
-  "./core-api.js": "./core-api.js?v=3k",
-  "./core-backtest.js": "./core-backtest.js?v=3k",
-  "./core-calc.js": "./core-calc.js?v=3k",
-  "./core-candlesticks.js": "./core-candlesticks.js?v=3k",
-  "./core-confirm.js": "./core-confirm.js?v=3k",
-  "./core-elliott.js": "./core-elliott.js?v=3k",
-  "./core-fib.js": "./core-fib.js?v=3k",
-  "./core-format.js": "./core-format.js?v=3k",
-  "./core-health.js": "./core-health.js?v=3k",
-  "./core-hotscan.js": "./core-hotscan.js?v=3k",
-  "./core-indicators.js": "./core-indicators.js?v=3k",
-  "./core-market.js": "./core-market.js?v=3k",
-  "./core-patterns.js": "./core-patterns.js?v=3k",
-  "./core-performance.js": "./core-performance.js?v=3k",
-  "./core-positions.js": "./core-positions.js?v=3k",
-  "./core-risk.js": "./core-risk.js?v=3k",
-  "./core-scanner.js": "./core-scanner.js?v=3k",
-  "./core-signals.js": "./core-signals.js?v=3k",
-  "./core-stops.js": "./core-stops.js?v=3k",
-  "./core-store.js": "./core-store.js?v=3k",
-  "./core-stream.js": "./core-stream.js?v=3k",
-  "./core-trades.js": "./core-trades.js?v=3k",
-  "./core-universe.js": "./core-universe.js?v=3k",
-  "./core-watchlist.js": "./core-watchlist.js?v=3k",
-  "./main.js": "./main.js?v=3k",
-  "./test-backtest.js": "./test-backtest.js?v=3k",
-  "./test-calc.js": "./test-calc.js?v=3k",
-  "./test-market.js": "./test-market.js?v=3k",
-  "./test-performance.js": "./test-performance.js?v=3k",
-  "./test-risk.js": "./test-risk.js?v=3k",
-  "./test-signals.js": "./test-signals.js?v=3k",
-  "./test-trades.js": "./test-trades.js?v=3k",
-  "./ui-backtest.js": "./ui-backtest.js?v=3k",
-  "./ui-chart.js": "./ui-chart.js?v=3k",
-  "./ui-coin.js": "./ui-coin.js?v=3k",
-  "./ui-home.js": "./ui-home.js?v=3k",
-  "./ui-market.js": "./ui-market.js?v=3k",
-  "./ui-parts.js": "./ui-parts.js?v=3k",
-  "./ui-performance.js": "./ui-performance.js?v=3k",
-  "./ui-risk.js": "./ui-risk.js?v=3k",
-  "./ui-signals.js": "./ui-signals.js?v=3k",
-  "./ui-testpage.js": "./ui-testpage.js?v=3k",
-  "./ui-trade.js": "./ui-trade.js?v=3k"
+  "./config.js": "./config.js?v=3l",
+  "./core-account.js": "./core-account.js?v=3l",
+  "./core-api.js": "./core-api.js?v=3l",
+  "./core-backtest.js": "./core-backtest.js?v=3l",
+  "./core-calc.js": "./core-calc.js?v=3l",
+  "./core-candlesticks.js": "./core-candlesticks.js?v=3l",
+  "./core-confirm.js": "./core-confirm.js?v=3l",
+  "./core-elliott.js": "./core-elliott.js?v=3l",
+  "./core-fib.js": "./core-fib.js?v=3l",
+  "./core-format.js": "./core-format.js?v=3l",
+  "./core-health.js": "./core-health.js?v=3l",
+  "./core-hotscan.js": "./core-hotscan.js?v=3l",
+  "./core-indicators.js": "./core-indicators.js?v=3l",
+  "./core-market.js": "./core-market.js?v=3l",
+  "./core-patterns.js": "./core-patterns.js?v=3l",
+  "./core-performance.js": "./core-performance.js?v=3l",
+  "./core-positions.js": "./core-positions.js?v=3l",
+  "./core-risk.js": "./core-risk.js?v=3l",
+  "./core-scanner.js": "./core-scanner.js?v=3l",
+  "./core-signals.js": "./core-signals.js?v=3l",
+  "./core-stops.js": "./core-stops.js?v=3l",
+  "./core-store.js": "./core-store.js?v=3l",
+  "./core-stream.js": "./core-stream.js?v=3l",
+  "./core-trades.js": "./core-trades.js?v=3l",
+  "./core-universe.js": "./core-universe.js?v=3l",
+  "./core-watchlist.js": "./core-watchlist.js?v=3l",
+  "./main.js": "./main.js?v=3l",
+  "./test-backtest.js": "./test-backtest.js?v=3l",
+  "./test-calc.js": "./test-calc.js?v=3l",
+  "./test-market.js": "./test-market.js?v=3l",
+  "./test-performance.js": "./test-performance.js?v=3l",
+  "./test-risk.js": "./test-risk.js?v=3l",
+  "./test-signals.js": "./test-signals.js?v=3l",
+  "./test-trades.js": "./test-trades.js?v=3l",
+  "./ui-backtest.js": "./ui-backtest.js?v=3l",
+  "./ui-chart.js": "./ui-chart.js?v=3l",
+  "./ui-coin.js": "./ui-coin.js?v=3l",
+  "./ui-home.js": "./ui-home.js?v=3l",
+  "./ui-market.js": "./ui-market.js?v=3l",
+  "./ui-parts.js": "./ui-parts.js?v=3l",
+  "./ui-performance.js": "./ui-performance.js?v=3l",
+  "./ui-risk.js": "./ui-risk.js?v=3l",
+  "./ui-signals.js": "./ui-signals.js?v=3l",
+  "./ui-testpage.js": "./ui-testpage.js?v=3l",
+  "./ui-trade.js": "./ui-trade.js?v=3l"
  }
 }
 </script>
-<script type="module" src="main.js?v=3k"></script>
+<script type="module" src="main.js?v=3l"></script>
 </body>
 </html>

@@ -47,6 +47,8 @@ export const CONFIG = {
     liqNoStopMinShare: 0.5,   // ohne Stop: Warnung, wenn mehr als die Hälfte des Anfangsabstands verbraucht ist
     maxOpenPositions: 5,      // maximal gleichzeitig offene Positionen
     marginBudgetPct: 50,      // Hebel-Empfehlung: pro Trade höchstens so viel % des verfügbaren Kapitals als Margin
+    freeCapitalWarnPct: 10,   // gelb, wenn weniger als so viel % vom Konto frei sind
+    freeCapitalMinPct: 2,     // rot darunter: keine neuen Trades möglich, kein Puffer
   },
 
   // SIGNALGEBER

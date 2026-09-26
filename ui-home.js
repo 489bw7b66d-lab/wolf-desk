@@ -4,7 +4,7 @@ import { accountRisk } from './core-positions.js';
 import { parsePortfolio } from './core-performance.js';
 import { perfSplit, change24h } from './core-trades.js';
 import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
-import { badge, esc, topReasons, seal } from './ui-parts.js';
+import { badge, esc, dn, topReasons, seal } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -37,6 +37,19 @@ export function renderHome(s) {
       <div><span class="k">Auslastung</span><span class="v">${f.pct(r.summary.usagePct)}</span></div>
     </div>`;
 
+  // Heiße Coins: deutlicher Hinweis, wenn kaum Kapital frei ist
+  const free = r.checks.find((c) => c.rule === 'Freies Kapital');
+  const cap = $('hot-cap');
+  if (cap) {
+    cap.hidden = !free || free.status === 'ok';
+    if (free && free.status !== 'ok') {
+      cap.className = 'cap-note ' + free.status;
+      cap.textContent = free.status === 'bad'
+        ? `Kein Kapital frei (${f.pct(free.value, 1)}). Die Signale sind nur zur Beobachtung, erst eine Position schließen oder verkleinern.`
+        : `Nur noch ${f.pct(free.value, 1)} vom Konto frei. Neue Trades nur klein.`;
+    }
+  }
+
   // Alle Regelverstöße und Warnungen an einer Stelle
   const issues = [
     ...r.checks.filter((c) => c.status !== 'ok').map((c) => ({ ...c, who: 'Konto' })),
@@ -54,7 +67,7 @@ export function renderHome(s) {
     const st = p.evaluation.worst;
     const ch = change24h(s.prices?.[p.coin], s.prevDay?.[p.coin]);
     return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}"><span class="dot r-${st}"></span>
-      <span class="sym">${esc(p.coin)} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
+      <span class="sym">${esc(dn(p.coin))} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
         <span class="pos-px">${f.price(p.mark)} <b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2)}</b></span></span>
       <span class="meta">Liq ${f.pct(p.liqDist)}</span>
       <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span></button>`;
@@ -73,7 +86,7 @@ function renderHot() {
   $('hot-status').innerHTML = `<p class="empty" style="font-size:13px">${esc(status)}${hot.source ? ` · ${esc(hot.source)}` : ''}</p>${prog}${hot.error ? `<p class="warnline">${esc(hot.error)}</p>` : ''}`;
   $('hot-list').innerHTML = hot.picks.length ? hot.picks.map(({ r }, i) => `<button type="button" class="hot-row" data-hot="${esc(r.coin)}">
       <span class="rank">${i + 1}</span>
-      <span class="hot-main"><span class="sym">${esc(r.coin)} ${seal(r, true)}</span><span class="reasons">${topReasons(r, 2).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
+      <span class="hot-main"><span class="sym">${esc(dn(r.coin))} ${seal(r, true)}</span><span class="reasons">${topReasons(r, 2).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
       <span class="hot-side">${badge(r.dir)}<span class="heat">Score ${r.total[r.dir]}</span></span>
     </button>`).join('')
     : hot.lastRound ? '<p class="empty">Gerade kein Coin mit klarem Signal. Kein Trade ist auch eine Entscheidung.</p>'

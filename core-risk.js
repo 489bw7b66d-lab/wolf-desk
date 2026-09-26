@@ -94,11 +94,12 @@ export function liqCheck(p, mark, stop, liqDist, rules, liqFirst) {
       text: `Liquidation ${fmt1(buffer)} % hinter dem Stop (mind. ${fmt1(rules.liqBufferPct)} %)`,
     };
   }
+  // Ohne Stop: rot, sobald mehr als die Hälfte des Anfangsabstands verbraucht ist, gelb ab einem Viertel
   const start = approxLiqDistPct(p.leverage);
   const share = start ? liqDist / start : 1;
   return {
     rule: 'Abstand Liquidation',
-    status: level(share < rules.liqNoStopMinShare * 0.5, share < rules.liqNoStopMinShare),
+    status: level(share < rules.liqNoStopMinShare, share < 1 - (1 - rules.liqNoStopMinShare) / 2),
     text: `${fmt1(liqDist)} % von anfangs ca. ${fmt1(start)} % bei ${p.leverage}×`,
   };
 }
@@ -130,8 +131,16 @@ export function checkPosition(p, mark, stop, liqDist, equity, rules) {
 }
 
 // Prüft kontoweite Regeln.
-export function checkAccount({ equity, positionsCount, realizedToday, openRiskTotal }, rules) {
+export function checkAccount({ equity, positionsCount, realizedToday, openRiskTotal, available = null }, rules) {
   const dayLossPct = equity > 0 && realizedToday < 0 ? (-realizedToday / equity) * 100 : 0;
+  const freePct = available != null && equity > 0 ? Math.max(0, (available / equity) * 100) : null;
+  const free = freePct == null ? [] : [{
+    rule: 'Freies Kapital',
+    status: level(freePct < (rules.freeCapitalMinPct ?? 2), freePct < (rules.freeCapitalWarnPct ?? 10)),
+    text: freePct < (rules.freeCapitalMinPct ?? 2) ? `${freePct.toFixed(1).replace('.', ',')} % frei: keine neuen Trades möglich, kein Puffer für bestehende Positionen`
+      : `${freePct.toFixed(1).replace('.', ',')} % vom Konto frei (Warnung unter ${rules.freeCapitalWarnPct ?? 10} %)`,
+    value: freePct,
+  }];
   return [
     {
       rule: 'Tagesverlust (realisiert)',
@@ -150,6 +159,7 @@ export function checkAccount({ equity, positionsCount, realizedToday, openRiskTo
       text: openRiskTotal == null ? 'Nicht berechenbar, mindestens ein Stop-Loss fehlt'
         : `${(equity > 0 ? (openRiskTotal / equity) * 100 : 0).toFixed(1).replace('.', ',')} % vom Konto, wenn alle Stops greifen`,
     },
+    ...free,
   ];
 }
 

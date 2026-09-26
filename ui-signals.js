@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { getWatchlist, addToWatchlist, removeFromWatchlist, onWatchlist, WATCHLIST_MAX } from './core-watchlist.js';
 import { analyzeMarket, analyzeAllModes, switchStyle } from './core-scanner.js';
-import { badge, ladder, esc, TFL, styleRow, seal } from './ui-parts.js';
+import { badge, ladder, esc, dn, TFL, styleRow, seal } from './ui-parts.js';
 import * as f from './core-format.js';
 import { change24h, entryDistance } from './core-trades.js';
 
@@ -60,7 +60,7 @@ export function showDetail(r) {
   shown = r;
   const lv = r.levels, p = r.plan;
   $('sig-detail').innerHTML = `<div class="sig-head">
-      <div><div class="coin" style="font-size:22px">${esc(r.coin)}</div>
+      <div><div class="coin" style="font-size:22px">${esc(dn(r.coin))}</div>
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · letzte Kerze ${new Date(r.lastClose).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span></div>
       ${badge(r.dir)}
     </div>
@@ -99,7 +99,7 @@ export async function analyze(coin) {
   if (!coin) return;
   $('sig-suggest').innerHTML = '';
   $('sig-search').value = coin;
-  $('sig-detail').innerHTML = `<p class="empty">Analysiere ${esc(coin)} ${mode === 'auto' ? 'in allen drei Stilen' : '(' + CONFIG.signals.modes[mode].tfs.map((t) => TFL[t]).join(', ') + ')'} …</p>`;
+  $('sig-detail').innerHTML = `<p class="empty">Analysiere ${esc(dn(coin))} ${mode === 'auto' ? 'in allen drei Stilen' : '(' + CONFIG.signals.modes[mode].tfs.map((t) => TFL[t]).join(', ') + ')'} …</p>`;
   try {
     const r = await run(coin);
     results.set(mode + '|' + coin, r);
@@ -110,7 +110,7 @@ export async function analyze(coin) {
   }
 }
 
-const run = (coin) => (mode === 'auto' ? analyzeAllModes(coin) : analyzeMarket(coin, mode));
+const run = (coin, background = false) => (mode === 'auto' ? analyzeAllModes(coin, background) : analyzeMarket(coin, mode, background));
 
 function renderSuggest() {
   const q = $('sig-search').value.trim().toUpperCase();
@@ -136,10 +136,10 @@ function renderList() {
   $('sig-list').innerHTML = getWatchlist().map((c) => {
     const r = results.get(mode + '|' + c);
     return `<button type="button" class="sig-row" data-coin="${esc(c)}">
-      <span class="sym">${esc(c)} ${r ? seal(r, true) : ''}
+      <span class="sym">${esc(dn(c))} ${r ? seal(r, true) : ''}
         <span class="wl-live"><span data-px="${esc(c)}"></span> <b data-chg="${esc(c)}"></b></span></span>
       <span class="wl-right">
-        ${r ? `<span class="meta">${r.styles ? (r.best ? CONFIG.signals.modes[r.best].label + ' · ' + r.total[r.dir] : 'kein Stil passt') : `L ${r.total.long} · S ${r.total.short}`}</span>${badge(r.dir)}` : '<span class="meta">noch nicht gescannt</span>'}
+        ${r ? `<span class="meta">${r.styles ? (r.best ? CONFIG.signals.modes[r.best].label + ' · ' + r.total[r.dir] : 'kein Stil passt') : `L ${r.total.long} · S ${r.total.short}`}</span>${badge(r.dir)}` : `<span class="meta">${scanning ? 'wird geprüft …' : 'noch nicht geprüft'}</span>`}
         ${r?.plan ? `<span class="wl-dist" data-dist="${esc(c)}"></span>` : ''}
       </span>
     </button>`;
@@ -165,16 +165,29 @@ export function renderWatchLive(s) {
   });
 }
 
-async function scanWatchlist() {
+let scanning = false, lastScan = 0;
+// background = gedrosselt (automatischer Scan), sonst so schnell wie möglich (Knopf)
+async function scanWatchlist(background = false) {
+  if (scanning) return;
+  scanning = true;
+  renderList();
   const btn = $('sig-scan');
   btn.disabled = true;
-  for (const [i, c] of getWatchlist().entries()) {
-    btn.textContent = `Scanne ${i + 1} von ${getWatchlist().length} …`;
-    try { results.set(mode + '|' + c, await run(c)); } catch { /* weiter */ }
+  const list = getWatchlist();
+  for (const [i, c] of list.entries()) {
+    btn.textContent = `${background ? 'Automatischer Scan' : 'Scanne'} ${i + 1} von ${list.length} …`;
+    try { results.set(mode + '|' + c, await run(c, background)); } catch { /* weiter */ }
     renderList();
   }
+  lastScan = Date.now();
+  scanning = false;
   btn.disabled = false;
-  btn.textContent = 'Watchlist scannen';
+  btn.textContent = 'Watchlist neu scannen';
+}
+
+// Beim Öffnen des Signale-Bereichs: automatisch scannen, wenn der letzte Scan älter als 15 Minuten ist
+export function autoScan() {
+  if (!scanning && Date.now() - lastScan > 15 * 60e3) scanWatchlist(true);
 }
 
 export function initSignals(stateGetter, openTrade, openCoin) {
@@ -216,7 +229,7 @@ export function initSignals(stateGetter, openTrade, openCoin) {
     if (!b) return;
     if (editing) removeFromWatchlist(b.dataset.coin); else analyze(b.dataset.coin);
   });
-  $('sig-scan').addEventListener('click', scanWatchlist);
+  $('sig-scan').addEventListener('click', () => scanWatchlist(false));
   // Tipp auf einen Watchlist-Markt: mit Signal die Trade-Karte, sonst das Markt-Blatt mit Chart
   $('sig-list').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-coin]');

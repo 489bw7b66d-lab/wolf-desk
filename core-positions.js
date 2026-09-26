@@ -30,7 +30,7 @@ export function accountRisk(s, now = Date.now()) {
   const missingStop = positions.some((p) => p.stop == null);
   const openRiskTotal = missingStop ? null : positions.reduce((n, p) => n + (p.evaluation.loss || 0), 0);
   const realizedToday = a.fillsToday ? realizedPnl(a.fillsToday) : null;
-  const checks = checkAccount({ equity: summary.equity, positionsCount: positions.length, realizedToday: realizedToday ?? 0, openRiskTotal }, CONFIG.rules);
+  const checks = checkAccount({ equity: summary.equity, positionsCount: positions.length, realizedToday: realizedToday ?? 0, openRiskTotal, available: summary.available }, CONFIG.rules);
   if (realizedToday == null) checks[0] = { rule: 'Tagesverlust (realisiert)', status: 'warn', text: 'Trades von heute konnten nicht geladen werden' };
   return { summary, positions, checks, realizedToday, openRiskTotal };
 }

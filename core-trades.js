@@ -75,3 +75,27 @@ export function entryDistance(plan, price) {
   if (price >= lo && price <= hi) return 0;
   return price > hi ? ((price - hi) / hi) * 100 : ((price - lo) / lo) * 100;
 }
+
+// Auswertung der eigenen abgeschlossenen Trades: Trefferquote, Ø Gewinn/Verlust,
+// Vergleich „in Teilen verkauft“ (Ausstiegsplan) gegen „alles auf einmal“.
+export function tradeStats(trades) {
+  const list = (trades || []).filter((t) => t.closedAt != null && !t.partial);
+  const stat = (l) => {
+    const n = l.length, wins = l.filter((t) => t.realized > 0);
+    const total = l.reduce((s, t) => s + t.realized, 0);
+    return { n, winRate: n ? (wins.length / n) * 100 : null, avg: n ? total / n : null, total };
+  };
+  if (!list.length) return { n: 0 };
+  const wins = list.filter((t) => t.realized > 0), losses = list.filter((t) => t.realized <= 0);
+  const avgWin = wins.length ? wins.reduce((s, t) => s + t.realized, 0) / wins.length : null;
+  const avgLoss = losses.length ? losses.reduce((s, t) => s + t.realized, 0) / losses.length : null;
+  const sorted = [...list].sort((a, b) => b.realized - a.realized);
+  return {
+    ...stat(list), avgWin, avgLoss,
+    payoff: avgWin != null && avgLoss ? avgWin / Math.abs(avgLoss) : null,
+    best: sorted[0], worst: sorted.at(-1),
+    split: stat(list.filter((t) => t.exits.length >= 2)),
+    single: stat(list.filter((t) => t.exits.length === 1)),
+    long: stat(list.filter((t) => t.side === 'long')), short: stat(list.filter((t) => t.side === 'short')),
+  };
+}
