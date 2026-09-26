@@ -39,6 +39,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
           WALLET: ${{ secrets.WALLET }}
           TEST_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}
 
