@@ -13,6 +13,7 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-market.js`, `ui-market.js` – Marktüberblick (Markt-Bias, Fear & Greed, Marktkapitalisierung, BTC-Dominanz)
 - `core-trades.js`, `ui-coin.js` – Trade-Historie aus Fills, Teilverkäufe, Markt-Blatt mit Chart in allen Zeitebenen
 - `core-backtest.js`, `ui-backtest.js` – Backtest des Signalgebers auf vergangenen Kerzen
+- `core-alerts.js`, `watcher.mjs` – Telegram-Wächter: läuft alle 15 Minuten bei GitHub Actions (`.github/workflows/wolf-watch.yml`), meldet starke Signale und Regelverstöße
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -30,3 +31,4 @@ Etappe 3i: Privatmodus (Auge blendet Beträge und Stückzahlen aus, Prozente ble
 Etappe 3j: Verkäufe als Anteil in Prozent statt Stück, Ausstiegsplan mit Wert je Stufe
 Etappe 3k: Versionsnummer für alle Dateien (Import-Map), damit nach Updates keine alten Dateien aus dem Zwischenspeicher geladen werden
 Etappe 3l: Kundentest umgesetzt: rote Warnung bei fehlendem Stop nahe Liquidation, Regel „Freies Kapital“, Hinweis bei vollem Konto, eigene Trade-Statistik, kompakte Positionskarten, „Stop im Gewinn“, automatischer Watchlist-Scan, Backtest als eigener Tab, Börsen-Präfix ausgeblendet
+Etappe 3m: Telegram-Wächter (GitHub Actions alle 15 Min., Signale ab Score 75, Regelverstöße und Entwarnungen, Wallet und Zugangsdaten als GitHub Secrets)

@@ -22,7 +22,18 @@ export const CONFIG = {
 
   // Beobachtete Märkte. HIP-3-Märkte tragen den Börsen-Namen als Präfix.
   // Falls ein Name nicht stimmt, zeigt die Testseite das an und listet die echten Namen.
-  watchlist: ['BTC', 'ETH', 'SOL', 'LINK', 'xyz:GOLD', 'xyz:SILVER', 'xyz:EUR'],
+  // Standard-Watchlist. In der App bearbeitest du sie direkt, der Telegram-Wächter nutzt diese Liste.
+  watchlist: ['BTC', 'ETH', 'SOL', 'LINK', 'NEAR', 'XRP', 'XLM', 'LTC', 'xyz:QNT', 'ZEC', 'SUI'],
+
+  // TELEGRAM-WÄCHTER (läuft alle 15 Minuten bei GitHub)
+  alerts: {
+    minScore: 75,               // Signal melden ab diesem Score
+    repeatHours: 12,            // gleicher Markt in gleicher Richtung frühestens nach so vielen Stunden erneut
+    states: ['zone', 'early'],  // nur melden, wenn der Kurs noch nicht davongelaufen ist
+    maxPerRun: 3,               // höchstens so viele Signal-Meldungen pro Durchlauf
+    risk: true,                 // Regelverstöße deiner Positionen melden (und Entwarnung)
+    appUrl: 'https://489bw7b66d-lab.github.io/wolf-desk/',
+  },
 
   // AUSSTIEGSPLAN: Anteil der Position je Ziel (Summe 100 %)
   exitPlan: [
