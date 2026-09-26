@@ -13,15 +13,16 @@ import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
 import { signalAlert, badChecks, riskDiff, signalText, riskText } from './core-alerts.js';
 
-const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, WALLET, TEST_RUN } = process.env;
+const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
+// Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
 const STATE_FILE = '.watch-state.json';
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
-async function send(text) {
+async function send(text, chat = CHAT) {
   const res = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: CHAT, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true }),
   });
   const j = await res.json().catch(() => ({}));
   if (!j.ok) throw new Error(`Telegram: ${j.description || res.status}`);
@@ -87,6 +88,17 @@ async function findChat() {
   return msg.message.chat.id;
 }
 
+// Kanäle, in denen der Bot Admin ist (aus den letzten 24 Std. an Telegram-Ereignissen)
+async function findChannels() {
+  const j = await (await fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates`)).json().catch(() => ({}));
+  const found = new Map();
+  (j.result || []).forEach((u) => {
+    const c = u.channel_post?.chat || u.my_chat_member?.chat;
+    if (c?.type === 'channel') found.set(c.id, c.title || String(c.id));
+  });
+  return [...found.entries()];
+}
+
 async function main() {
   if (!TOKEN) throw new Error('TELEGRAM_TOKEN fehlt (GitHub Secrets prüfen)');
   if (!CHAT) {
@@ -110,7 +122,15 @@ async function main() {
 
   if (TEST_RUN === 'true') {
     const bad = badChecks(risk);
+    if (CHANNEL) {
+      await send('✅ <b>Wolf Desk Wächter</b> ist mit diesem Kanal verbunden. Hier erscheinen ab jetzt die Signale.', CHANNEL);
+    } else {
+      const ch = await findChannels().catch(() => []);
+      if (ch.length) await send(['📣 <b>Kanal gefunden</b>', ...ch.map(([id, t]) => `${t}: <code>${id}</code>`),
+        '', 'Tippe auf die Zahl, um sie zu kopieren, und trage sie bei GitHub als Secret <b>TELEGRAM_CHANNEL</b> ein.'].join('\n'));
+    }
     await send(['✅ <b>Wolf Desk Wächter ist verbunden</b>',
+      CHANNEL ? 'Signale gehen in deinen Kanal, Regelverstöße bleiben hier privat.' : 'Signale und Regelverstöße kommen hierher.',
       WALLET ? (risk ? `Konto gelesen: ${risk.positions.length} Positionen, ${Object.keys(bad).length} Regelverstöße.` : 'Konto konnte nicht gelesen werden.') : 'Keine Wallet hinterlegt, nur Signale.',
       `Signale ab Score ${CONFIG.alerts.minScore}, alle 15 Minuten.`].join('\n'));
     log('Testnachricht gesendet');
@@ -135,7 +155,7 @@ async function main() {
     .sort((x, y) => heat(y.r) - heat(x.r))
     .slice(0, CONFIG.alerts.maxPerRun);
   for (const { r, a } of alerts) {
-    await send(signalText(r, a, { noCapital }));
+    await send(signalText(r, a, { noCapital }), CHANNEL || CHAT);
     state.sent[a.key] = now;
     log('Signal gemeldet:', a.key, a.score);
   }
