@@ -1,0 +1,49 @@
+name: Wolf Desk Wächter
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # alle 15 Minuten (GitHub startet teils einige Minuten später)
+  workflow_dispatch:          # manuell starten über „Run workflow“
+    inputs:
+      test:
+        description: 'Nur Testnachricht senden'
+        type: boolean
+        default: true
+
+concurrency:
+  group: wolf-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Gedächtnis zwischen den Läufen (was schon gemeldet wurde)
+      - uses: actions/cache/restore@v4
+        with:
+          path: .watch-state.json
+          key: watch-state-${{ github.run_id }}
+          restore-keys: watch-state-
+
+      - name: Wächter ausführen
+        run: |
+          echo '{"type":"module"}' > package.json
+          node watcher.mjs
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+          WALLET: ${{ secrets.WALLET }}
+          TEST_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .watch-state.json
+          key: watch-state-${{ github.run_id }}
