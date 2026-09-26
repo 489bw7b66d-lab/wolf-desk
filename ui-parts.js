@@ -71,7 +71,7 @@ export function fitHint(fit, equity, budgetPct) {
   const pct = equity > 0 ? (fit.riskAmt / equity) * 100 : null;
   return `<div class="fit-box">
     <b>Machbar bei ${f.lev(fit.lev)} mit ${budgetPct} % deines verfügbaren Kapitals</b>
-    <span>${f.size(fit.size)} Stück · Margin ${f.usd(fit.margin)} · Risiko ${f.usd(fit.riskAmt)} (${f.pct(pct)})</span>
+    <span>Position ${f.usd(fit.notional)} · Margin ${f.usd(fit.margin)} · Risiko ${f.usd(fit.riskAmt)} (${f.pct(pct)})</span>
     ${pct ? `<button type="button" class="small-btn" data-risk="${Math.floor(pct * 10) / 10}">Übernehmen</button>` : ''}
   </div>`;
 }
