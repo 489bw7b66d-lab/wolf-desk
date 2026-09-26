@@ -35,7 +35,7 @@ jobs:
       - name: Wächter ausführen
         run: |
           echo '{"type":"module"}' > package.json
-          node watcher.mjs
+          node watcher.js
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
