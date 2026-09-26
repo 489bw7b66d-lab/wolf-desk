@@ -16,12 +16,13 @@ export function tradeHistory(fills) {
   for (const [coin, list] of byCoin) {
     list.sort((a, b) => n(a.time) - n(b.time));
     let cur = null;
-    const start = (side, time, partial) => ({ coin, side, openedAt: time, closedAt: null, partial, entries: [], exits: [], fees: 0, realized: 0 });
+    const start = (side, time, partial) => ({ coin, side, openedAt: time, closedAt: null, partial, entries: [], exits: [], fees: 0, realized: 0, maxSz: 0 });
     for (const f of list) {
       const sz = n(f.sz), before = n(f.startPosition), after = before + (f.side === 'B' ? sz : -sz);
       const time = n(f.time), px = n(f.px), fee = n(f.fee), pnl = n(f.closedPnl);
       if (!cur && (Math.abs(after) > EPS || Math.abs(before) > EPS)) cur = start((Math.abs(before) > EPS ? before : after) > 0 ? 'long' : 'short', time, Math.abs(before) > EPS);
       if (!cur) continue;
+      cur.maxSz = Math.max(cur.maxSz, Math.abs(before), Math.sign(after) === Math.sign(before || after) ? Math.abs(after) : 0);
       const opening = Math.abs(after) > Math.abs(before) + EPS && Math.sign(after) === Math.sign(before || after);
       if (opening) {
         cur.entries.push({ time, px, sz });
@@ -35,7 +36,7 @@ export function tradeHistory(fills) {
         cur.fees += fee * share; cur.realized += pnl - fee * share;
         if (Math.abs(after) < EPS || flip) {
           cur.closedAt = time; trades.push(cur); cur = null;
-          if (flip) { cur = start(after > 0 ? 'long' : 'short', time, false); cur.entries.push({ time, px, sz: Math.abs(after) }); cur.fees += fee * (1 - share); cur.realized -= fee * (1 - share); }
+          if (flip) { cur = start(after > 0 ? 'long' : 'short', time, false); cur.maxSz = Math.abs(after); cur.entries.push({ time, px, sz: Math.abs(after) }); cur.fees += fee * (1 - share); cur.realized -= fee * (1 - share); }
         }
       }
     }
@@ -45,6 +46,9 @@ export function tradeHistory(fills) {
     const q = t.entries.reduce((s, e) => s + e.sz, 0);
     t.entryAvg = q > 0 ? t.entries.reduce((s, e) => s + e.px * e.sz, 0) / q : null;
     t.closedSz = t.exits.reduce((s, e) => s + e.sz, 0);
+    // Anteil jedes Verkaufs an der größten Positionsgröße dieses Trades
+    t.exits.forEach((e) => { e.sharePct = t.maxSz > 0 ? (e.sz / t.maxSz) * 100 : null; });
+    t.soldPct = t.maxSz > 0 ? (t.closedSz / t.maxSz) * 100 : null;
   });
   return trades.sort((a, b) => (b.closedAt ?? Infinity) - (a.closedAt ?? Infinity) || b.openedAt - a.openedAt);
 }

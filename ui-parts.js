@@ -56,9 +56,9 @@ export function styleRow(r, modes) {
 export function exitTable(plan, runnerNote) {
   if (!plan) return '';
   return `<div class="exit" role="table" aria-label="Ausstiegsplan">
-    <div class="exit-row head" role="row"><span>Ziel</span><span>Preis</span><span>Anteil</span><span>Stück</span><span>Gewinn</span></div>
+    <div class="exit-row head" role="row"><span>Ziel</span><span>Preis</span><span>Anteil</span><span>Wert</span><span>Gewinn</span></div>
     ${plan.rows.map((x) => `<div class="exit-row" role="row"><span><b>${esc(x.label)}</b></span>
-      <span>${x.price != null ? f.price(x.price) : 'offen'}</span><span>${x.pct} %</span><span>${f.size(x.qty)}</span>
+      <span>${x.price != null ? f.price(x.price) : 'offen'}</span><span>${x.pct} %</span><span>${f.usdShort(x.value).replace('+', '')}</span>
       <span class="${x.profit == null ? 'muted' : x.profit >= 0 ? 'long' : 'short'}">${x.profit != null ? f.usdShort(x.profit) : 'Trailing'}</span></div>`).join('')}
     <div class="exit-row total" role="row"><span><b>Summe</b></span><span></span><span>${plan.pctFixed} %</span><span></span><span class="long"><b>${f.usdShort(plan.totalFixed)}</b></span></div>
   </div>

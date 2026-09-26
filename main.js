@@ -167,6 +167,14 @@ function setPrivacy(on) {
   renderAll(getState());
   refreshTrade();
 }
+// Falls eine ältere index.html im Zwischenspeicher liegt: Auge-Knopf selbst anlegen
+if (!document.getElementById('eye')) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.id = 'eye'; b.className = 'eye-btn';
+  const mh = document.getElementById('mini-health');
+  mh.parentNode.insertBefore(b, mh);
+  mh.parentNode.style.display = 'flex'; mh.parentNode.style.gap = '8px'; mh.parentNode.style.alignItems = 'center';
+}
 let privOn = false;
 try { privOn = localStorage.getItem(PRIV_KEY) === '1'; } catch { /* egal */ }
 document.getElementById('eye').addEventListener('click', () => setPrivacy(!fmt.isPrivate()));
@@ -174,6 +182,7 @@ document.getElementById('eye').addEventListener('click', () => setPrivacy(!fmt.i
 // Ziehen zum Aktualisieren (nur in der installierten App, im Browser macht das der Browser selbst)
 const standalone = window.navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
 if (standalone) {
+  if (!document.getElementById('ptr')) document.body.insertAdjacentHTML('afterbegin', '<div id="ptr" class="ptr" aria-hidden="true"><span class="ptr-spin"></span><span id="ptr-text">Zum Aktualisieren ziehen</span></div>');
   const ptr = document.getElementById('ptr'), ptrText = document.getElementById('ptr-text');
   const LIMIT = 70;
   let startY = null, pull = 0, busy = false;

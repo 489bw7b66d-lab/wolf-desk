@@ -70,12 +70,12 @@ function renderLive() {
 // Teilverkäufe des laufenden Trades mit Kurs und PnL
 function partials(t) {
   if (!t) return '';
-  const rows = t.exits.map((x, i) => `<div class="exit-row" role="row"><span><b>${i + 1}.</b></span><span>${f.price(x.px)}</span><span>${f.size(x.sz)}</span>
+  const rows = t.exits.map((x, i) => `<div class="exit-row" role="row"><span><b>${i + 1}.</b></span><span>${f.price(x.px)}</span><span>${x.sharePct == null ? '–' : f.pct(x.sharePct, 0)}</span>
     <span class="${x.pnl >= 0 ? 'long' : 'short'}">${f.usdShort(x.pnl)}</span><span class="muted">${time(x.time)}</span></div>`).join('');
   return `<h3 class="sub-h">Bereits realisiert <small class="muted" style="font-weight:600">${t.partial ? 'ab Beginn der Daten' : 'seit Eröffnung ' + time(t.openedAt)}</small></h3>
     ${t.exits.length ? `<div class="exit part" role="table" aria-label="Teilverkäufe">
-      <div class="exit-row head" role="row"><span>Nr.</span><span>Kurs</span><span>Stück</span><span>PnL</span><span>Zeit</span></div>${rows}
-      <div class="exit-row total" role="row"><span><b>Summe</b></span><span></span><span></span><span class="${t.realized >= 0 ? 'long' : 'short'}"><b>${f.usdShort(t.realized)}</b></span><span></span></div>
+      <div class="exit-row head" role="row"><span>Nr.</span><span>Kurs</span><span>Anteil</span><span>PnL</span><span>Zeit</span></div>${rows}
+      <div class="exit-row total" role="row"><span><b>Summe</b></span><span></span><span>${t.soldPct == null ? '' : f.pct(t.soldPct, 0)}</span><span class="${t.realized >= 0 ? 'long' : 'short'}"><b>${f.usdShort(t.realized)}</b></span><span></span></div>
     </div>` : `<p class="empty">Noch nichts verkauft. Gebühren bisher ${f.usd(t.fees)}.</p>`}`;
 }
 

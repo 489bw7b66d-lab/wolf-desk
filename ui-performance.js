@@ -89,8 +89,8 @@ function renderTrades(s) {
         <span class="meta">${dt(t.openedAt)} – ${dt(t.closedAt)} · ${t.exits.length} Verk.</span>
         <b class="${t.realized >= 0 ? 'long' : 'short'}">${f.signedUsd(t.realized)}</b></summary>
       <div class="exit part" role="table" aria-label="Verkäufe ${t.coin}">
-        <div class="exit-row head" role="row"><span>Nr.</span><span>Kurs</span><span>Stück</span><span>PnL</span><span>Datum</span></div>
-        ${t.exits.map((x, i) => `<div class="exit-row" role="row"><span><b>${i + 1}.</b></span><span>${f.price(x.px)}</span><span>${f.size(x.sz)}</span><span class="${x.pnl >= 0 ? 'long' : 'short'}">${f.usdShort(x.pnl)}</span><span class="muted">${dt(x.time)}</span></div>`).join('')}
+        <div class="exit-row head" role="row"><span>Nr.</span><span>Kurs</span><span>Anteil</span><span>PnL</span><span>Datum</span></div>
+        ${t.exits.map((x, i) => `<div class="exit-row" role="row"><span><b>${i + 1}.</b></span><span>${f.price(x.px)}</span><span>${x.sharePct == null ? '–' : f.pct(x.sharePct, 0)}</span><span class="${x.pnl >= 0 ? 'long' : 'short'}">${f.usdShort(x.pnl)}</span><span class="muted">${dt(x.time)}</span></div>`).join('')}
       </div>
       <p class="empty" style="font-size:12px;margin:6px 0 0">Einstieg Ø ${t.entryAvg ? f.price(t.entryAvg) : 'vor dem Zeitraum'} · Gebühren ${f.usd(t.fees)}</p>
     </details>`;

@@ -20,6 +20,8 @@ export const tests = [
     return t.length === 2 && t.some((x) => x.side === 'short' && x.closedAt == null) && t.some((x) => x.side === 'long' && x.closedAt === 2);
   }],
   ['Trades: vor dem Zeitraum eröffnet = als Teilstück markiert', () => tradeHistory([F(5, 'A', 1, 100, 2, 5)])[0].partial === true],
+  ['Trades: Anteil je Verkauf an der Gesamtposition (2 von 10 = 20 %)', () => { const t = openTradeFor(tradeHistory(OPEN), 'ETH'); return near(t.exits[0].sharePct, 20) && near(t.exits[1].sharePct, 30) && near(t.soldPct, 50); }],
+  ['Trades: Anteil auch bei vor dem Zeitraum eröffneter Position', () => near(tradeHistory([F(5, 'A', 1, 100, 4, 5)])[0].exits[0].sharePct, 25)],
   ['Trades: kaputte Daten = leer', () => tradeHistory(null).length === 0],
   ['Performance-Split: realisiert = gesamt minus Buchgewinn', () => { const p = perfSplit(2400, 1500, 300); return near(p.total, 900) && near(p.realized, 600) && near(p.pct, 60); }],
   ['24h: 100 → 105 = +5 %', () => near(change24h(105, 100), 5)],

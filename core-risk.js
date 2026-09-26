@@ -167,14 +167,14 @@ export function recommendLeverage(notional, available, maxLev, budgetPct = 50) {
 }
 
 // Ausstiegsplan: Position auf Ziele verteilen. splits: [{label, pct}], letzter Eintrag ohne Ziel = Runner.
-// Ergebnis je Stufe: Preis, Stückzahl, Gewinn in $; dazu Summe, wenn alle festen Ziele erreicht werden.
+// Ergebnis je Stufe: Preis, Stückzahl, Wert (Anteil am Positionswert beim Einstieg), Gewinn in $; dazu Summe, wenn alle festen Ziele erreicht werden.
 export function exitPlan(dir, entry, tps, size, splits) {
   if (!(size > 0) || !entry) return null;
   const s = dir === 'long' ? 1 : -1;
   const rows = splits.map((sp, i) => {
     const price = tps[i] ?? null;
     const qty = (size * sp.pct) / 100;
-    return { label: sp.label, pct: sp.pct, price, qty, profit: price != null ? s * (price - entry) * qty : null };
+    return { label: sp.label, pct: sp.pct, price, qty, value: qty * entry, profit: price != null ? s * (price - entry) * qty : null };
   });
   const fixed = rows.filter((x) => x.profit != null);
   return { rows, totalFixed: fixed.reduce((n, x) => n + x.profit, 0), pctFixed: fixed.reduce((n, x) => n + x.pct, 0) };

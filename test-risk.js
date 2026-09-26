@@ -49,6 +49,7 @@ export const tests = [
   ['Hebel-Empfehlung: Budget reicht nicht → Max.-Hebel', () => recommendLeverage(10000, 1000, 16, 50).lev === 16],
   ['Hebel-Empfehlung: Kapital reicht nicht = kein Hebel', () => recommendLeverage(10000, 400, 20, 50).lev === null],
   // Ausstiegsplan 20/25/25/15 + Runner 15
+  ['Ausstieg: Wert je Stufe = Anteil am Positionswert (20 % von 1.000 $ = 200 $)', () => near(exitPlan('long', 100, [110, 120, 130, 140], 10, [{ label: 'TP1', pct: 20 }, { label: 'Runner', pct: 80 }]).rows[0].value, 200)],
   ['Ausstieg: 10 Stk. → TP1 2 Stk., Runner 1,5 Stk.', () => {
     const e = exitPlan('long', 100, [110, 120, 130, 140], 10, [{ label: 'TP1', pct: 20 }, { label: 'TP2', pct: 25 }, { label: 'TP3', pct: 25 }, { label: 'TP4', pct: 15 }, { label: 'Runner', pct: 15 }]);
     return near(e.rows[0].qty, 2) && near(e.rows[4].qty, 1.5) && e.rows[4].price === null;

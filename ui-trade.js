@@ -37,7 +37,7 @@ function planText() {
   return [
     `${r.coin} ${p.dir === 'long' ? 'LONG' : 'SHORT'} (${CONFIG.signals.modes[r.mode].label})`,
     p.liveEntry ? `Einstieg: ${f.price(p.entry)} (Live-Kurs)` : `Einstieg: ${f.price(p.zone[0])} – ${f.price(p.zone[1])}`,
-    ...(exits ? exits.rows.map((x) => `${x.label} (${x.pct} %): ${x.price != null ? f.price(x.price) : 'Trailing'} · ${f.size(x.qty)} Stk.`) : p.tps.map((tp, i) => `TP${i + 1}: ${f.price(tp)}`)),
+    ...(exits ? exits.rows.map((x) => `${x.label} (${x.pct} % = ${f.usd(x.value)}): ${x.price != null ? f.price(x.price) : 'Trailing'}`) : p.tps.map((tp, i) => `TP${i + 1}: ${f.price(tp)}`)),
     `Stop-Loss: ${f.price(p.stop)}`,
     size ? `Größe: ${f.size(size.size)} (${riskPct} % Risiko = ${f.usd(size.riskAmt)})` : '',
     lev ? `Hebel: ${lev}×${manualLev ? ' (manuell)' : ''} · Margin: ${f.usd(margin)}` : '',
