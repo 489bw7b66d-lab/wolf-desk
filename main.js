@@ -15,6 +15,9 @@ import { initMarket } from './ui-market.js';
 import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
 import { getMarketCtx } from './core-scanner.js';
+import { refreshMarket } from './core-market.js';
+import { refreshTrade } from './ui-trade.js';
+import * as fmt from './core-format.js';
 
 const ADDR_KEY = 'wolfdesk.address';
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -147,12 +150,65 @@ initSignals(getState, openTrade, openCoin);
 initHome(getState, openTrade, openFull, openCoin);
 initMarket();
 initBacktest();
+
+// Privatmodus: Auge im Kopfbereich blendet alle Geldbeträge und Stückzahlen aus, Prozente bleiben
+const PRIV_KEY = 'wolfdesk.private';
+const EYE_OPEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7c1.8 0 3.4-.5 4.8-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+function setPrivacy(on) {
+  fmt.setPrivate(on);
+  try { localStorage.setItem(PRIV_KEY, on ? '1' : '0'); } catch { /* egal */ }
+  const eye = document.getElementById('eye');
+  eye.innerHTML = on ? EYE_OFF : EYE_OPEN;
+  eye.setAttribute('aria-pressed', String(on));
+  eye.setAttribute('aria-label', on ? 'Beträge anzeigen' : 'Beträge verbergen');
+  document.body.classList.toggle('private', on);
+  touching = false;
+  renderAll(getState());
+  refreshTrade();
+}
+let privOn = false;
+try { privOn = localStorage.getItem(PRIV_KEY) === '1'; } catch { /* egal */ }
+document.getElementById('eye').addEventListener('click', () => setPrivacy(!fmt.isPrivate()));
+
+// Ziehen zum Aktualisieren (nur in der installierten App, im Browser macht das der Browser selbst)
+const standalone = window.navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+if (standalone) {
+  const ptr = document.getElementById('ptr'), ptrText = document.getElementById('ptr-text');
+  const LIMIT = 70;
+  let startY = null, pull = 0, busy = false;
+  const sheetOpen = () => !document.getElementById('sheet').hidden;
+  document.addEventListener('touchstart', (e) => {
+    startY = !busy && !sheetOpen() && window.scrollY <= 0 ? e.touches[0].clientY : null;
+    pull = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (startY == null) return;
+    pull = Math.max(0, e.touches[0].clientY - startY);
+    if (pull < 8) { ptr.classList.remove('show'); return; }
+    ptr.classList.add('show');
+    ptr.style.setProperty('--pull', Math.min(pull, LIMIT * 1.4) + 'px');
+    ptrText.textContent = pull >= LIMIT ? 'Loslassen zum Aktualisieren' : 'Zum Aktualisieren ziehen';
+  }, { passive: true });
+  document.addEventListener('touchend', async () => {
+    if (startY == null) return;
+    startY = null;
+    if (pull < LIMIT) { ptr.classList.remove('show'); return; }
+    busy = true;
+    ptr.classList.add('busy');
+    ptrText.textContent = 'Aktualisiere …';
+    await Promise.allSettled([refreshAccount(), refreshPortfolio(), refreshFills(), refreshPrevDay(), refreshMarket(true)]);
+    ptrText.textContent = 'Aktualisiert';
+    setTimeout(() => { ptr.classList.remove('show', 'busy'); busy = false; }, 600);
+  }, { passive: true });
+}
 // Positionen im Konto: Tipp öffnet das Markt-Blatt mit Chart und Teilverkäufen
 const posBox = document.getElementById('positions');
 posBox.addEventListener('click', (e) => { const a = e.target.closest('[data-coin]'); if (a) openCoin(a.dataset.coin); });
 posBox.addEventListener('keydown', (e) => { const a = e.target.closest('[data-coin]'); if (a && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCoin(a.dataset.coin); } });
 initRisk(getState);
 initPerformance(() => renderAll(getState()));
+setPrivacy(privOn);
 subscribe(renderAll);
 renderAll(getState());
 showTab(location.hash.slice(1));

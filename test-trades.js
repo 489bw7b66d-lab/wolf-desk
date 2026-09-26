@@ -1,5 +1,6 @@
 import { tradeHistory, openTradeFor, closedTrades, perfSplit, change24h, entryDistance } from './core-trades.js';
 import { ladder } from './ui-parts.js';
+import * as f from './core-format.js';
 
 const near = (a, b, eps = 1e-6) => a != null && Math.abs(a - b) < eps;
 const F = (time, side, sz, px, start, pnl = 0, fee = 0, coin = 'ETH') => ({ coin, time, side, sz: String(sz), px: String(px), startPosition: String(start), closedPnl: String(pnl), fee: String(fee) });
@@ -25,6 +26,10 @@ export const tests = [
   ['Entry-Abstand: in der Zone = 0', () => entryDistance(plan, 100) === 0],
   ['Entry-Abstand: über der Zone positiv', () => near(entryDistance(plan, 102.01), 1)],
   ['Entry-Abstand: unter der Zone negativ', () => near(entryDistance(plan, 98.01), -1)],
+  ['Privatmodus: Beträge und Stückzahlen verborgen', () => { f.setPrivate(true); const ok = !/\d/.test(f.usd(2423.86) + f.signedUsd(-40) + f.usdShort(150) + f.size(2.26)); f.setPrivate(false); return ok; }],
+  ['Privatmodus: Prozente und Kurse bleiben', () => { f.setPrivate(true); const ok = f.pct(61.6) === '61,6 %' && f.price(2697.6) === '2.697,6'; f.setPrivate(false); return ok; }],
+  ['Privatmodus: Plan kopieren nutzt echte Zahlen', () => { f.setPrivate(true); const ok = f.raw(() => f.usd(5)) === '5,00 $' && f.usd(5).includes('••'); f.setPrivate(false); return ok; }],
+  ['Privatmodus aus: normale Anzeige', () => f.usd(5) === '5,00 $'],
   ['Trade-Karte: Einstieg → TP1–TP4 → Stop-Loss', () => {
     const h = ladder(plan), i = (s) => h.indexOf(s);
     return i('Einstieg') < i('TP1') && i('TP1') < i('TP4') && i('TP4') < i('Stop-Loss');

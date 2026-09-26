@@ -146,6 +146,12 @@ export function openTrade(result) {
   $('sheet-close').focus();
 }
 
+// Von außen neu zeichnen (z. B. nach Umschalten des Privatmodus)
+export function refreshTrade() {
+  if (!current || $('sheet').hidden || !$('sheet-live')) return;
+  render(); renderLive();
+}
+
 export function closeTrade() {
   clearInterval(liveTimer);
   $('sheet').hidden = true;
@@ -195,7 +201,7 @@ export function initTrade(stateGetter, onFull, onCalc) {
       return;
     }
     if (e.target.id === 'sheet-copy') {
-      try { await navigator.clipboard.writeText(planText()); e.target.textContent = 'Kopiert ✓'; }
+      try { await navigator.clipboard.writeText(f.raw(planText)); e.target.textContent = 'Kopiert ✓'; }
       catch { e.target.textContent = 'Kopieren nicht möglich'; }
       setTimeout(() => { const b = $('sheet-copy'); if (b) b.textContent = 'Plan kopieren'; }, 2000);
     }

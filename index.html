@@ -16,11 +16,15 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div id="ptr" class="ptr" aria-hidden="true"><span class="ptr-spin"></span><span id="ptr-text">Zum Aktualisieren ziehen</span></div>
 <main class="app">
   <header class="top">
     <div class="top-row">
       <p class="kicker">Wolf Desk</p>
-      <button type="button" id="mini-health" class="mini-health" aria-label="Datenstatus anzeigen"></button>
+      <div class="top-actions">
+        <button type="button" id="eye" class="eye-btn" aria-pressed="false" aria-label="Beträge verbergen"></button>
+        <button type="button" id="mini-health" class="mini-health" aria-label="Datenstatus anzeigen"></button>
+      </div>
     </div>
     <h1 id="page-title">Start</h1>
   </header>

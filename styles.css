@@ -366,3 +366,16 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .bt-row.head { color: var(--muted); font-size: 11px; font-weight: 700; background: rgba(255,255,255,.02); }
 .bt-row span:not(:first-child) { text-align: right; }
 .bt-row small { font-size: 11px; font-weight: 800; }
+
+/* ===== Etappe 3i: Privatmodus und Ziehen zum Aktualisieren ===== */
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.eye-btn { width: 36px; height: 32px; padding: 0; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; }
+.eye-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.eye-btn[aria-pressed="true"] { color: var(--gold); border-color: var(--gold); }
+.ptr { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 6px); z-index: 50; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 700; transform: translate(-50%, -80px); opacity: 0; pointer-events: none; }
+.ptr.show { opacity: 1; transform: translate(-50%, calc(var(--pull, 0px) * 0.5)); }
+.ptr.busy { transform: translate(-50%, 30px); color: var(--gold); transition: transform .2s; }
+.ptr-spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--gold); }
+.ptr.busy .ptr-spin { animation: ptr-spin .8s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ptr.busy .ptr-spin { animation: none; } }
