@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<title>Wolf Desk – Daten-Kern</title>
+<title>Wolf Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="styles.css">
@@ -24,6 +24,10 @@
     </div>
     <h1 id="page-title">Start</h1>
   </header>
+
+  <section data-tab="start" class="card market-card" aria-label="Marktüberblick">
+    <div id="market"></div>
+  </section>
 
   <section data-tab="start" class="card home-top" aria-label="Kontoübersicht">
     <div id="home-top"></div>
@@ -85,6 +89,11 @@
     <div id="positions"></div>
   </section>
 
+  <section data-tab="konto" class="card" aria-labelledby="h-trades">
+    <h2 id="h-trades">Abgeschlossene Trades</h2>
+    <div id="trades"></div>
+  </section>
+
   <section data-tab="risiko" class="card" id="stop-box" aria-labelledby="h-stop" hidden>
     <h2 id="h-stop">Stop-Loss manuell eintragen</h2>
     <form id="stop-form" class="addr">
@@ -124,6 +133,17 @@
     <h2 id="h-scan">Watchlist-Scan</h2>
     <button type="button" id="sig-scan" class="wide">Watchlist scannen</button>
     <div id="sig-list" class="sig-list"></div>
+  </section>
+
+  <section data-tab="signale" class="card" id="bt-card" aria-labelledby="h-bt">
+    <h2 id="h-bt">Backtest</h2>
+    <p class="empty" style="font-size:13px;margin:-6px 0 12px">Spielt den Signalgeber auf vergangenen Kerzen nach, so als hättest du jedes Signal nach Plan gehandelt.</p>
+    <label for="bt-coin" class="k">Markt</label>
+    <select id="bt-coin" class="bt-select"></select>
+    <div id="bt-styles" class="tabs modes" role="group" aria-label="Stil" style="margin-top:10px"></div>
+    <button type="button" id="bt-run" class="wide">Backtest starten</button>
+    <div id="bt-status" role="status"></div>
+    <div id="bt-out"></div>
   </section>
 
   <section data-tab="system" class="card" aria-labelledby="h-watch">

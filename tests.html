@@ -20,7 +20,10 @@ import { tests as calc } from './test-calc.js';
 import { tests as risk } from './test-risk.js';
 import { tests as perf } from './test-performance.js';
 import { tests as sig } from './test-signals.js';
-const tests = [...calc, ...risk, ...perf, ...sig];
+import { tests as trades } from './test-trades.js';
+import { tests as mkt } from './test-market.js';
+import { tests as bt } from './test-backtest.js';
+const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt];
 let pass = 0;
 const list = document.getElementById('list');
 for (const [name, fn] of tests) {

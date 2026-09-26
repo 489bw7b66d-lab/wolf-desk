@@ -1,7 +1,8 @@
 // Startseite: das Wichtigste auf einen Blick.
 import { CONFIG } from './config.js';
 import { accountRisk } from './core-positions.js';
-import { performance } from './core-performance.js';
+import { parsePortfolio } from './core-performance.js';
+import { perfSplit, change24h } from './core-trades.js';
 import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
 import { badge, esc, topReasons, seal } from './ui-parts.js';
 import * as f from './core-format.js';
@@ -9,7 +10,7 @@ import * as f from './core-format.js';
 const $ = (id) => document.getElementById(id);
 const HOT_KEY = 'wolfdesk.hotOn';
 let getState = () => ({});
-let onTrade = () => {}, onDetail = () => {};
+let onTrade = () => {}, onDetail = () => {}, onCoin = () => {};
 
 export function renderHome(s) {
   const r = accountRisk(s);
@@ -18,15 +19,20 @@ export function renderHome(s) {
     $('home-alerts').innerHTML = ''; $('home-pos').innerHTML = '';
     return;
   }
-  const perf = performance(r.summary.equity, CONFIG.startCapital);
   const upnl = s.account.positions.reduce((n, p) => n + (p.upnl || 0), 0);
+  const split = perfSplit(r.summary.equity, CONFIG.startCapital, upnl);
   const rt = r.realizedToday;
+  const day = s.portfolio ? parsePortfolio(s.portfolio).day?.pnl : null;
+  const dayPnl = day?.length ? day.at(-1)[1] - day[0][1] : null;
+  const cls = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : '');
   $('home-top').innerHTML = `<span class="k">Kontowert</span>
     <div class="home-equity">${f.usd(r.summary.equity)}</div>
-    <div class="home-perf ${perf.pnl >= 0 ? 'long' : 'short'}">${f.signedUsd(perf.pnl)} · ${perf.pct >= 0 ? '+' : ''}${f.pct(perf.pct, 1)} seit Start</div>
+    ${split ? `<div class="home-perf ${split.total >= 0 ? 'long' : 'short'}">${f.signedUsd(split.total)} · ${split.pct >= 0 ? '+' : ''}${f.pct(split.pct, 1)} gesamt</div>` : ''}
     <div class="kv" style="margin-top:14px">
-      <div><span class="k">Offener PnL</span><span class="v ${upnl >= 0 ? 'long' : 'short'}">${f.signedUsd(upnl)}</span></div>
-      <div><span class="k">Heute realisiert</span><span class="v ${rt > 0 ? 'long' : rt < 0 ? 'short' : ''}">${f.signedUsd(rt)}</span></div>
+      <div><span class="k">PnL 24 Std</span><span class="v ${cls(dayPnl)}">${f.signedUsd(dayPnl)}</span></div>
+      <div><span class="k">Heute realisiert</span><span class="v ${cls(rt)}">${f.signedUsd(rt)}</span></div>
+      <div><span class="k">Realisiert gesamt</span><span class="v ${cls(split?.realized)}">${f.signedUsd(split?.realized)}</span></div>
+      <div><span class="k">Buchgewinn offen</span><span class="v ${cls(upnl)}">${f.signedUsd(upnl)}</span></div>
       <div><span class="k">Verfügbar</span><span class="v">${f.usd(r.summary.available)}</span></div>
       <div><span class="k">Auslastung</span><span class="v">${f.pct(r.summary.usagePct)}</span></div>
     </div>`;
@@ -46,10 +52,12 @@ export function renderHome(s) {
 
   $('home-pos').innerHTML = r.positions.length ? r.positions.map((p) => {
     const st = p.evaluation.worst;
-    return `<a href="#konto" class="pos-row"><span class="dot r-${st}"></span>
-      <span class="sym">${esc(p.coin)} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small></span>
+    const ch = change24h(s.prices?.[p.coin], s.prevDay?.[p.coin]);
+    return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}"><span class="dot r-${st}"></span>
+      <span class="sym">${esc(p.coin)} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
+        <span class="pos-px">${f.price(p.mark)} <b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2)}</b></span></span>
       <span class="meta">Liq ${f.pct(p.liqDist)}</span>
-      <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span></a>`;
+      <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span></button>`;
   }).join('') : '<p class="empty">Keine offenen Positionen.</p>';
 }
 
@@ -72,9 +80,10 @@ function renderHot() {
     : hot.running ? '<p class="empty">Erster Durchlauf läuft, die Ergebnisse erscheinen nach und nach.</p>' : '';
 }
 
-export function initHome(stateGetter, openTrade, openDetail) {
+export function initHome(stateGetter, openTrade, openDetail, openCoin) {
   getState = stateGetter;
-  onTrade = openTrade; onDetail = openDetail;
+  onTrade = openTrade; onDetail = openDetail; onCoin = openCoin;
+  $('home-pos').addEventListener('click', (e) => { const b = e.target.closest('button[data-coin]'); if (b) onCoin(b.dataset.coin); });
   const markets = () => (getState().markets?.[''] || []);
   $('hot-toggle').addEventListener('click', () => {
     if (hot.running) { stopHot(); try { localStorage.setItem(HOT_KEY, '0'); } catch { /* egal */ } }

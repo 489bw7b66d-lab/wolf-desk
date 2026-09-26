@@ -10,6 +10,9 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-indicators.js`, `core-signals.js`, `core-scanner.js`, `ui-signals.js` – Signalgeber (EMA, RSI, MACD, ATR, Struktur, Scores, Trade-Plan)
 - `core-fib.js`, `core-elliott.js`, `core-universe.js`, `core-hotscan.js` – Fibonacci, Elliott-Regeln, Top-150-Liste, Live-Überwachung
 - `core-risk.js`, `core-positions.js`, `core-stops.js` – Risiko-Regeln, Zusammenführung, manuelle Stops
+- `core-market.js`, `ui-market.js` – Marktüberblick (Markt-Bias, Fear & Greed, Marktkapitalisierung, BTC-Dominanz)
+- `core-trades.js`, `ui-coin.js` – Trade-Historie aus Fills, Teilverkäufe, Markt-Blatt mit Chart in allen Zeitebenen
+- `core-backtest.js`, `ui-backtest.js` – Backtest des Signalgebers auf vergangenen Kerzen
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -22,3 +25,4 @@ Etappe 3d: Automatische Stilwahl (Scalp/Daytrade/Swing) mit Hebel-Obergrenzen, A
 Etappe 3e: Live-Kurs auf der Trade-Karte, Chartmuster-Brüche (1D/4H), Candlestick-Muster, neue Score-Balance (70 Trend + max. 30 Ereignisse)
 Etappe 3f: Live-Chart auf der Trade-Karte, Hebel manuell per Stepper, Hyperliquid-Hebelgrenzen, App-Icon (PWA)
 Etappe 3g: Watchlist bearbeitbar (max. 15), Retest-Siegel (BOS/CHoCH/Key Level), Hebel-Regler mit Farbzonen, Chart-Abstand
+Etappe 3h: Marktüberblick (Bias-Tacho, Fear & Greed, Marktkap., BTC-Dominanz, ETF-Link), PnL 24 Std und realisiert vs. Buchgewinn, Teilverkäufe je Trade, abgeschlossene Trades, Markt-Blatt mit Chart in allen Zeitebenen, Trade-Karte in Handelsreihenfolge mit Margin, Live-Kurs/24h/Entry-Abstand in der Watchlist, Backtest-Modul

@@ -5,6 +5,7 @@ import { getWatchlist } from './core-watchlist.js';
 import { priceHealth, accountHealth, streamHealth } from './core-health.js';
 import { accountSummary } from './core-calc.js';
 import { enrichPositions } from './core-positions.js';
+import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -51,15 +52,20 @@ function renderPositions(s, now) {
   if (!a) { $('positions').innerHTML = '<p class="empty">Keine Kontodaten.</p>'; return; }
   if (!a.positions.length) { $('positions').innerHTML = '<p class="empty">Aktuell keine offenen Positionen.</p>'; return; }
   const COLOR = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)' };
+  const trades = s.fills ? tradeHistory(s.fills) : null;
   $('positions').innerHTML = enrichPositions(s, now).map((p) => {
     const ev = p.evaluation;
+    const ch = change24h(s.prices?.[p.coin], s.prevDay?.[p.coin]);
+    const t = trades ? openTradeFor(trades, p.coin) : null;
     const barW = p.liqDist == null ? 0 : Math.max(3, Math.min(100, p.liqDist * 3));
     const issues = ev.checks.filter((c) => c.status !== 'ok');
-    return `<article class="pos">
+    return `<article class="pos" data-coin="${esc(p.coin)}" role="button" tabindex="0" aria-label="${esc(p.coin)}: Chart und Details öffnen">
       <div class="pos-head">
         <span><span class="coin">${esc(p.coin)}</span><span class="side ${p.side}">${p.side === 'long' ? 'LONG' : 'SHORT'} ${f.lev(p.leverage)} ${p.leverageType}</span></span>
         <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span>
       </div>
+      <div class="pos-live"><span>${f.price(p.mark)}</span><b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2) + ' 24h'}</b>
+        ${t && t.exits.length ? `<span class="pos-real">Realisiert ${f.signedUsd(t.realized)} · ${t.exits.length} Teilverk.</span>` : ''}</div>
       <div class="pos-grid">
         <div><span class="k">Einstieg</span>${f.price(p.entry)}</div>
         <div><span class="k">${p.live ? 'Live-Kurs' : 'Mark (Snapshot)'}</span>${f.price(p.mark)}</div>
@@ -76,6 +82,7 @@ function renderPositions(s, now) {
       </div>
       <div class="bar"><span style="width:${barW}%;background:${COLOR[ev.checks.find((c) => c.rule === 'Abstand Liquidation')?.status || 'ok']}"></span></div>
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
+      <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
   }).join('');
 }

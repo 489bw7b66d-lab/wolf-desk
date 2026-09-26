@@ -3,8 +3,8 @@ import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, priceVsPlan, withEntry, leverageIssues } from './core-risk.js';
 import { chartSvg } from './ui-chart.js';
-import { switchStyle } from './core-scanner.js';
-import { badge, ladder, esc, topReasons, styleRow, exitTable, fitHint, TFL, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
+import { switchStyle, getCandles } from './core-scanner.js';
+import { badge, ladder, esc, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -12,6 +12,7 @@ let getState = () => ({});
 let current = null, riskPct = null, lastFocus = null, liveTimer = null, basePlan = null;
 let manualLev = null, chartTf = null; // manueller Hebel (null = Empfehlung), gewählter Chart-Timeframe
 const RISKS = [5, 10, 15];
+const extraCandles = new Map(); // "coin|tf" -> Kerzen für Zeitebenen außerhalb des Stils (werden bei Bedarf geladen)
 
 function calc() {
   const s = getState(), p = current.plan;
@@ -36,8 +37,8 @@ function planText() {
   return [
     `${r.coin} ${p.dir === 'long' ? 'LONG' : 'SHORT'} (${CONFIG.signals.modes[r.mode].label})`,
     p.liveEntry ? `Einstieg: ${f.price(p.entry)} (Live-Kurs)` : `Einstieg: ${f.price(p.zone[0])} – ${f.price(p.zone[1])}`,
-    `Stop: ${f.price(p.stop)}`,
     ...(exits ? exits.rows.map((x) => `${x.label} (${x.pct} %): ${x.price != null ? f.price(x.price) : 'Trailing'} · ${f.size(x.qty)} Stk.`) : p.tps.map((tp, i) => `TP${i + 1}: ${f.price(tp)}`)),
+    `Stop-Loss: ${f.price(p.stop)}`,
     size ? `Größe: ${f.size(size.size)} (${riskPct} % Risiko = ${f.usd(size.riskAmt)})` : '',
     lev ? `Hebel: ${lev}×${manualLev ? ' (manuell)' : ''} · Margin: ${f.usd(margin)}` : '',
     `Runner: ${CONFIG.runnerNote}`,
@@ -56,12 +57,12 @@ function render() {
     </div>
     ${seal(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
-    ${r.candles ? `<div class="chart-tfs" role="group" aria-label="Chart-Zeitraum">${r.tfs.map((tf) => `<button type="button" data-ctf="${tf}" aria-pressed="${tf === chartTf}">${TFL[tf]}</button>`).join('')}</div>
-    <div id="sheet-chart" class="chart-box"></div>` : ''}
+    <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((tf) => `<button type="button" data-ctf="${tf}" aria-pressed="${tf === chartTf}">${TFL[tf]}</button>`).join('')}</div>
+    <div id="sheet-chart" class="chart-box"></div>
     ${styleRow(r, CONFIG.signals.modes)}
     ${topReasons(r).length ? `<p class="reasons-line">${topReasons(r).map(esc).join(' · ')}</p>` : ''}
     ${p.liveEntry ? `<p class="plan-mode"><span class="chip">Einstieg = Live-Kurs ${f.price(p.entry)}</span></p>` : ''}
-    ${ladder(p)}
+    ${ladder(p, size ? `<div class="lvl lvl-margin"><span class="dot" style="background:var(--gold)"></span><span class="lbl">Margin</span><span class="px" id="ladder-margin">${margin ? f.usd(margin) : 'Kapital reicht nicht'}</span><span class="pc muted" id="ladder-lev">${lev ? lev + '× · ' : ''}Position ${f.usd(size.notional)}</span></div>` : '')}
     <h3 class="sub-h">Risiko pro Trade</h3>
     <div class="tabs risk-chips" role="group" aria-label="Risiko pro Trade">
       ${RISKS.map((x) => `<button type="button" data-risk="${x}" aria-pressed="${x === riskPct}">${x} %</button>`).join('')}
@@ -101,7 +102,18 @@ function renderLive() {
   const s = getState(), p = current.plan;
   const px = s.prices?.[current.coin], ts = s.priceTs?.[current.coin];
   const ch = $('sheet-chart');
-  if (ch && current.candles?.[chartTf]) ch.innerHTML = chartSvg({ candles: current.candles[chartTf], tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current) });
+  if (ch) {
+    const cs = current.candles?.[chartTf] || extraCandles.get(current.coin + '|' + chartTf);
+    if (cs) ch.innerHTML = chartSvg({ candles: cs, tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current) });
+    else if (!ch.dataset.loading) {
+      ch.dataset.loading = '1';
+      ch.innerHTML = `<p class="empty">Lade ${TFL[chartTf]}-Kerzen …</p>`;
+      const coin = current.coin, tf = chartTf;
+      getCandles(coin, tf).then((c) => extraCandles.set(coin + '|' + tf, c.slice(-120)))
+        .catch(() => { ch.innerHTML = '<p class="empty">Kerzen konnten nicht geladen werden.</p>'; })
+        .finally(() => { delete ch.dataset.loading; });
+    }
+  }
   const age = ts ? Date.now() - ts : null;
   const pos = priceVsPlan(basePlan || p, px);
   const cls = pos ? { zone: 'ok', chasing: 'warn', early: 'warn', invalid: 'bad' }[pos.state] : 'warn';
@@ -148,7 +160,11 @@ export function initTrade(stateGetter, onFull, onCalc) {
     if (!e.target.classList.contains('lev-range')) return;
     manualLev = Number(e.target.value);
     const { levCtx } = calc();
-    updateLevOut($('sheet-body'), manualLev, levCtx, (m) => { $('sheet-margin').textContent = f.usd(m); });
+    updateLevOut($('sheet-body'), manualLev, levCtx, (m) => {
+      $('sheet-margin').textContent = f.usd(m);
+      if ($('ladder-margin')) $('ladder-margin').textContent = f.usd(m);
+      if ($('ladder-lev')) $('ladder-lev').textContent = `${manualLev}× · Position ${f.usd(levCtx.notional)}`;
+    });
   });
   $('sheet-close').addEventListener('click', closeTrade);
   $('sheet').addEventListener('click', (e) => { if (e.target.classList.contains('sheet-backdrop')) closeTrade(); });
@@ -161,6 +177,7 @@ export function initTrade(stateGetter, onFull, onCalc) {
     const cb = e.target.closest('button[data-ctf]');
     if (cb) {
       chartTf = cb.dataset.ctf;
+      if ($('sheet-chart')) delete $('sheet-chart').dataset.loading;
       $('sheet-body').querySelectorAll('button[data-ctf]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.ctf === chartTf)));
       renderLive(); return;
     }

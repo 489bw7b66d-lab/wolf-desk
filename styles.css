@@ -297,3 +297,72 @@ html, body { overflow-x: hidden; }
 .lev-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .lev-why { margin: 8px 0 10px; font-size: 13px; line-height: 1.4; }
 .lev-why.ok { color: var(--ok); } .lev-why.warn { color: var(--warn); } .lev-why.bad { color: var(--bad); }
+
+/* ===== Etappe 3h ===== */
+/* Marktüberblick */
+.market-card { padding: 16px 16px 14px; }
+.mkt-gauges { display: grid; grid-template-columns: 1.25fr 1fr; gap: 10px; align-items: end; }
+.mkt-gauges > div { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-width: 0; }
+.gauge { width: 100%; max-width: 190px; height: auto; display: block; }
+.gauge.small { max-width: 150px; }
+.mkt-label { font-size: 16px; font-weight: 800; margin-top: 2px; }
+.mkt-gauges .k { font-size: 11px; }
+.mkt-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.mkt-stats div { display: flex; flex-direction: column; gap: 2px; }
+.mkt-stats b { font-size: 17px; font-weight: 800; }
+.mkt-stats small { font-size: 12px; font-weight: 700; }
+.mkt-etf { display: inline-block; margin-top: 12px; color: var(--gold); font-size: 13px; font-weight: 700; text-decoration: none; }
+
+/* Positionen auf der Startseite: jetzt antippbar */
+button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; text-align: left; font: 600 15px var(--font); color: var(--text); }
+#home-pos button.pos-row:first-child { border-top: 0; }
+.pos-row .pos-px { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 1px; }
+.pos-row .pos-px b { font-weight: 800; margin-left: 4px; }
+.pos { cursor: pointer; }
+.pos-live { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 14px; font-weight: 700; margin-top: -4px; }
+.pos-live b { font-size: 13px; }
+.pos-real { color: var(--gold); font-size: 12px; font-weight: 700; }
+.pos-open { color: var(--gold); font-size: 13px; font-weight: 700; }
+
+/* Konto: Anteil realisiert / Buchgewinn */
+.split-bar { height: 6px; border-radius: 3px; background: rgba(227,176,75,.35); margin-top: 12px; overflow: hidden; }
+.split-bar span { display: block; height: 100%; background: var(--gold); }
+
+/* Abgeschlossene Trades */
+.trade { border-top: 1px solid var(--line); }
+.trade:first-child { border-top: 0; }
+.trade summary { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; min-height: 48px; cursor: pointer; list-style: none; }
+.trade summary::-webkit-details-marker { display: none; }
+.trade summary .sym { font-weight: 800; }
+.trade summary small { font-size: 11px; font-weight: 800; margin-left: 2px; }
+.trade summary .meta { color: var(--muted); font-size: 12px; }
+.trade[open] { padding-bottom: 12px; }
+.exit.part .exit-row { grid-template-columns: 34px 1fr 1fr 1fr 78px; }
+
+/* Markt-Blatt */
+.coin-px { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.coin-px .chg { font-size: 15px; font-weight: 800; }
+.coin-px .chg small { font-size: 11px; color: var(--muted); font-weight: 600; }
+#coin-pos .kv { margin: 14px 0 4px; }
+#coin-pos .v { font-size: 17px; }
+.lvl-margin { border-top: 1px dashed var(--line); }
+
+/* Signale-Watchlist mit Live-Kurs */
+.sig-row .wl-live { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.sig-row .wl-live b { font-weight: 800; }
+.sig-row .wl-right { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 8px; max-width: 60%; }
+.sig-row .wl-dist { flex-basis: 100%; text-align: right; font-size: 12px; font-weight: 700; }
+
+/* Backtest */
+.bt-select { width: 100%; margin-top: 6px; }
+#bt-styles { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 10px 0 0; }
+.bt-verdict { margin: 0 0 14px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); font-size: 14px; line-height: 1.45; font-weight: 600; }
+.bt-verdict.ok { border-color: rgba(74,222,155,.5); color: var(--ok); }
+.bt-verdict.warn { border-color: rgba(242,181,68,.5); color: var(--warn); }
+.bt-verdict.bad { border-color: rgba(255,112,112,.6); color: var(--bad); }
+.bt-table { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: 13px; }
+.bt-row { display: grid; grid-template-columns: 1.6fr .7fr .8fr .8fr; gap: 6px; padding: 9px 12px; border-top: 1px solid var(--line); align-items: center; }
+.bt-row:first-child { border-top: 0; }
+.bt-row.head { color: var(--muted); font-size: 11px; font-weight: 700; background: rgba(255,255,255,.02); }
+.bt-row span:not(:first-child) { text-align: right; }
+.bt-row small { font-size: 11px; font-weight: 800; }

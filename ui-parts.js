@@ -4,6 +4,7 @@ import { levStatus } from './core-risk.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const TFL = { '5m': '5M', '15m': '15M', '1h': '1H', '4h': '4H', '1d': '1D' };
+export const CHART_TFS = ['5m', '15m', '1h', '4h', '1d']; // alle Zeitebenen zum Umschalten im Chart
 const DIR = { long: ['LONG', 'long'], short: ['SHORT', 'short'], neutral: ['KEIN SIGNAL', 'muted'] };
 
 export function badge(dir) {
@@ -14,16 +15,15 @@ export function badge(dir) {
 const pctFrom = (from, to) => ((to - from) / from) * 100;
 const signedPct = (v) => (v >= 0 ? '+' : '−') + f.pct(Math.abs(v), 2);
 
-// Preisleiter: Ziele oben, Stop unten (bei Short umgekehrt)
-export function ladder(p) {
-  const row = (label, price, cls, extra) => `<div class="lvl"><span class="dot" style="background:var(--${cls})"></span><span class="lbl">${label}</span><span class="px">${price}</span><span class="pc ${cls === 'gold' ? 'muted' : cls === 'ok' ? 'long' : 'short'}">${extra}</span></div>`;
+// Preisleiter in Handelsreihenfolge: Einstieg, dann TP1 bis TP4, zum Schluss der Stop-Loss (Long und Short gleich)
+export function ladder(p, extra = '') {
+  const row = (label, price, cls, info) => `<div class="lvl"><span class="dot" style="background:var(--${cls})"></span><span class="lbl">${label}</span><span class="px">${price}</span><span class="pc ${cls === 'gold' ? 'muted' : cls === 'ok' ? 'long' : 'short'}">${info}</span></div>`;
   const levels = [
-    row('Stop-Loss', f.price(p.stop), 'bad', `${signedPct(pctFrom(p.entry, p.stop))} · ${esc(p.stopLabel)}`),
     row('Einstieg', `${f.price(p.zone[0])} – ${f.price(p.zone[1])}`, 'gold', p.method === 'fib' ? 'Fib 0,5–0,618' : 'Zone'),
     ...p.tps.map((tp, i) => row(`TP${i + 1}`, f.price(tp), 'ok', `${signedPct(pctFrom(p.entry, tp))}${p.method === 'fib' ? ' · ' + esc(p.tpLabels[i]) : ''} · ${(Math.abs(tp - p.entry) / p.R).toFixed(1).replace('.', ',')}R`)),
+    row('Stop-Loss', f.price(p.stop), 'bad', `${signedPct(pctFrom(p.entry, p.stop))} · ${esc(p.stopLabel)}`),
   ];
-  if (p.dir === 'long') levels.reverse();
-  return `<div class="ladder">${levels.join('')}</div>`;
+  return `<div class="ladder">${levels.join('')}${extra}</div>`;
 }
 
 // Gründe für ein Signal kompakt: gleiche Ereignisse über Timeframes zusammenfassen

@@ -1,7 +1,8 @@
 // Performance-Anzeige: Startkapital vs. Kontowert, Verlauf, Drawdown.
 import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
-import { parsePortfolio, performance, equityCurve, maxDrawdown } from './core-performance.js';
+import { parsePortfolio, equityCurve, maxDrawdown } from './core-performance.js';
+import { perfSplit, tradeHistory, closedTrades } from './core-trades.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -38,30 +39,29 @@ export function initPerformance(onChange) {
 
 export function renderPerformance(s) {
   const a = s.account;
+  renderTrades(s);
   if (!a) { $('perf').innerHTML = '<p class="empty">Noch keine Kontodaten.</p>'; $('perf-chart').innerHTML = ''; return; }
   const equity = accountSummary(a, CONFIG.accountMode).equity;
-  const perf = performance(equity, CONFIG.startCapital);
-  const cls = perf.pnl >= 0 ? 'long' : 'short';
-  $('perf').innerHTML = `<div class="kv">
-    <div><span class="k">Startkapital</span><span class="v">${f.usd(CONFIG.startCapital)}</span></div>
-    <div><span class="k">Kontowert</span><span class="v">${f.usd(equity)}</span></div>
-    <div><span class="k">Gewinn</span><span class="v ${cls}">${f.signedUsd(perf.pnl)}</span></div>
-    <div><span class="k">Performance</span><span class="v big ${cls}">${perf.pct >= 0 ? '+' : ''}${f.pct(perf.pct, 2)}</span></div>
-  </div>`;
+  const upnl = a.positions.reduce((n, p) => n + (p.upnl || 0), 0);
+  const sp = perfSplit(equity, CONFIG.startCapital, upnl);
+  const cls = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : '');
+  // Anteil realisiert / Buchgewinn als Balken (nur wenn beide positiv, sonst nur Zahlen)
+  const bar = sp && sp.realized > 0 && sp.book > 0
+    ? `<div class="split-bar" aria-hidden="true"><span style="width:${(sp.realized / (sp.realized + sp.book)) * 100}%"></span></div>` : '';
+  $('perf').innerHTML = sp ? `<div class="kv">
+    <div><span class="k">Gesamtperformance</span><span class="v big ${cls(sp.total)}">${sp.pct >= 0 ? '+' : ''}${f.pct(sp.pct, 2)}</span></div>
+    <div><span class="k">Gewinn gesamt</span><span class="v ${cls(sp.total)}" style="margin-top:6px">${f.signedUsd(sp.total)}</span></div>
+    <div><span class="k">Realisiert</span><span class="v ${cls(sp.realized)}">${f.signedUsd(sp.realized)}</span></div>
+    <div><span class="k">Buchgewinn (offen)</span><span class="v ${cls(sp.book)}">${f.signedUsd(sp.book)}</span></div>
+  </div>${bar}` : '<p class="empty">Startkapital fehlt in der Konfiguration.</p>';
 
   const all = s.portfolio ? parsePortfolio(s.portfolio) : null;
   const life = all?.allTime?.pnl;
-  if (life?.length) {
-    const lifePnl = life.at(-1)[1];
-    const since = new Date(life[0][0]).toLocaleDateString('de-DE');
-    const diff = perf.pnl - lifePnl;
-    $('perf').innerHTML += `<div class="kv" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
-      <div><span class="k">PnL seit Kontoeröffnung</span><span class="v ${lifePnl >= 0 ? 'long' : 'short'}">${f.signedUsd(lifePnl)}</span></div>
-      <div><span class="k">Daten ab</span><span class="v">${since}</span></div>
-    </div>
-    <p class="empty" style="margin-top:10px">${Math.abs(diff) > Math.max(25, Math.abs(lifePnl) * 0.05)
-      ? `Abweichung zur Startkapital-Rechnung: ${f.signedUsd(diff)}. Das kann an weiteren Ein- oder Auszahlungen liegen oder an Märkten, die Hyperliquid hier nicht mitzählt.`
-      : 'Stimmt mit der Rechnung ab Startkapital überein.'}</p>`;
+  if (life?.length && sp) {
+    const diff = sp.total - life.at(-1)[1];
+    if (Math.abs(diff) > Math.max(25, Math.abs(life.at(-1)[1]) * 0.05)) {
+      $('perf').innerHTML += `<p class="empty" style="margin-top:10px">Hyperliquid meldet ${f.signedUsd(diff)} Abweichung zur eigenen Rechnung. Das kann an weiteren Ein- oder Auszahlungen liegen.</p>`;
+    }
   }
   const data = all ? all[period] : null;
   if (!data) { $('perf-chart').innerHTML = `<p class="empty">${s.portfolioError ? 'Verlauf konnte nicht geladen werden.' : 'Verlauf wird geladen …'}</p>`; return; }
@@ -71,4 +71,28 @@ export function renderPerformance(s) {
     <div><span class="k">Ergebnis ${PERIODS[period]}</span><span class="v ${periodPnl >= 0 ? 'long' : 'short'}">${f.signedUsd(periodPnl)}</span></div>
     <div><span class="k">Max. Drawdown</span><span class="v">${f.pct(maxDrawdown(curve.map((c) => c[1])))}</span></div>
   </div>`;
+}
+
+// Abgeschlossene Trades der letzten 90 Tage mit Teilverkäufen
+const dt = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+function renderTrades(s) {
+  const box = $('trades');
+  if (!box) return;
+  if (!s.fills) { box.innerHTML = `<p class="empty">${s.fillsError ? 'Trades konnten nicht geladen werden.' : 'Trades werden geladen …'}</p>`; return; }
+  const list = closedTrades(tradeHistory(s.fills), 15);
+  if (!list.length) { box.innerHTML = '<p class="empty">Keine abgeschlossenen Trades in den letzten 90 Tagen.</p>'; return; }
+  const open = new Set([...box.querySelectorAll('details[open]')].map((d) => d.dataset.key));
+  box.innerHTML = list.map((t) => {
+    const key = t.coin + t.closedAt;
+    return `<details class="trade" data-key="${key}"${open.has(key) ? ' open' : ''}>
+      <summary><span class="sym">${t.coin} <small class="${t.side}">${t.side === 'long' ? 'L' : 'S'}</small></span>
+        <span class="meta">${dt(t.openedAt)} – ${dt(t.closedAt)} · ${t.exits.length} Verk.</span>
+        <b class="${t.realized >= 0 ? 'long' : 'short'}">${f.signedUsd(t.realized)}</b></summary>
+      <div class="exit part" role="table" aria-label="Verkäufe ${t.coin}">
+        <div class="exit-row head" role="row"><span>Nr.</span><span>Kurs</span><span>Stück</span><span>PnL</span><span>Datum</span></div>
+        ${t.exits.map((x, i) => `<div class="exit-row" role="row"><span><b>${i + 1}.</b></span><span>${f.price(x.px)}</span><span>${f.size(x.sz)}</span><span class="${x.pnl >= 0 ? 'long' : 'short'}">${f.usdShort(x.pnl)}</span><span class="muted">${dt(x.time)}</span></div>`).join('')}
+      </div>
+      <p class="empty" style="font-size:12px;margin:6px 0 0">Einstieg Ø ${t.entryAvg ? f.price(t.entryAvg) : 'vor dem Zeitraum'} · Gebühren ${f.usd(t.fees)}</p>
+    </details>`;
+  }).join('');
 }

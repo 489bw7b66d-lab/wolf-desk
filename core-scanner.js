@@ -52,7 +52,7 @@ export async function getMarketCtx() {
       const name = dex && !u.name.startsWith(dex + ':') ? `${dex}:${u.name}` : u.name;
       const c = ctxs?.[j] || {};
       map[name] = Number(c.dayNtlVlm);
-      ctx[name] = { volume: Number(c.dayNtlVlm), oi: Number(c.openInterest) * Number(c.markPx), price: Number(c.markPx), delisted: !!u.isDelisted };
+      ctx[name] = { volume: Number(c.dayNtlVlm), oi: Number(c.openInterest) * Number(c.markPx), price: Number(c.markPx), prevDay: Number(c.prevDayPx), delisted: !!u.isDelisted };
     });
   });
   volumes = { at: Date.now(), map, ctx };
@@ -61,11 +61,23 @@ export async function getMarketCtx() {
 
 // Komplette Analyse eines Marktes. Der Tageschart wird immer mitgeladen (200er Tageslinie, Golden/Death Cross).
 export async function analyzeMarket(coin, modeKey, background = false) {
-  const mode = CONFIG.signals.modes[modeKey];
-  const tfs = mode.tfs.includes('1d') ? mode.tfs : [...mode.tfs, '1d'];
+  const tfs = modeTfs(modeKey);
   const series = [];
   for (const tf of tfs) series.push(await getCandles(coin, tf, background)); // nacheinander, schont das Limit
   const vols = await getMarketCtx().catch(() => ({ map: {} }));
+  return signalFromSeries(coin, modeKey, series, vols.map[coin]);
+}
+
+// Timeframes eines Stils plus Tageschart (falls nicht schon dabei)
+export function modeTfs(modeKey) {
+  const t = CONFIG.signals.modes[modeKey].tfs;
+  return t.includes('1d') ? t : [...t, '1d'];
+}
+
+// Signal aus fertigen Kerzenreihen (Reihenfolge wie modeTfs). Ohne Netzwerk, daher auch für den Backtest nutzbar.
+export function signalFromSeries(coin, modeKey, series, volume) {
+  const mode = CONFIG.signals.modes[modeKey];
+  const tfs = modeTfs(modeKey);
   mode.tfs.forEach((tf, i) => {
     if (series[i].length < 60) throw new Error(`Zu wenig Kursdaten auf ${tf} (${series[i].length} Kerzen)`);
   });
@@ -83,7 +95,6 @@ export async function analyzeMarket(coin, modeKey, background = false) {
   const setup = analyses[1];
   const levels = keyLevels(analyses.slice(0, 2), setup.close);
   const plan = tradePlan(dir, setup, levels);
-  const volume = vols.map[coin];
   const warnings = [];
   if (Number.isFinite(volume) && volume < CONFIG.signals.minDayVolumeUsd) warnings.push({ type: 'liq', text: 'Geringe Liquidität, Indikatoren weniger aussagekräftig' });
   if (analyses.some((a) => a.ema200 == null)) warnings.push({ type: 'data', text: 'Kurze Historie, EMA 200 nicht auf allen Timeframes berechenbar' });

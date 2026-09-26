@@ -14,7 +14,8 @@ export function liveCandle(candles, tf, price) {
   return live;
 }
 
-export function chartSvg({ candles, tf, plan, price, events = [], confirms = [] }) {
+// lines: zusätzliche Linien [{ price, col, label, dash }], z. B. Einstieg, Stop und Liquidation einer offenen Position
+export function chartSvg({ candles, tf, plan, price, events = [], confirms = [], lines = [] }) {
   if (!candles?.length) return '<p class="empty">Keine Kursdaten für den Chart.</p>';
   const cs = candles.slice(-SHOW);
   const lc = liveCandle(candles, tf, price);
@@ -24,6 +25,7 @@ export function chartSvg({ candles, tf, plan, price, events = [], confirms = [] 
   // Preisbereich: Kerzen plus Stop und TP2 (weitere Ziele werden am Rand angezeigt)
   let lo = Math.min(...all.map((c) => c.l)), hi = Math.max(...all.map((c) => c.h));
   if (plan) { lo = Math.min(lo, plan.stop, plan.zone[0], plan.tps[1]); hi = Math.max(hi, plan.stop, plan.zone[1], plan.tps[1]); }
+  lines.filter((l) => l.fit !== false && l.price > 0).forEach((l) => { lo = Math.min(lo, l.price); hi = Math.max(hi, l.price); });
   const span = hi - lo || 1; lo -= span * 0.04; hi += span * 0.04;
   const y = (p) => PAD_T + (1 - (p - lo) / (hi - lo)) * (H - PAD_T - PAD_B);
   const inRange = (p) => p >= lo && p <= hi;
@@ -50,6 +52,7 @@ export function chartSvg({ candles, tf, plan, price, events = [], confirms = [] 
     const off = plan.tps.map((tp, i) => (!inRange(tp) ? `TP${i + 1}` : null)).filter(Boolean);
     if (off.length) marks += `<text x="6" y="${plan.dir === 'long' ? 14 : H - PAD_B - 4}" text-anchor="start" fill="var(--ok)" font-size="9" font-weight="700">${off.join(' ')} ${plan.dir === 'long' ? '↑' : '↓'}</text>`;
   }
+  lines.forEach((l) => { if (l.price > 0) marks += line(l.price, l.col, l.label, l.dash || ''); });
   events.filter((e) => e.level && e.tf === tf).forEach((e) => { marks += line(e.level, 'var(--muted)', 'Bruch', '1 3'); });
   confirms.filter((c) => c.tf === tf).forEach((c) => { marks += line(c.level, 'var(--gold)', '🛡 Retest', '1 2'); });
   if (price && inRange(price)) {

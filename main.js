@@ -6,11 +6,15 @@ import { startStream } from './core-stream.js';
 import { getState, update, subscribe, logError } from './core-store.js';
 import { render } from './ui-testpage.js';
 import { initRisk, renderRisk, setCalc } from './ui-risk.js';
-import { initSignals, showDetail } from './ui-signals.js';
+import { initSignals, showDetail, analyze, renderWatchLive } from './ui-signals.js';
 import { initHome, renderHome } from './ui-home.js';
 import { initTrade, openTrade } from './ui-trade.js';
 import { streamHealth, accountHealth } from './core-health.js';
 import { initPerformance, renderPerformance } from './ui-performance.js';
+import { initMarket } from './ui-market.js';
+import { initCoin, openCoin } from './ui-coin.js';
+import { initBacktest } from './ui-backtest.js';
+import { getMarketCtx } from './core-scanner.js';
 
 const ADDR_KEY = 'wolfdesk.address';
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -32,9 +36,10 @@ document.getElementById('addr-form').addEventListener('submit', (e) => {
   try { localStorage.setItem(ADDR_KEY, address); } catch { /* ignorieren */ }
   msg.textContent = 'Gespeichert. Konto wird geladen …';
   setTimeout(() => { location.hash = 'start'; }, 800);
-  update({ account: null, accountTs: 0, accountError: null });
+  update({ account: null, accountTs: 0, accountError: null, fills: null });
   refreshAccount();
   refreshPortfolio();
+  refreshFills();
 });
 
 document.getElementById('market-filter').addEventListener('input', () => renderAll(getState()));
@@ -59,6 +64,28 @@ async function refreshPortfolio() {
     update({ portfolioError: e.message });
     logError('Performance', e);
   }
+}
+
+// Ausführungen der letzten 90 Tage (für Teilverkäufe und abgeschlossene Trades)
+async function refreshFills() {
+  if (!address) return;
+  try {
+    const fills = await hl.fillsSince(address, Date.now() - 90 * 864e5);
+    update({ fills: Array.isArray(fills) ? fills : [], fillsError: null });
+  } catch (e) {
+    update({ fillsError: e.message });
+    logError('Trades', e);
+  }
+}
+
+// Vortageskurse aller Märkte (für die 24h-Veränderung)
+async function refreshPrevDay() {
+  try {
+    const { ctx } = await getMarketCtx();
+    const prevDay = {};
+    Object.entries(ctx || {}).forEach(([k, v]) => { if (v.prevDay > 0) prevDay[k] = v.prevDay; });
+    update({ prevDay });
+  } catch (e) { logError('24h-Daten', e); }
 }
 
 async function loadMarkets() {
@@ -99,16 +126,31 @@ function renderMiniHealth(s) {
   document.getElementById('mini-health').innerHTML = `<span class="dot s-${worst}"></span>${worst === 'ok' ? 'Live' : worst === 'fehler' ? 'Störung' : 'Prüfen'}`;
 }
 
-const renderAll = (s) => { render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderMiniHealth(s); };
+// Während der Finger auf dem Bildschirm liegt, nicht neu zeichnen (sonst gehen Tipps auf sich bewegende Zeilen verloren)
+let touching = false, touchTimer = null;
+document.addEventListener('touchstart', () => { touching = true; clearTimeout(touchTimer); }, { passive: true });
+['touchend', 'touchcancel'].forEach((ev) => document.addEventListener(ev, () => { clearTimeout(touchTimer); touchTimer = setTimeout(() => { touching = false; }, 350); }, { passive: true }));
+const renderAll = (s) => {
+  if (touching) return; 
+  render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderWatchLive(s); renderMiniHealth(s);
+};
 const openFull = (r) => { location.hash = 'signale'; setTimeout(() => showDetail(r), 50); };
 const openCalc = (r) => {
   setCalc(r.coin, r.plan.entry, r.plan.stop, r.plan.tps, r.mode);
   location.hash = 'risiko';
   setTimeout(() => document.getElementById('calc').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
 };
+const openAnalyze = (coin) => { location.hash = 'signale'; setTimeout(() => analyze(coin), 50); };
 initTrade(getState, openFull, openCalc);
-initSignals(getState, openTrade);
-initHome(getState, openTrade, openFull);
+initCoin(getState, openAnalyze);
+initSignals(getState, openTrade, openCoin);
+initHome(getState, openTrade, openFull, openCoin);
+initMarket();
+initBacktest();
+// Positionen im Konto: Tipp öffnet das Markt-Blatt mit Chart und Teilverkäufen
+const posBox = document.getElementById('positions');
+posBox.addEventListener('click', (e) => { const a = e.target.closest('[data-coin]'); if (a) openCoin(a.dataset.coin); });
+posBox.addEventListener('keydown', (e) => { const a = e.target.closest('[data-coin]'); if (a && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCoin(a.dataset.coin); } });
 initRisk(getState);
 initPerformance(() => renderAll(getState()));
 subscribe(renderAll);
@@ -119,7 +161,11 @@ loadMarkets();
 startStream();
 refreshAccount();
 refreshPortfolio();
+refreshFills();
+refreshPrevDay();
 setInterval(refreshAccount, CONFIG.refresh.accountMs);
 setInterval(refreshPortfolio, CONFIG.refresh.performanceMs);
+setInterval(refreshFills, CONFIG.refresh.performanceMs);
+setInterval(refreshPrevDay, 5 * 60e3);
 setInterval(() => renderAll(getState()), 1000); // Alter der Daten live mitzählen
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAccount(); });
