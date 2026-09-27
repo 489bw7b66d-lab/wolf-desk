@@ -21,28 +21,41 @@ export function targetOrders(p, orders) {
 }
 
 // p: { side, entry, stop, liq, mark }, orders: offene Orders, exits: Teilverkäufe [{ px }], exitPlan aus der Konfiguration
-export function tradePath(p, orders, exits, exitPlan) {
+// targets (optional): { tps: [...], source, label } aus Plan oder Signal; ersetzt dann die Orders als Quelle
+export function tradePath(p, orders, exits, exitPlan, targets = null) {
   if (!p || !(p.entry > 0)) return null;
   const long = p.side === 'long', sg = long ? 1 : -1;
   const n = plannedTargets(exitPlan);
   if (!n) return null;
   const inProfit = (x) => (x - p.entry) * sg > 0;
   const byDir = (a, b) => (a - b) * sg;
-  const filled = [...new Set((exits || []).map((e) => e.px).filter((x) => x > 0 && inProfit(x)))].sort(byDir);
-  const open = [...new Set(targetOrders(p, orders))].filter((x) => !filled.length || (x - filled.at(-1)) * sg > 0).sort(byDir);
-  const tps = [...filled.map((price) => ({ price, reached: true })), ...open.map((price) => ({ price, reached: false }))].slice(0, n)
-    .map((t, i) => ({ ...t, n: i + 1 }));
+  const sold = (exits || []).map((e) => e.px).filter((x) => x > 0 && inProfit(x));
+  let tps;
+  if (targets?.tps?.length) {
+    // Feste Ziele (Plan/Signal): erreicht, wenn du dort (bis 0,5 % davor) schon verkauft hast
+    tps = [...targets.tps].filter((x) => x > 0 && inProfit(x)).sort(byDir).slice(0, n)
+      .map((price, i) => ({ price, n: i + 1, reached: sold.some((x) => (x - price * (1 - 0.005 * sg)) * sg >= 0) }));
+  } else {
+    const filled = [...new Set(sold)].sort(byDir);
+    const open = [...new Set(targetOrders(p, orders))].filter((x) => !filled.length || (x - filled.at(-1)) * sg > 0).sort(byDir);
+    tps = [...filled.map((price) => ({ price, reached: true })), ...open.map((price) => ({ price, reached: false }))].slice(0, n)
+      .map((t, i) => ({ ...t, n: i + 1 }));
+  }
   if (!tps.length) return { empty: true, planned: n };
 
-  // Linkes Ende: Stop; ohne Stop die Liquidation (gefährlich), sonst ein Stück vor dem Einstieg
+  // Linkes Ende: der Punkt, der am weitesten auf der Verlustseite liegt (Stop, bei Stop im Gewinn der Einstieg;
+  // ohne Stop die Liquidation, sonst ein Stück vor dem Einstieg)
   const last = tps.at(-1).price;
-  const left = p.stop != null ? p.stop : p.liq != null ? p.liq : p.entry - (last - p.entry) * 0.3;
+  const base = p.stop != null ? p.stop : p.liq != null ? p.liq : p.entry - (last - p.entry) * 0.3;
+  const left = (base - p.entry) * sg < 0 ? base : p.entry;
   const span = (last - left) * sg;
   if (!(span > 0)) return null;
   const frac = (x) => Math.max(0, Math.min(1, ((x - left) * sg) / span));
   const next = tps.find((t) => !t.reached && (p.mark == null || (t.price - p.mark) * sg > 0)) || null;
   return {
     left: { price: left, kind: p.stop != null ? 'stop' : p.liq != null ? 'liq' : 'none', at: 0 },
+    stop: p.stop != null ? { price: p.stop, at: frac(p.stop), inProfit: (p.stop - p.entry) * sg >= 0 } : null,
+    source: targets?.tps?.length ? targets : { source: 'orders', label: 'aus deinen Take-Profit-Orders' },
     entry: { price: p.entry, at: frac(p.entry) },
     tps: tps.map((t) => ({ ...t, at: frac(t.price), passed: t.reached || (p.mark != null && (p.mark - t.price) * sg >= 0) })),
     mark: p.mark != null ? { price: p.mark, at: frac(p.mark), beyond: (p.mark - last) * sg > 0, below: (p.mark - left) * sg < 0 } : null,

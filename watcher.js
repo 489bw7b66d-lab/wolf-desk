@@ -11,8 +11,10 @@ import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.
 import { getUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText } from './core-alerts.js';
 import { viewFor, alignment, viewEvents } from './core-views.js';
+import { planFor, signalFor, targetsFor, targetHits } from './core-plans.js';
+import { tradeHistory, openTradeFor } from './core-trades.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
 // Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
@@ -32,7 +34,7 @@ async function send(text, chat = CHAT) {
 async function loadState() {
   let st = {};
   try { st = JSON.parse(await readFile(STATE_FILE, 'utf8')); } catch { /* erster Lauf */ }
-  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, ...st };
+  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, tpHits: {}, ...st };
 }
 
 async function marketNames() {
@@ -205,6 +207,28 @@ async function main() {
     state.journal.push(journalEntry(r, a, now, al));
     log('Signal gemeldet:', a.key, a.score);
   }
+  // Ziele deiner offenen Positionen (eigener Plan oder zugehöriges Signal) → privat an dich
+  if (risk?.positions?.length) {
+    try {
+      const trades = tradeHistory(await hl.fillsSince(WALLET, now - 30 * 864e5));
+      const n = CONFIG.exitPlan.filter((x) => /^TP\d/.test(x.label) && x.pct > 0).length;
+      for (const p of risk.positions) {
+        const t = openTradeFor(trades, p.coin);
+        const plan = planFor(CONFIG.plans, p.coin, p.side, t?.openedAt);
+        const signal = signalFor(state.journal, p.coin, p.side, t?.openedAt);
+        const targets = targetsFor({ plan, signal });
+        if (!targets) continue;
+        const tps = targets.tps.slice(0, n);
+        const key = t?.openedAt || plan?.at || signal?.at;
+        const hits = targetHits(p.coin, p.side, tps, prices[p.coin] || p.mark, key, state.tpHits);
+        if (!hits.length) continue;
+        await send(targetText(p.coin, hits, tps.length));
+        hits.forEach((h) => { state.tpHits[h.key] = now; });
+      }
+    } catch (err) { log('Ziele prüfen:', err.message); }
+  }
+  Object.keys(state.tpHits).forEach((k) => { if (now - state.tpHits[k] > 60 * 864e5) delete state.tpHits[k]; });
+
   // Deine Marken: Bruch, Bestätigung oder Ziel erreicht → privat an dich
   for (const [coin, v] of Object.entries(CONFIG.views || {})) {
     if (!viewFor(CONFIG.views, coin, now)) continue;

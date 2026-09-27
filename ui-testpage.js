@@ -7,6 +7,8 @@ import { accountSummary } from './core-calc.js';
 import { enrichPositions } from './core-positions.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { tradePath } from './core-path.js';
+import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
+import { getFeedSignals } from './ui-feed.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -90,7 +92,7 @@ function renderPositions(s, now) {
           <div><span class="k">Stop-Quelle</span>${p.stopSource || '–'}</div>
         </div>
       </details>
-      ${pathBar(tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan))}
+      ${pathBar(tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan, targetsFor({ plan: planFor(getPlans(), p.coin, p.side, t?.openedAt), signal: signalFor(getFeedSignals(), p.coin, p.side, t?.openedAt) })))}
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
       <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
@@ -136,29 +138,41 @@ export function render(s, hasAddr) {
   renderMarkets(s);
 }
 
-// Trade-Weg als Fortschrittsbalken: gefüllt vom Stop bis zum Kurs, beschriftete Striche für SL, Einstieg und Ziele
-function pathBar(path) {
+// Trade-Weg als Fortschrittsbalken: gefüllt bis zum Kurs, beschriftete Striche für SL, Einstieg und Ziele, 🏁 am Ende
+export function pathBar(path) {
   if (!path) return '';
-  if (path.empty) return `<p class="path-info meta">Noch keine Take-Profit-Orders gefunden. Der Trade-Weg erscheint, sobald bei Hyperliquid Ziele gesetzt sind.</p>`;
+  if (path.empty) return `<p class="path-info meta">Noch keine Ziele für diesen Trade. Im Markt-Blatt (Tipp auf die Position) kannst du sie festlegen.</p>`;
   const pct = (x) => (x * 100).toFixed(1);
   const m = path.mark;
-  const fill = m ? m.at : 0;
-  const cls = m && m.at < path.entry.at ? 'loss' : 'gain';
-  const ticks = [
-    { at: path.left.at, label: path.left.kind === 'stop' ? 'SL' : path.left.kind === 'liq' ? 'Liq' : '', cls: path.left.kind === 'liq' ? 'liq' : 'sl' },
+  // Rot vom linken Ende bis zum Einstieg (bzw. bis zum Kurs, wenn er darunter liegt), grün vom Einstieg bis zum Kurs
+  const e = path.entry.at, at = m ? m.at : 0;
+  const red = Math.min(at, e), green = Math.max(0, at - e);
+  const last = path.tps.length - 1;
+  let ticks = [
+    path.left.kind === 'liq' ? { at: 0, label: 'Liq', cls: 'liq' } : null,
+    path.stop ? { at: path.stop.at, label: path.stop.inProfit ? 'SL✓' : 'SL', cls: path.stop.inProfit ? 'sl-gain' : 'sl' } : null,
     { at: path.entry.at, label: 'E', cls: 'e' },
-    ...path.tps.map((t) => ({ at: t.at, label: `TP${t.n}${t.reached ? '✓' : ''}`, cls: t.passed ? 'tp done' : 'tp' })),
-  ];
+    ...path.tps.map((t, i) => ({ at: t.at, label: i === last ? `🏁 TP${t.n}${t.reached ? '✓' : ''}` : `TP${t.n}${t.reached ? '✓' : ''}`, cls: t.passed ? 'tp done' : 'tp' })),
+  ].filter(Boolean).sort((a, b) => a.at - b.at);
+  // Beschriftungen, die zu nah beieinander liegen, rutschen in eine zweite Zeile
+  let lastTop = -1, lastBottom = -1;
+  ticks = ticks.map((x) => {
+    const room = 0.11;
+    if (x.at - lastTop >= room || lastTop < 0) { lastTop = x.at; return { ...x, row: 0 }; }
+    if (x.at - lastBottom >= room || lastBottom < 0) { lastBottom = x.at; return { ...x, row: 1 }; }
+    lastTop = x.at; return { ...x, row: 0 };
+  });
+  const twoRows = ticks.some((x) => x.row === 1);
   const info = [];
   if (path.left.kind === 'liq') info.push('kein Stop: Balken beginnt bei der Liquidation');
-  path.tps.filter((t) => t.reached).forEach((t) => info.push(`TP${t.n} ✓`));
   if (path.next) info.push(`nächstes Ziel TP${path.next.n}: ${path.next.pct >= 0 ? '+' : '−'}${f.pct(Math.abs(path.next.pct), 1)}`);
-  else if (m?.beyond) info.push('alle Ziele überschritten');
-  if (path.found < path.planned) info.push(`${path.planned - path.found} von ${path.planned} Zielen ohne Order`);
-  return `<div class="path" role="img" aria-label="Trade-Weg: ${ticks.map((x) => x.label).filter(Boolean).join(', ')}">
-    <div class="path-track"><span class="path-fill ${cls}" style="width:${pct(fill)}%"></span>
+  else if (m?.beyond) info.push('🏁 Ziel erreicht');
+  if (path.found < path.planned) info.push(`${path.planned - path.found} von ${path.planned} Zielen fehlen`);
+  const edge = (x) => (x.at < 0.06 ? ' first' : x.at > 0.94 ? ' last' : '');
+  return `<div class="path" role="img" aria-label="Trade-Weg: ${ticks.map((x) => x.label).join(', ')}">
+    <div class="path-track"><span class="path-fill loss" style="left:0;width:${pct(red)}%"></span><span class="path-fill gain" style="left:${pct(e)}%;width:${pct(green)}%"></span>
       ${ticks.map((x) => `<i class="path-tick ${x.cls}" style="left:${pct(x.at)}%"></i>`).join('')}</div>
-    <div class="path-labels">${ticks.map((x, i) => `<span class="${x.cls}${i === 0 ? ' first' : i === ticks.length - 1 ? ' last' : ''}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
-    ${info.length ? `<p class="path-info meta">${info.join(' · ')}</p>` : ''}
+    <div class="path-labels${twoRows ? ' two' : ''}">${ticks.map((x) => `<span class="${x.cls}${edge(x)} r${x.row}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
+    <p class="path-info meta">${info.join(' · ')}${info.length ? ' · ' : ''}<span class="path-src">Ziele ${path.source.label}</span></p>
   </div>`;
 }

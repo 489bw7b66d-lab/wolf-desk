@@ -4,6 +4,10 @@ import { accountRisk } from './core-positions.js';
 import { getCandles } from './core-scanner.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { fundingForTrade } from './core-fees.js';
+import { getPlans, savePlan, planFor, signalFor, targetsFor, cleanTargets } from './core-plans.js';
+import { getFeedSignals } from './ui-feed.js';
+import { analyzeAllModes } from './core-scanner.js';
+import { CONFIG } from './config.js';
 import { chartSvg } from './ui-chart.js';
 import { esc, dn, TFL, CHART_TFS } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
@@ -106,6 +110,7 @@ export function openCoin(name) {
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((t) => `<button type="button" data-ktf="${t}" aria-pressed="${t === tf}">${TFL[t]}</button>`).join('')}</div>
     <div id="coin-chart" class="chart-box"></div>
     <div id="coin-pos"></div>
+    <div id="coin-plan"></div>
     <div class="sheet-actions"><button type="button" id="coin-analyze" class="span-2">Signal analysieren</button></div>
   </div>`;
   lastFocus = document.activeElement;
@@ -114,6 +119,7 @@ export function openCoin(name) {
   $('sheet-body').closest('.sheet-panel').scrollTop = 0;
   loadChart();
   renderLive();
+  renderPlan();
   clearInterval(timer);
   timer = setInterval(renderLive, 1000);
   $('sheet-close').focus();
@@ -121,6 +127,7 @@ export function openCoin(name) {
 
 export function initCoin(stateGetter, analyzeFn) {
   getState = stateGetter;
+  planClicks();
   onAnalyze = analyzeFn;
   $('sheet-body').addEventListener('click', (e) => {
     if (!$('coin-view')) return;
@@ -156,4 +163,80 @@ function costLine(t, s) {
   if (!t) return '';
   const fund = s.funding ? fundingForTrade(t, s.funding) : null;
   return `<p class="empty" style="font-size:12.5px;margin:8px 0 0">Kosten bisher: Gebühren ${f.usd(t.fees)}${fund == null ? '' : ` · Funding ${f.signedUsd(fund)}`}</p>`;
+}
+
+// ===== Ziele für diesen Trade (für manuelles Schließen an den TPs) =====
+let planEdit = false, planMsg = '';
+function planCtx() {
+  const s = getState(), p = position(s);
+  if (!p) return null;
+  const t = openTradeFor(tradeHistory(s.fills), coin);
+  const plan = planFor(getPlans(), coin, p.side, t?.openedAt);
+  const signal = signalFor(getFeedSignals(), coin, p.side, t?.openedAt);
+  return { p, t, plan, signal, targets: targetsFor({ plan, signal }) };
+}
+
+function renderPlan() {
+  const box = $('coin-plan');
+  if (!box) return;
+  const c = planCtx();
+  if (!c) { box.innerHTML = ''; return; }
+  const { p, plan, signal, targets } = c;
+  const long = p.side === 'long';
+  const n = CONFIG.exitPlan.filter((x) => /^TP\d/.test(x.label) && x.pct > 0).length;
+  const rel = (x) => `${((x - p.entry) / p.entry * 100 * (long ? 1 : -1)) >= 0 ? '+' : '−'}${f.pct(Math.abs((x - p.entry) / p.entry * 100), 1)}`;
+  if (planEdit) {
+    const cur = targets?.tps || [];
+    box.innerHTML = `<h3 class="sub-h">Ziele selbst eintragen</h3>
+      <div class="view-form">${[0, 1, 2, 3].map((i) => `<label class="vf"><span>TP${i + 1}${i >= n ? ' (0 % im Plan)' : ''}</span><input id="pl-tp${i}" type="text" inputmode="decimal" value="${cur[i] != null ? String(cur[i]).replace('.', ',') : ''}" placeholder="${long ? 'über' : 'unter'} ${f.price(p.entry)}"></label>`).join('')}
+      <div class="set-actions"><button type="button" id="pl-save">Speichern</button><button type="button" id="pl-cancel" class="ghost">Abbrechen</button></div></div>`;
+    return;
+  }
+  box.innerHTML = `<h3 class="sub-h">Ziele für diesen Trade</h3>
+    ${targets ? `<div class="plan-list">${targets.tps.slice(0, n).map((x, i) => `<div><span>${i === Math.min(n, targets.tps.length) - 1 ? '🏁 ' : ''}TP${i + 1}</span><b>${f.price(x)}</b><small class="long">${rel(x)}</small></div>`).join('')}</div>
+      <p class="meta" style="font-size:12px;margin:6px 0 0">Ziele ${esc(targets.label)}.</p>`
+      : '<p class="empty" style="margin:0">Noch keine festen Ziele. Ohne sie nutzt der Trade-Weg deine Take-Profit-Orders bei Hyperliquid.</p>'}
+    ${planMsg ? `<p class="meta" style="color:var(--gold);font-size:12.5px">${esc(planMsg)}</p>` : ''}
+    <div class="set-actions">
+      ${signal && targets?.source !== 'signal' ? '<button type="button" id="pl-signal" class="ghost">Aus Telegram-Signal übernehmen</button>' : ''}
+      <button type="button" id="pl-analyse" class="ghost">Aus aktueller Analyse übernehmen</button>
+      <button type="button" id="pl-edit" class="ghost">Selbst eintragen</button>
+      ${plan ? '<button type="button" id="pl-clear" class="ghost">Eigene Ziele entfernen</button>' : ''}
+    </div>
+    <p class="empty" style="font-size:12px;margin-top:6px">Damit der Wächter dich beim Erreichen eines Ziels erinnert: ⚙️ → „Für den Wächter übernehmen“ und my-settings.js hochladen. Ziele aus Telegram-Signalen kennt er von selbst.</p>`;
+}
+
+function storePlan(tps, source) {
+  const c = planCtx();
+  if (!c) return;
+  savePlan(coin, { side: c.p.side, openedAt: c.t?.openedAt || null, entry: c.p.entry, tps, source, at: Date.now() });
+  planEdit = false; planMsg = 'Gespeichert.';
+  renderPlan(); renderLive();
+}
+
+function planClicks() {
+$('sheet-body').addEventListener('click', async (e) => {
+  if (!$('coin-plan') || !e.target.closest('#coin-plan')) return;
+  const id = e.target.id, c = planCtx();
+  if (!c) return;
+  planMsg = '';
+  if (id === 'pl-signal' && c.signal) storePlan(c.signal.tps, 'signal');
+  if (id === 'pl-edit') { planEdit = true; renderPlan(); }
+  if (id === 'pl-cancel') { planEdit = false; renderPlan(); }
+  if (id === 'pl-clear') { savePlan(coin, null); renderPlan(); renderLive(); }
+  if (id === 'pl-save') {
+    const tps = cleanTargets([0, 1, 2, 3].map((i) => $('pl-tp' + i).value), c.p.side, c.p.entry);
+    if (!tps.length) { planMsg = `Bitte mindestens ein Ziel ${c.p.side === 'long' ? 'über' : 'unter'} dem Einstieg eintragen.`; planEdit = false; renderPlan(); return; }
+    storePlan(tps, 'manuell');
+  }
+  if (id === 'pl-analyse') {
+    e.target.textContent = 'Analysiere …'; e.target.disabled = true;
+    try {
+      const r = await analyzeAllModes(coin);
+      const cand = [r.all?.[r.best], ...Object.values(r.all || {})].find((x) => x?.plan?.dir === c.p.side);
+      if (cand) storePlan(cand.plan.tps, 'analyse');
+      else { planMsg = 'Die aktuelle Analyse sieht gerade kein Setup in deiner Richtung. Trag die Ziele selbst ein.'; renderPlan(); }
+    } catch { planMsg = 'Analyse gerade nicht möglich.'; renderPlan(); }
+  }
+});
 }

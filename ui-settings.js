@@ -1,6 +1,7 @@
 // Einstellungs-Seite (Zahnrad oben). Liest und schreibt nur über core-settings.js.
 import { CONFIG, SETTINGS_KEY } from './config.js';
 import { getViews } from './core-views.js';
+import { getPlans } from './core-plans.js';
 import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile } from './core-settings.js';
 
 const $ = (id) => document.getElementById(id);
@@ -80,6 +81,8 @@ async function exportFile() {
   const diff = diffFromRecommended(values);
   const views = getViews();
   if (Object.keys(views).length) diff.views = views;
+  const plans = getPlans();
+  if (Object.keys(plans).length) diff.plans = plans;
   const text = settingsFile(diff);
   const file = new File([text], 'my-settings.js', { type: 'text/javascript' });
   try {

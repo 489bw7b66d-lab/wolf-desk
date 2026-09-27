@@ -100,7 +100,7 @@ export function journalEntry(r, alert, now = Date.now(), view = null) {
   const p = r.plan;
   return {
     id: `${r.coin}|${r.dir}|${now}`, coin: r.coin, dir: r.dir, style: r.best, score: alert.score, state: alert.pos.state,
-    px: alert.price, zone: p.zone, stop: p.stop, tps: p.tps.slice(0, 2), at: now, status: 'offen',
+    px: alert.price, zone: p.zone, stop: p.stop, tps: p.tps.slice(0, 4), at: now, status: 'offen',
     events: [...new Set((r.events || []).filter((e) => e.dir === r.dir).map((e) => eventName(e.name)))],
     seal: (r.confirms || []).some((c) => c.dir === r.dir),
     view, // 'mit' | 'gegen' | 'neutral' | null: passte das Signal zu deiner Einschätzung?
@@ -254,4 +254,19 @@ export function viewEventText(coin, view, ev, price) {
   if (ev.type === 'invalid') return `🔔 ${name}: Deine ${long ? 'bullische' : 'bärische'} Einschätzung ist <b>ungültig</b> (Kurs ${px}, Marke ${f.price(ev.level)}).`;
   if (ev.type === 'trigger') return `🔔 ${name}: <b>Bestätigung</b> deiner ${long ? 'bullischen' : 'bärischen'} Einschätzung, Kurs ${px} ${long ? 'über' : 'unter'} ${f.price(ev.level)}.`;
   return `🎯 ${name}: <b>Ziel ${ev.n}</b> deiner Einschätzung erreicht (${f.price(ev.level)}).`;
+}
+
+// ===== Ziel deiner offenen Position erreicht (manuelles Schließen) =====
+export function targetText(coin, hits, total, exitPlan = CONFIG.exitPlan) {
+  const top = hits.at(-1);
+  const step = exitPlan[top.n - 1];
+  const runner = exitPlan.find((x) => x.label === 'Runner');
+  const name = `<b>${esc(dn(coin))}</b>`;
+  if (top.n >= total) {
+    return `🏁 ${name}: <b>letztes Ziel TP${top.n}</b> erreicht (${f.price(top.price)}).`
+      + (step?.pct ? ` Laut Plan ${step.pct} % verkaufen` : '') + (runner?.pct ? `, Runner (${runner.pct} %) nachziehen oder schließen.` : '.');
+  }
+  const also = hits.length > 1 ? ` (auch ${hits.slice(0, -1).map((h) => 'TP' + h.n).join(', ')} überschritten)` : '';
+  return `🎯 ${name}: <b>TP${top.n}</b> erreicht (${f.price(top.price)})${also}.` + (step?.pct ? ` Laut Plan jetzt ${step.pct} % verkaufen.` : '')
+    + (top.n === 2 ? ' Stop auf Einstieg nachziehen.' : '');
 }

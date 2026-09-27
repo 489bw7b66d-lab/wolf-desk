@@ -475,7 +475,9 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 /* ===== Etappe 3y: Trade-Weg ===== */
 .path { margin: 12px 0 4px; }
 .path-track { position: relative; height: 10px; border-radius: 5px; background: var(--line); overflow: visible; }
-.path-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; }
+.path-fill { position: absolute; top: 0; bottom: 0; border-radius: 0; }
+.path-fill.loss { border-radius: 5px 0 0 5px; }
+.path-fill.gain { border-radius: 0 5px 5px 0; }
 .path-fill.gain { background: var(--ok); }
 .path-fill.loss { background: var(--bad); }
 .path-tick { position: absolute; top: -3px; width: 2px; height: 16px; margin-left: -1px; background: var(--muted); border-radius: 1px; }
@@ -491,3 +493,12 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .path-labels .e { color: var(--gold); }
 .path-labels .tp.done { color: var(--gold); }
 .path-info { margin: 4px 0 0; font-size: 12px; }
+.path-labels.two { height: 32px; }
+.path-labels span.r1 { top: 15px; }
+.path-labels .sl-gain { color: var(--ok); }
+.path-tick.sl-gain { background: var(--ok); }
+.path-src { opacity: .75; }
+.plan-list { display: grid; gap: 4px; }
+.plan-list div { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; font-size: 14px; }
+.plan-list b { font-weight: 800; }
+.plan-list small { font-size: 12px; font-weight: 700; }

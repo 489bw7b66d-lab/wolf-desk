@@ -36,6 +36,7 @@ async function load() {
 }
 
 export function renderFeed() { render(); }
+export const getFeedSignals = () => feed || [];
 
 function render() {
   const box = $('feed');

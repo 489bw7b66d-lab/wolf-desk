@@ -28,6 +28,9 @@ export const CONFIG = {
   // DEINE MARKTEINSCHÄTZUNG je Markt (wird in der App gepflegt und über my-settings.js an den Wächter gegeben)
   views: {},
 
+  // DEINE ZIELE je offener Position (für manuelles Schließen; über my-settings.js auch für den Wächter)
+  plans: {},
+
   // LETZTE SIGNALE: vom Wächter veröffentlicht (eigener Zweig "signals", nur öffentliche Signaldaten)
   feed: {
     url: 'https://raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/signals/signals.json',
