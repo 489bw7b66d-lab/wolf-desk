@@ -6,6 +6,7 @@ import { priceHealth, accountHealth, streamHealth } from './core-health.js';
 import { accountSummary } from './core-calc.js';
 import { enrichPositions } from './core-positions.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
+import { tradePath } from './core-path.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -61,7 +62,6 @@ function renderPositions(s, now) {
     // Stop liegt auf der Gewinnseite des Einstiegs: kein Risiko mehr, sondern gesicherter Mindestgewinn
     const inProfit = p.stop != null && (p.side === 'long' ? p.stop >= p.entry : p.stop <= p.entry);
     const locked = inProfit ? Math.abs(p.size) * Math.abs(p.stop - p.entry) : null;
-    const barW = p.liqDist == null ? 0 : Math.max(3, Math.min(100, p.liqDist * 3));
     const issues = ev.checks.filter((c) => c.status !== 'ok');
     return `<article class="pos" data-coin="${esc(p.coin)}" role="button" tabindex="0" aria-label="${esc(p.coin)}: Chart und Details öffnen">
       <div class="pos-head">
@@ -90,7 +90,7 @@ function renderPositions(s, now) {
           <div><span class="k">Stop-Quelle</span>${p.stopSource || '–'}</div>
         </div>
       </details>
-      <div class="bar"><span style="width:${barW}%;background:${COLOR[ev.checks.find((c) => c.rule === 'Abstand Liquidation')?.status || 'ok']}"></span></div>
+      ${pathBar(tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan))}
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
       <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
@@ -134,4 +134,31 @@ export function render(s, hasAddr) {
   renderWatch(s, now);
   renderErrors(s);
   renderMarkets(s);
+}
+
+// Trade-Weg als Fortschrittsbalken: gefüllt vom Stop bis zum Kurs, beschriftete Striche für SL, Einstieg und Ziele
+function pathBar(path) {
+  if (!path) return '';
+  if (path.empty) return `<p class="path-info meta">Noch keine Take-Profit-Orders gefunden. Der Trade-Weg erscheint, sobald bei Hyperliquid Ziele gesetzt sind.</p>`;
+  const pct = (x) => (x * 100).toFixed(1);
+  const m = path.mark;
+  const fill = m ? m.at : 0;
+  const cls = m && m.at < path.entry.at ? 'loss' : 'gain';
+  const ticks = [
+    { at: path.left.at, label: path.left.kind === 'stop' ? 'SL' : path.left.kind === 'liq' ? 'Liq' : '', cls: path.left.kind === 'liq' ? 'liq' : 'sl' },
+    { at: path.entry.at, label: 'E', cls: 'e' },
+    ...path.tps.map((t) => ({ at: t.at, label: `TP${t.n}${t.reached ? '✓' : ''}`, cls: t.passed ? 'tp done' : 'tp' })),
+  ];
+  const info = [];
+  if (path.left.kind === 'liq') info.push('kein Stop: Balken beginnt bei der Liquidation');
+  path.tps.filter((t) => t.reached).forEach((t) => info.push(`TP${t.n} ✓`));
+  if (path.next) info.push(`nächstes Ziel TP${path.next.n}: ${path.next.pct >= 0 ? '+' : '−'}${f.pct(Math.abs(path.next.pct), 1)}`);
+  else if (m?.beyond) info.push('alle Ziele überschritten');
+  if (path.found < path.planned) info.push(`${path.planned - path.found} von ${path.planned} Zielen ohne Order`);
+  return `<div class="path" role="img" aria-label="Trade-Weg: ${ticks.map((x) => x.label).filter(Boolean).join(', ')}">
+    <div class="path-track"><span class="path-fill ${cls}" style="width:${pct(fill)}%"></span>
+      ${ticks.map((x) => `<i class="path-tick ${x.cls}" style="left:${pct(x.at)}%"></i>`).join('')}</div>
+    <div class="path-labels">${ticks.map((x, i) => `<span class="${x.cls}${i === 0 ? ' first' : i === ticks.length - 1 ? ' last' : ''}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
+    ${info.length ? `<p class="path-info meta">${info.join(' · ')}</p>` : ''}
+  </div>`;
 }

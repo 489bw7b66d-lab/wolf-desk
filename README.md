@@ -18,6 +18,7 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `ui-feed.js` – Letzte Signale im Signale-Tab (liest signals.json aus dem Zweig „signals“, vom Wächter veröffentlicht)
 - `core-views.js`, `ui-views.js` – Deine Markteinschätzung je Markt: Marken im Chart, ⭐/⚠︎ bei Signalen, Meldungen des Wächters
 - `core-fees.js` – Kosten: Gebühren, Funding, deine Gebührensätze, Schätzung je Trade
+- `core-path.js` – Trade-Weg einer Position (Stop → Einstieg → Ziele aus echten Orders und Teilverkäufen)
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -46,3 +47,4 @@ Etappe 3t: Meine Einschätzung (Richtung, ungültig/bestätigt, Ziele, Notiz, G�
 Etappe 3u: Aufräumen: alte watcher.mjs entfernt, GitHub-Bausteine auf Version 5 (Node 24)
 Etappe 3v: Menüleiste Start · Konto · Signale · Backtest · Risiko
 Etappe 3w: Kosten-Karte im Konto (Gebühren und Funding 7/30/90 Tage, Anteil am Bruttogewinn), Funding und Netto je Trade, geschätzte Gebühren auf der Trade-Karte mit deinem echten Satz, Backtest rechnet mit deinem Satz
+Etappe 3y: Trade-Weg in den Positionskarten: Fortschrittsbalken vom Stop bis zum Kurs mit beschrifteten Strichen für SL, Einstieg und TP1–TP4 (Anzahl nach Ausstiegsplan), erreichte Ziele mit ✓, nächstes Ziel in %

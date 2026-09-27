@@ -471,3 +471,23 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .view-box.mit { border-color: rgba(227,176,75,.6); background: rgba(227,176,75,.06); }
 .view-box.gegen { border-color: rgba(242,181,68,.6); background: rgba(242,181,68,.06); }
 .view-box .meta { margin-top: 3px; }
+
+/* ===== Etappe 3y: Trade-Weg ===== */
+.path { margin: 12px 0 4px; }
+.path-track { position: relative; height: 10px; border-radius: 5px; background: var(--line); overflow: visible; }
+.path-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; }
+.path-fill.gain { background: var(--ok); }
+.path-fill.loss { background: var(--bad); }
+.path-tick { position: absolute; top: -3px; width: 2px; height: 16px; margin-left: -1px; background: var(--muted); border-radius: 1px; }
+.path-tick.sl, .path-tick.liq { background: var(--bad); }
+.path-tick.e { background: var(--gold); }
+.path-tick.tp { background: var(--text); }
+.path-tick.tp.done { background: var(--gold); }
+.path-labels { position: relative; height: 16px; margin-top: 5px; font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.path-labels span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.path-labels span.first { transform: none; }
+.path-labels span.last { transform: translateX(-100%); }
+.path-labels .sl, .path-labels .liq { color: var(--bad); }
+.path-labels .e { color: var(--gold); }
+.path-labels .tp.done { color: var(--gold); }
+.path-info { margin: 4px 0 0; font-size: 12px; }
