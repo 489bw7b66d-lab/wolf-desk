@@ -14,6 +14,7 @@ import { initPerformance, renderPerformance } from './ui-performance.js';
 import { initMarket } from './ui-market.js';
 import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
+import { initSettings } from './ui-settings.js';
 import { getMarketCtx } from './core-scanner.js';
 import { refreshMarket } from './core-market.js';
 import { refreshTrade } from './ui-trade.js';
@@ -109,7 +110,7 @@ async function loadMarkets() {
 }
 
 // Navigation zwischen den Bereichen
-const TITLES = { start: 'Start', signale: 'Signale', backtest: 'Backtest', konto: 'Konto', risiko: 'Risiko', system: 'System' };
+const TITLES = { start: 'Start', signale: 'Signale', backtest: 'Backtest', konto: 'Konto', risiko: 'Risiko', system: 'System', einstellungen: 'Einstellungen' };
 function showTab(name) {
   if (!TITLES[name]) name = address ? 'start' : 'system';
   document.querySelectorAll('[data-tab]').forEach((el) => el.classList.toggle('tab-off', el.dataset.tab !== name));
@@ -151,6 +152,8 @@ initSignals(getState, openTrade, openCoin);
 initHome(getState, openTrade, openFull, openCoin);
 initMarket();
 initBacktest();
+initSettings();
+document.getElementById('gear').addEventListener('click', () => { location.hash = 'einstellungen'; });
 
 // Privatmodus: Auge im Kopfbereich blendet alle Geldbeträge und Stückzahlen aus, Prozente bleiben
 const PRIV_KEY = 'wolfdesk.private';

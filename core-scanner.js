@@ -97,7 +97,7 @@ export function signalFromSeries(coin, modeKey, series, volume) {
   const plan = tradePlan(dir, setup, levels);
   const warnings = [];
   if (Number.isFinite(volume) && volume < CONFIG.signals.minDayVolumeUsd) warnings.push({ type: 'liq', text: 'Geringe Liquidität, Indikatoren weniger aussagekräftig' });
-  if (analyses.some((a) => a.ema200 == null)) warnings.push({ type: 'data', text: 'Kurze Historie, EMA 200 nicht auf allen Timeframes berechenbar' });
+  if (analyses.some((a) => a.ema200 == null)) warnings.push({ type: 'data', text: `Kurze Historie, EMA ${CONFIG.indicators.emaTrend} nicht auf allen Timeframes berechenbar` });
 
   const events = [...analyses.flatMap((a) => a.events.map((e) => ({ ...e, tf: a.tf }))), ...dailyStrong.map((e) => ({ ...e, tf: '1d' }))];
   const waves = [...analyses, ...(daily && !mode.tfs.includes('1d') ? [daily] : [])]

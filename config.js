@@ -28,6 +28,11 @@ export const CONFIG = {
   // TELEGRAM-WÄCHTER (läuft alle 15 Minuten bei GitHub)
   alerts: {
     minScore: 75,               // Signal melden ab diesem Score
+    styles: ['swing', 'intraday'], // Scalp nicht per Telegram: der Wächter läuft nur alle 15 Minuten
+    minVolumeUsd: 20000000,     // nur Märkte mit mindestens so viel 24h-Umsatz (weniger Ausreißer)
+    flipHours: 24,              // kein Richtungswechsel auf demselben Markt innerhalb so vieler Stunden
+    journalDays: { swing: 14, intraday: 3 }, // so lange wird ein Signal im Tagebuch verfolgt
+    reportDays: 7,              // Tagebuch-Auswertung alle so viele Tage privat an dich
     repeatHours: 12,            // gleicher Markt in gleicher Richtung frühestens nach so vielen Stunden erneut
     states: ['zone', 'early'],  // nur melden, wenn der Kurs noch nicht davongelaufen ist
     maxPerRun: 3,               // höchstens so viele Signal-Meldungen pro Durchlauf
@@ -86,6 +91,20 @@ export const CONFIG = {
     },
   },
 
+  // INDIKATOREN (Experte): Längen und Schwellen der Signal-Berechnung
+  indicators: {
+    emaFast: 8, emaMid: 21, emaSlow: 55, emaTrend: 200,  // EMA-Längen (Stack und Kreuzungen)
+    rsiPeriod: 14, rsiHigh: 70, rsiLow: 30,             // RSI-Länge und Grenzen überkauft/überverkauft
+    atrPeriod: 14,                                      // ATR-Länge (Stops, Momentum, Muster)
+    macdFast: 12, macdSlow: 26, macdSignal: 9,          // MACD
+    momentumAtr: 3,                                     // ab so vielen ATR in 10 Kerzen gilt Momentum als stark
+    volumeSpike: 2.5,                                   // ab diesem Vielfachen des Durchschnitts gilt Volumen als Spike
+  },
+  // PUNKTE JE EREIGNIS (Trendzustand max. 70, Ereignisse max. 30 je Timeframe und Richtung)
+  eventPoints: {
+    goldenCross: 15, patternDaily: 15, pattern4h: 10, ema55x200: 8, ema21x55: 7, ema8x21: 5, macdCross: 4,
+    rsiExit: 6, momentum: 4, momentumStrong: 7, volume: 5, volumeStrong: 8, candle: 4, candleStrong: 5, elliott: 8,
+  },
   // Wie oft das Konto neu geladen wird (Kurse kommen live per WebSocket)
   refresh: {
     accountMs: 15000,
@@ -99,3 +118,34 @@ export const CONFIG = {
     accountStaleMs: 45000,
   },
 };
+
+// ============================================================
+//  DEINE EINSTELLUNGEN
+//  Die Werte oben sind die EMPFEHLUNG. Abweichungen kommen aus
+//  my-settings.js (für App und Telegram-Wächter, von der App erzeugt)
+//  und in der App zusätzlich aus dem Speicher des iPhones.
+// ============================================================
+// Fehlt die Datei (z. B. vergessen hochzuladen), läuft alles mit der Empfehlung weiter
+let fileSettings = {};
+try { fileSettings = (await import('./my-settings.js')).MY_SETTINGS || {}; } catch { /* keine eigenen Werte */ }
+export const MY_SETTINGS = fileSettings;
+export const RECOMMENDED = JSON.parse(JSON.stringify(CONFIG));
+export const SETTINGS_KEY = 'wolfdesk.settings';
+
+// Wert über Pfad lesen/schreiben, z. B. "rules.maxLeverage" oder "exitPlan.0.pct"
+export function getPath(obj, path) { return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj); }
+export function setPath(obj, path, value) {
+  const keys = path.split('.'); let o = obj;
+  keys.slice(0, -1).forEach((k) => { if (o[k] == null) o[k] = {}; o = o[k]; });
+  o[keys.at(-1)] = value;
+}
+export function applySettings(target, overrides) {
+  Object.entries(overrides || {}).forEach(([path, v]) => {
+    if (getPath(RECOMMENDED, path) !== undefined) setPath(target, path, JSON.parse(JSON.stringify(v)));
+  });
+}
+function localOverrides() {
+  try { return JSON.parse(globalThis.localStorage?.getItem(SETTINGS_KEY) || '{}'); } catch { return {}; }
+}
+applySettings(CONFIG, MY_SETTINGS);
+applySettings(CONFIG, localOverrides());

@@ -6,12 +6,12 @@ import { elliott } from './core-elliott.js';
 import { chartPatterns } from './core-patterns.js';
 import { candlePatterns } from './core-candlesticks.js';
 import { confirmations } from './core-confirm.js';
+import { CONFIG } from './config.js';
 
 // Gewichtung der Ereignisse (Punkte). Trendzustand max. 70, Ereignisse max. 30 je Timeframe und Richtung.
-export const EVENT_POINTS = {
-  goldenCross: 15, patternDaily: 15, pattern4h: 10, ema55x200: 8, ema21x55: 7, ema8x21: 5, macdCross: 4,
-  rsiExit: 6, momentum: 4, momentumStrong: 7, volume: 5, volumeStrong: 8, candle: 4, candleStrong: 5, elliott: 8,
-};
+// Werte stehen in config.js (eventPoints) und sind in den Einstellungen änderbar.
+export const EVENT_POINTS = CONFIG.eventPoints;
+const IND = () => CONFIG.indicators;
 export const EVENT_CAP = 30;
 
 // Elliott erst ab 4H (darunter zu viel Rauschen)
@@ -39,9 +39,10 @@ function structureOf(pv) {
 
 export function analyzeTimeframe(candles, tf = '') {
   const closes = candles.map((c) => c.c);
-  const E8 = ema(closes, 8), E21 = ema(closes, 21), E55 = ema(closes, 55), E200 = ema(closes, 200);
+  const I = IND();
+  const E8 = ema(closes, I.emaFast), E21 = ema(closes, I.emaMid), E55 = ema(closes, I.emaSlow), E200 = ema(closes, I.emaTrend);
   const e8 = last(E8), e21 = last(E21), e55 = last(E55), e200 = last(E200);
-  const m = macd(closes);
+  const m = macd(closes, I.macdFast, I.macdSlow, I.macdSignal);
   const pv = pivots(candles);
   const stack = e8 != null && e21 != null && e55 != null
     ? (e8 > e21 && e21 > e55 ? 'bull' : e8 < e21 && e21 < e55 ? 'bear' : 'mixed') : 'mixed';
@@ -53,28 +54,29 @@ export function analyzeTimeframe(candles, tf = '') {
     events.push({ name: cross.dir === 'up' ? upName : downName, dir: cross.dir === 'up' ? 'long' : 'short', barsAgo: cross.barsAgo, bonus, strong });
   };
   const P = EVENT_POINTS;
-  add(lastCross(E8, E21, 3), 'EMA 8/21 Kreuzung aufwärts', 'EMA 8/21 Kreuzung abwärts', P.ema8x21);
-  add(lastCross(E21, E55, 5), 'EMA 21/55 Kreuzung aufwärts', 'EMA 21/55 Kreuzung abwärts', P.ema21x55);
+  const fm = `${I.emaFast}/${I.emaMid}`, ms = `${I.emaMid}/${I.emaSlow}`, st = `${I.emaSlow}/${I.emaTrend}`;
+  add(lastCross(E8, E21, 3), `EMA ${fm} Kreuzung aufwärts`, `EMA ${fm} Kreuzung abwärts`, P.ema8x21);
+  add(lastCross(E21, E55, 5), `EMA ${ms} Kreuzung aufwärts`, `EMA ${ms} Kreuzung abwärts`, P.ema21x55);
   const gc = lastCross(E55, E200, 10);
-  if (tf === '1d') add(gc, 'Golden Cross (55/200 Tag)', 'Death Cross (55/200 Tag)', P.goldenCross, true);
-  else add(gc, `EMA 55/200 Kreuzung aufwärts`, `EMA 55/200 Kreuzung abwärts`, P.ema55x200);
+  if (tf === '1d') add(gc, `Golden Cross (${st} Tag)`, `Death Cross (${st} Tag)`, P.goldenCross, true);
+  else add(gc, `EMA ${st} Kreuzung aufwärts`, `EMA ${st} Kreuzung abwärts`, P.ema55x200);
   add(lastCross(m.line, m.signal, 3), 'MACD-Kreuzung aufwärts', 'MACD-Kreuzung abwärts', P.macdCross);
 
   // RSI: Verlassen der Extremzonen
-  const R = rsi(closes);
-  const rz = rsiZoneExit(R);
+  const R = rsi(closes, I.rsiPeriod);
+  const rz = rsiZoneExit(R, 3, I.rsiLow, I.rsiHigh);
   if (rz) events.push({ name: rz.dir === 'long' ? 'RSI verlässt überverkauft' : 'RSI verlässt überkauft', dir: rz.dir, barsAgo: rz.barsAgo, bonus: P.rsiExit, strong: false });
 
   // Momentum in ATR
-  const atrNow = last(atr(candles));
+  const atrNow = last(atr(candles, I.atrPeriod));
   const mom = momentumAtr(closes, atrNow);
-  if (mom != null && Math.abs(mom) >= 3) {
+  if (mom != null && Math.abs(mom) >= I.momentumAtr) {
     events.push({ name: `Starkes Momentum (${mom > 0 ? '+' : '−'}${Math.abs(mom).toFixed(1).replace('.', ',')} ATR)`, dir: mom > 0 ? 'long' : 'short', barsAgo: 0, bonus: Math.abs(mom) >= 5 ? P.momentumStrong : P.momentum, strong: false });
   }
 
   // Plötzlicher Volumenanstieg
   const vs = volumeSpike(candles);
-  if (vs && vs.ratio >= 2.5) {
+  if (vs && vs.ratio >= I.volumeSpike) {
     events.push({ name: `Volumen-Spike ×${vs.ratio.toFixed(1).replace('.', ',')}`, dir: vs.up ? 'long' : 'short', barsAgo: vs.barsAgo, bonus: vs.ratio >= 4 ? P.volumeStrong : P.volume, strong: false });
   }
 
@@ -116,8 +118,9 @@ export function scoreTimeframe(a) {
     if (a.macdHist < 0) { S += 6; if (a.macdHistPrev != null && a.macdHist < a.macdHistPrev) S += 4; }
   }
   if (a.rsi != null) {
-    if (a.rsi >= 50 && a.rsi <= 70) L += 12; else if (a.rsi > 70) L += 4;
-    if (a.rsi < 50 && a.rsi >= 30) S += 12; else if (a.rsi < 30) S += 4;
+    const hi = IND().rsiHigh, lo = IND().rsiLow;
+    if (a.rsi >= 50 && a.rsi <= hi) L += 12; else if (a.rsi > hi) L += 4;
+    if (a.rsi < 50 && a.rsi >= lo) S += 12; else if (a.rsi < lo) S += 4;
   }
   // Ereignisse: max. 30 Punkte je Richtung, damit kein Einzelsignal den Trend überstimmt
   let eL = 0, eS = 0;
@@ -155,8 +158,8 @@ function planWarnings(dir, entry, tps, a, levels) {
   const warnings = [];
   const blocker = long ? levels.resistance.find((p) => p > entry && p < tps[0]) : levels.support.find((p) => p < entry && p > tps[0]);
   if (blocker != null) warnings.push({ type: 'level', price: blocker, text: long ? 'Widerstand liegt vor TP1' : 'Unterstützung liegt vor TP1' });
-  if (long && a.rsi > 70) warnings.push({ type: 'rsi', text: 'RSI überkauft, Rücksetzer abwarten' });
-  if (!long && a.rsi < 30) warnings.push({ type: 'rsi', text: 'RSI überverkauft, Erholung abwarten' });
+  if (long && a.rsi > IND().rsiHigh) warnings.push({ type: 'rsi', text: 'RSI überkauft, Rücksetzer abwarten' });
+  if (!long && a.rsi < IND().rsiLow) warnings.push({ type: 'rsi', text: 'RSI überverkauft, Erholung abwarten' });
   return warnings;
 }
 

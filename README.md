@@ -13,7 +13,8 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-market.js`, `ui-market.js` – Marktüberblick (Markt-Bias, Fear & Greed, Marktkapitalisierung, BTC-Dominanz)
 - `core-trades.js`, `ui-coin.js` – Trade-Historie aus Fills, Teilverkäufe, Markt-Blatt mit Chart in allen Zeitebenen
 - `core-backtest.js`, `ui-backtest.js` – Backtest des Signalgebers auf vergangenen Kerzen
-- `core-alerts.js`, `watcher.mjs` – Telegram-Wächter: läuft alle 15 Minuten bei GitHub Actions (`.github/workflows/wolf-watch.yml`), meldet starke Signale und Regelverstöße
+- `core-alerts.js`, `watcher.js` – Telegram-Wächter: läuft alle 15 Minuten bei GitHub Actions (`.github/workflows/wolf-watch.yml`), meldet starke Signale und Regelverstöße
+- `core-settings.js`, `ui-settings.js`, `my-settings.js` – Einstellungen (Zahnrad): empfohlene Werte in config.js, deine Abweichungen in my-settings.js (auch für den Wächter)
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -32,3 +33,5 @@ Etappe 3j: Verkäufe als Anteil in Prozent statt Stück, Ausstiegsplan mit Wert 
 Etappe 3k: Versionsnummer für alle Dateien (Import-Map), damit nach Updates keine alten Dateien aus dem Zwischenspeicher geladen werden
 Etappe 3l: Kundentest umgesetzt: rote Warnung bei fehlendem Stop nahe Liquidation, Regel „Freies Kapital“, Hinweis bei vollem Konto, eigene Trade-Statistik, kompakte Positionskarten, „Stop im Gewinn“, automatischer Watchlist-Scan, Backtest als eigener Tab, Börsen-Präfix ausgeblendet
 Etappe 3m: Telegram-Wächter (GitHub Actions alle 15 Min., Signale ab Score 75, Regelverstöße und Entwarnungen, Wallet und Zugangsdaten als GitHub Secrets)
+Etappe 3n: Signal-Tagebuch (jedes Telegram-Signal wird verfolgt: TP1/TP2 oder Stop, wöchentliche Auswertung privat), nur Swing/Daytrade per Telegram, Mindestumsatz 20 Mio. $, kein Richtungswechsel binnen 24 Std., Beschriftung „unter/über der Zone“
+Etappe 3o: Einstellungen mit Zahnrad (Konto, Risiko, Ausstiegsplan, Signalgeber, Telegram, Indikatoren, Ereignis-Punkte), Empfehlung markiert, Zurücksetzen, Export my-settings.js für den Wächter
