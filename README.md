@@ -17,6 +17,7 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-settings.js`, `ui-settings.js`, `my-settings.js` – Einstellungen (Zahnrad): empfohlene Werte in config.js, deine Abweichungen in my-settings.js (auch für den Wächter)
 - `ui-feed.js` – Letzte Signale im Signale-Tab (liest signals.json aus dem Zweig „signals“, vom Wächter veröffentlicht)
 - `core-views.js`, `ui-views.js` – Deine Markteinschätzung je Markt: Marken im Chart, ⭐/⚠︎ bei Signalen, Meldungen des Wächters
+- `core-fees.js` – Kosten: Gebühren, Funding, deine Gebührensätze, Schätzung je Trade
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -43,3 +44,5 @@ Etappe 3r: Markt-Bias aus BTC (40 %), ETH (20 %), Marktbreite Top 50 über EMA 5
 Etappe 3s: Signale-Tab zeigt die letzten 5 Telegram-Signale mit Live-Kurs, Abstand und Status statt der Watchlist-Liste; Wächter veröffentlicht signals.json im Zweig „signals“
 Etappe 3t: Meine Einschätzung (Richtung, ungültig/bestätigt, Ziele, Notiz, Gültigkeit), Linien im Chart, ⭐ passt / ⚠︎ dagegen bei Signalen, Wächter meldet Marken und Ziele, Tagebuch wertet ⭐-Signale getrennt aus
 Etappe 3u: Aufräumen: alte watcher.mjs entfernt, GitHub-Bausteine auf Version 5 (Node 24)
+Etappe 3v: Menüleiste Start · Konto · Signale · Backtest · Risiko
+Etappe 3w: Kosten-Karte im Konto (Gebühren und Funding 7/30/90 Tage, Anteil am Bruttogewinn), Funding und Netto je Trade, geschätzte Gebühren auf der Trade-Karte mit deinem echten Satz, Backtest rechnet mit deinem Satz

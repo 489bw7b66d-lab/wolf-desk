@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
 import { parsePortfolio, equityCurve, maxDrawdown } from './core-performance.js';
 import { perfSplit, tradeHistory, closedTrades, tradeStats } from './core-trades.js';
+import { costSummary, fundingForTrade } from './core-fees.js';
 import * as f from './core-format.js';
 import { dn } from './ui-parts.js';
 
@@ -42,6 +43,7 @@ export function renderPerformance(s) {
   const a = s.account;
   renderTrades(s);
   renderStats(s);
+  renderCosts(s);
   if (!a) { $('perf').innerHTML = '<p class="empty">Noch keine Kontodaten.</p>'; $('perf-chart').innerHTML = ''; return; }
   const equity = accountSummary(a, CONFIG.accountMode).equity;
   const upnl = a.positions.reduce((n, p) => n + (p.upnl || 0), 0);
@@ -98,7 +100,7 @@ function renderTrades(s) {
         <div class="exit-row head" role="row"><span>Nr.</span><span>Kurs</span><span>Anteil</span><span>PnL</span><span>Datum</span></div>
         ${t.exits.map((x, i) => `<div class="exit-row" role="row"><span><b>${i + 1}.</b></span><span>${f.price(x.px)}</span><span>${x.sharePct == null ? '–' : f.pct(x.sharePct, 0)}</span><span class="${x.pnl >= 0 ? 'long' : 'short'}">${f.usdShort(x.pnl)}</span><span class="muted">${dt(x.time)}</span></div>`).join('')}
       </div>
-      <p class="empty" style="font-size:12px;margin:6px 0 0">Einstieg Ø ${t.entryAvg ? f.price(t.entryAvg) : 'vor dem Zeitraum'} · Gebühren ${f.usd(t.fees)}</p>
+      <p class="empty" style="font-size:12px;margin:6px 0 0">Einstieg Ø ${t.entryAvg ? f.price(t.entryAvg) : 'vor dem Zeitraum'} · Gebühren ${f.usd(t.fees)}${s.funding ? ` · Funding ${f.signedUsd(fundingForTrade(t, s.funding))} · netto ${f.signedUsd(t.realized + fundingForTrade(t, s.funding))}` : ''}</p>
     </details>`;
   }).join('');
 }
@@ -135,4 +137,25 @@ function renderStats(s) {
       ${row('In Teilen verkauft', st.split)}${row('Alles auf einmal', st.single)}${row('Long', st.long)}${row('Short', st.short)}
     </div>
     <p class="empty" style="font-size:12px;margin-top:8px">Bester Trade: ${dn(st.best.coin)} ${f.signedUsd(st.best.realized)} · schlechtester: ${dn(st.worst.coin)} ${f.signedUsd(st.worst.realized)}. Nach Gebühren, ohne Funding.</p>`;
+}
+
+// Kosten: Gebühren und Funding in 7/30/90 Tagen, Anteil am Bruttogewinn, deine Gebührensätze
+function renderCosts(s) {
+  const box = $('costs');
+  if (!box) return;
+  if (!s.fills) { box.innerHTML = '<p class="empty">Wird geladen …</p>'; return; }
+  const now = Date.now();
+  const rows = [[7, '7 Tage'], [30, '30 Tage'], [90, '90 Tage']].map(([d, label]) => ({ label, ...costSummary(s.fills, s.funding || [], now - d * 864e5, now + 1) }));
+  const m = rows[1];
+  const pc = (v) => (v == null ? '–' : f.pct(v, 0));
+  const cl = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
+  const note = m.share == null ? '' : m.share >= 30 ? 'short' : m.share >= 15 ? 'warn-t' : 'long';
+  const r = s.rates;
+  box.innerHTML = `${m.share != null ? `<p class="bt-verdict ${note === 'short' ? 'bad' : note === 'warn-t' ? 'warn' : 'ok'}">Die Kosten der letzten 30 Tage entsprechen <b>${pc(m.share)}</b> deines Bruttogewinns aus Verkäufen.${m.share >= 15 ? ' Weniger Hin und Her, Limit-Orders beim Einstieg und kürzere Haltedauer bei hohem Funding senken das.' : ''}</p>` : ''}
+    <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Zeitraum</span><span>Gebühren</span><span>Funding</span><span>Anteil</span></div>
+      ${rows.map((x) => `<div class="bt-row" role="row"><span><b>${x.label}</b></span><span class="short">${f.signedUsd(-x.fees)}</span><span class="${cl(x.funding)}">${s.funding ? f.signedUsd(x.funding) : '…'}</span><span>${pc(x.share)}</span></div>`).join('')}
+    </div>
+    <p class="empty" style="font-size:12px;margin-top:8px">Bruttogewinn 30 Tage ${f.signedUsd(m.gross)} · nach Gebühren und Funding ${f.signedUsd(m.net)}.
+      ${r ? `Dein Gebührensatz: Taker ${f.pct(r.taker * 100, 3)} · Maker ${f.pct(r.maker * 100, 3)}${r.known ? '' : ' (Standard, eigener Satz nicht abrufbar)'}.` : ''}
+      Funding negativ = von dir gezahlt, positiv = erhalten.${s.costsError ? ' Funding gerade nicht abrufbar.' : ''}</p>`;
 }

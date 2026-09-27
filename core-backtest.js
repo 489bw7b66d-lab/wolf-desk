@@ -11,7 +11,7 @@ export const BT = {
   lookback: 260,     // Kerzen je Timeframe für die Berechnung, wie live
   entryBars: 6,      // so viele Setup-Kerzen bleibt eine Limit-Order in der Zone gültig
   maxBars: 60,       // spätestens nach so vielen Setup-Kerzen wird der Rest zum Marktpreis geschlossen
-  feePct: 0.045,     // Hyperliquid Taker-Gebühr je Seite
+  feePct: 0.045,     // Taker-Gebühr je Seite (wird durch deinen echten Satz ersetzt, sobald bekannt)
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -165,3 +165,6 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
   onProgress?.(1);
   return { coin, mode: modeKey, days, trades, missed, from, to: setup.at(-1)?.T };
 }
+
+// Deinen echten Taker-Satz übernehmen (z. B. 0.00035 → 0,035 % je Seite)
+export function setFeeRate(taker) { if (Number.isFinite(taker) && taker >= 0) BT.feePct = taker * 100; }

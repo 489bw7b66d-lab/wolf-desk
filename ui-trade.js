@@ -5,6 +5,7 @@ import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, 
 import { chartSvg } from './ui-chart.js';
 import { switchStyle, getCandles } from './core-scanner.js';
 import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.js';
+import { estimateFees, DEFAULT_RATES } from './core-fees.js';
 import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -78,6 +79,7 @@ function render() {
       <div><span class="k">Risiko</span><span class="v ${riskState === 'ok' ? '' : riskState === 'warn' ? 'warn-t' : 'short'}">${size ? f.usd(size.riskAmt) : '–'}</span></div>
       <div><span class="k">Positionswert</span><span class="v">${size ? f.usd(size.notional) : '–'}</span></div>
       <div class="span2"><span class="k">Margin (dein Einsatz)</span><span class="v big" id="sheet-margin" style="color:var(--gold)">${margin ? f.usd(margin) : '–'}</span></div>
+      ${feeRow(size)}
     </div>
     ${levCtx ? levSlider(lev || Math.min(maxLev || 1, levCtx.exchangeMax || 50), rec?.lev || null, levCtx) : ''}
     <h3 class="sub-h">Ausstiegsplan</h3>
@@ -223,4 +225,14 @@ export function viewBox(r) {
   const lv = [v.invalid != null ? `ungültig ${long ? 'unter' : 'über'} ${f.price(v.invalid)}` : '', v.trigger != null ? `bestätigt ${long ? 'über' : 'unter'} ${f.price(v.trigger)}` : ''].filter(Boolean).join(' · ');
   return `<div class="view-box ${al || ''}">${viewMark(al, true) || '<b>Deine Einschätzung</b>'}
     <div class="meta">${BIAS_TXT[v.bias]}${lv ? ' · ' + esc(lv) : ''}${v.note ? ' · ' + esc(v.note) : ''}</div></div>`;
+}
+
+// Geschätzte Handelsgebühren für Ein- und Ausstieg mit deinem echten Satz (Market/Stop = Taker)
+function feeRow(size) {
+  const rates = getState().rates || { ...DEFAULT_RATES, known: false };
+  const est = size && estimateFees(size.notional, rates);
+  if (!est) return '';
+  const pct = (r) => f.pct(r * 100, 3);
+  return `<div class="span2"><span class="k">Gebühren Ein- und Ausstieg (geschätzt)</span>
+    <span class="v">${f.usd(est.taker)} <small class="muted" style="font-size:12px;font-weight:600">· mit Limit-Orders ${f.usd(est.maker)} · ${rates.known ? 'dein Satz' : 'Standardsatz'} ${pct(rates.taker)} / ${pct(rates.maker)}</small></span></div>`;
 }

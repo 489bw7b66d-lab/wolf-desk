@@ -40,6 +40,8 @@ export const hl = {
   fillsSince: (user, startTime) => info({ type: 'userFillsByTime', user, startTime, aggregateByTime: true }),
   metaCtx: (dex = '') => info(withDex({ type: 'metaAndAssetCtxs' }, dex)),
   portfolio: (user) => info({ type: 'portfolio', user }),
+  funding: (user, startTime) => info({ type: 'userFunding', user, startTime }),
+  fees: (user) => info({ type: 'userFees', user }),
   candles: (coin, interval, startTime, endTime = Date.now()) =>
     info({ type: 'candleSnapshot', req: { coin, interval, startTime, endTime } }),
 };

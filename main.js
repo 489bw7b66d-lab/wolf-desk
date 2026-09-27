@@ -16,6 +16,8 @@ import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
 import { initSettings } from './ui-settings.js';
 import { initFeed, renderFeedLive, renderFeed } from './ui-feed.js';
+import { loadFunding, ratesFrom } from './core-fees.js';
+import { setFeeRate } from './core-backtest.js';
 import { initViews } from './ui-views.js';
 import { getMarketCtx } from './core-scanner.js';
 import { refreshMarket } from './core-market.js';
@@ -63,6 +65,7 @@ document.getElementById('addr-form').addEventListener('submit', (e) => {
   refreshAccount();
   refreshPortfolio();
   refreshFills();
+  refreshCosts();
 });
 
 document.getElementById('market-filter').addEventListener('input', () => renderAll(getState()));
@@ -90,6 +93,20 @@ async function refreshPortfolio() {
 }
 
 // Ausführungen der letzten 90 Tage (für Teilverkäufe und abgeschlossene Trades)
+// Funding-Zahlungen (90 Tage) und deine Gebührensätze
+async function refreshCosts() {
+  if (!address) return;
+  try {
+    const [funding, feeInfo] = await Promise.all([loadFunding(address, Date.now() - 90 * 864e5), hl.fees(address).catch(() => null)]);
+    const rates = ratesFrom(feeInfo);
+    setFeeRate(rates.taker);
+    update({ funding, rates, costsError: null });
+  } catch (e) {
+    update({ costsError: e.message });
+    logError('Kosten', e);
+  }
+}
+
 async function refreshFills() {
   if (!address) return;
   try {
@@ -231,7 +248,7 @@ if (standalone) {
     busy = true;
     ptr.classList.add('busy');
     ptrText.textContent = 'Aktualisiere …';
-    await Promise.allSettled([refreshAccount(), refreshPortfolio(), refreshFills(), refreshPrevDay(), refreshMarket(true)]);
+    await Promise.allSettled([refreshAccount(), refreshPortfolio(), refreshFills(), refreshCosts(), refreshPrevDay(), refreshMarket(true)]);
     ptrText.textContent = 'Aktualisiert';
     setTimeout(() => { ptr.classList.remove('show', 'busy'); busy = false; }, 600);
   }, { passive: true });
@@ -252,10 +269,12 @@ startStream();
 refreshAccount();
 refreshPortfolio();
 refreshFills();
+refreshCosts();
 refreshPrevDay();
 setInterval(refreshAccount, CONFIG.refresh.accountMs);
 setInterval(refreshPortfolio, CONFIG.refresh.performanceMs);
 setInterval(refreshFills, CONFIG.refresh.performanceMs);
+setInterval(refreshCosts, 30 * 60e3);
 setInterval(refreshPrevDay, 5 * 60e3);
 setInterval(() => renderAll(getState()), 1000); // Alter der Daten live mitzählen
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAccount(); });

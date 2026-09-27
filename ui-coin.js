@@ -3,6 +3,7 @@
 import { accountRisk } from './core-positions.js';
 import { getCandles } from './core-scanner.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
+import { fundingForTrade } from './core-fees.js';
 import { chartSvg } from './ui-chart.js';
 import { esc, dn, TFL, CHART_TFS } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
@@ -52,7 +53,7 @@ function renderLive() {
       <div><span class="k">Stop-Loss${p.stopSource ? ' (' + p.stopSource + ')' : ''}</span><span class="v short">${f.price(p.stop)}</span></div>
       <div><span class="k">Liquidation</span><span class="v">${f.price(p.liq)} <small class="muted">${f.pct(p.liqDist)}</small></span></div>
     </div>
-    ${partials(trade)}`;
+    ${partials(trade)}${costLine(trade, s)}`;
   } else $('coin-pos').innerHTML = '';
 
   const cs = cache.get(coin + '|' + tf);
@@ -148,4 +149,11 @@ function viewSummary(c) {
   const long = v.bias !== 'short';
   const lv = [v.invalid != null ? `ungültig ${long ? 'unter' : 'über'} ${f.price(v.invalid)}` : '', v.trigger != null ? `bestätigt ${long ? 'über' : 'unter'} ${f.price(v.trigger)}` : '', v.targets?.length ? `Ziele ${v.targets.map((t) => f.price(t)).join(' / ')}` : ''].filter(Boolean).join(' · ');
   return `<div class="view-box"><b>Deine Einschätzung: ${BIAS_TXT[v.bias]}</b><div class="meta">${esc(lv)}${v.note ? ' · ' + esc(v.note) : ''}</div></div>`;
+}
+
+// Kosten dieses Trades bisher: Gebühren und Funding
+function costLine(t, s) {
+  if (!t) return '';
+  const fund = s.funding ? fundingForTrade(t, s.funding) : null;
+  return `<p class="empty" style="font-size:12.5px;margin:8px 0 0">Kosten bisher: Gebühren ${f.usd(t.fees)}${fund == null ? '' : ` · Funding ${f.signedUsd(fund)}`}</p>`;
 }
