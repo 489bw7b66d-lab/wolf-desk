@@ -14,9 +14,9 @@
     0.004669004503089268,
     0.004870004503089269
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "tp2",
+   "r": 1.5125471426003043,
+   "doneAt": 1790524799999,
    "events": [
     "Hammer",
     "Bullish Engulfing",
