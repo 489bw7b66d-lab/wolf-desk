@@ -47,7 +47,8 @@ export function renderSettings() {
     ${GROUPS.map((g) => {
       const fields = FIELDS.filter((f) => f.group === g.key);
       const n = fields.filter((f) => isChanged(f.path, values[f.path])).length;
-      const sum = g.key === 'exit' ? [0, 1, 2, 3, 4].reduce((s, i) => s + (Number(values[`exitPlan.${i}.pct`]) || 0), 0) : null;
+      const sum = g.key === 'exit' ? [0, 1, 2, 3, 4].reduce((s, i) => s + (Number(values[`exitPlan.${i}.pct`]) || 0), 0)
+        : g.key === 'markt' ? ['btc', 'eth', 'breadth', 'ratio'].reduce((s, k) => s + (Number(values[`market.biasWeights.${k}`]) || 0), 0) : null;
       return `<details class="set-group${g.expert ? ' expert' : ''}" data-group="${g.key}"${open.has(g.key) ? ' open' : ''}>
         <summary><span>${esc(g.title)}</span>${n ? `<b class="set-badge">${n} geändert</b>` : ''}</summary>
         ${g.hint ? `<p class="set-hint${g.expert ? ' warn' : ''}">${esc(g.hint)}</p>` : ''}

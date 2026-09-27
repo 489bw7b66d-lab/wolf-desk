@@ -91,6 +91,13 @@ export const CONFIG = {
     },
   },
 
+  // MARKT-BIAS: Zusammensetzung des Tachos auf der Startseite (Gewichte in Prozent)
+  market: {
+    biasWeights: { btc: 40, eth: 20, breadth: 25, ratio: 15 },
+    breadthTop: 50,            // Marktbreite: so viele Top-Coins nach Market Cap
+    breadthEma: 50,            // … über ihrer EMA dieser Länge im Tageschart
+  },
+
   // INDIKATOREN (Experte): Längen und Schwellen der Signal-Berechnung
   indicators: {
     emaFast: 8, emaMid: 21, emaSlow: 55, emaTrend: 200,  // EMA-Längen (Stack und Kreuzungen)

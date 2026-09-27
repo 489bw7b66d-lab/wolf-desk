@@ -18,5 +18,6 @@ export const tests = [
   ['Einstellungen: Anzeige 0,5 als 50 %', () => { const f = FIELDS.find((x) => x.path === 'rules.liqNoStopMinShare'); return toShown(f, 0.5) === 50; }],
   ['Einstellungen: Datei ist gültiges JavaScript mit den Werten', () => { const t = settingsFile({ 'rules.maxLeverage': 15 }); return t.includes('export const MY_SETTINGS') && JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1))['rules.maxLeverage'] === 15; }],
   ['Einstellungen: unbekannte Pfade werden ignoriert', () => { const o = JSON.parse(JSON.stringify(RECOMMENDED)); applySettings(o, { 'gibts.nicht': 5, 'rules.maxLeverage': 7 }); return o.rules.maxLeverage === 7 && o.gibts === undefined; }],
+  ['Einstellungen: Bias-Gewichte müssen 100 % ergeben', () => { const v = base(); v['market.biasWeights.btc'] = 60; return validate(v).some((e) => e.text.includes('Markt-Bias')); }],
   ['Einstellungen: gleiche Werte = nicht geändert', () => !isChanged('alerts.styles', [...RECOMMENDED.alerts.styles])],
 ];

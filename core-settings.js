@@ -8,6 +8,7 @@ export const GROUPS = [
   { key: 'risiko', title: 'Risiko-Regeln' },
   { key: 'exit', title: 'Ausstiegsplan', hint: 'Anteil der Position je Ziel. Zusammen müssen es 100 % sein.' },
   { key: 'signal', title: 'Signalgeber' },
+  { key: 'markt', title: 'Markt-Bias', hint: 'Zusammensetzung des Tachos auf der Startseite. Gewichte in Prozent, zusammen 100.' },
   { key: 'telegram', title: 'Telegram-Wächter', hint: 'Wirkt erst im Wächter, wenn du „Für den Wächter übernehmen“ nutzt und die Datei hochlädst.' },
   { key: 'ind', title: 'Indikatoren (Experte)', expert: true, hint: 'Ändert die ganze Strategie. Danach am besten einen Backtest laufen lassen und vergleichen.' },
   { key: 'points', title: 'Punkte je Ereignis (Experte)', expert: true, hint: 'Wie stark ein Ereignis den Score hebt. Zusammen zählen Ereignisse höchstens 30 Punkte je Timeframe.' },
@@ -40,6 +41,13 @@ export const FIELDS = [
   n('signal', 'signals.modes.scalp.minTp1Pct', 'TP1 mindestens entfernt (Scalp)', 0.1, 20, 0.1, '%'),
   n('signal', 'signals.hot.topN', 'Heiße Coins: Top … nach Market Cap', 20, 250, 10),
   n('signal', 'signals.hot.maxPicks', 'Heiße Coins: so viele anzeigen', 1, 15, 1),
+
+  n('markt', 'market.biasWeights.btc', 'Gewicht BTC-Trend', 0, 100, 5, '%'),
+  n('markt', 'market.biasWeights.eth', 'Gewicht ETH-Trend', 0, 100, 5, '%'),
+  n('markt', 'market.biasWeights.breadth', 'Gewicht Marktbreite', 0, 100, 5, '%'),
+  n('markt', 'market.biasWeights.ratio', 'Gewicht ETH/BTC', 0, 100, 5, '%'),
+  n('markt', 'market.breadthTop', 'Marktbreite: Top … Coins', 10, 150, 10),
+  n('markt', 'market.breadthEma', 'Marktbreite: über EMA', 10, 200, 5),
 
   n('telegram', 'alerts.minScore', 'Signal melden ab Score', 50, 100, 1),
   { group: 'telegram', path: 'alerts.styles', label: 'Welche Stile melden', type: 'styles' },
@@ -115,6 +123,8 @@ export function validate(v) {
   if (!(I('emaFast') < I('emaMid') && I('emaMid') < I('emaSlow') && I('emaSlow') < I('emaTrend'))) e('indicators.emaFast', 'EMA-Längen müssen aufsteigen: schnell < mittel < langsam < Trend');
   if (!(I('macdFast') < I('macdSlow'))) e('indicators.macdFast', 'MACD: schnell muss kleiner als langsam sein');
   if (!(I('rsiLow') < 50 && I('rsiHigh') > 50)) e('indicators.rsiLow', 'RSI: überverkauft unter 50, überkauft über 50');
+  const wsum = ['btc', 'eth', 'breadth', 'ratio'].reduce((s, k) => s + (Number(v[`market.biasWeights.${k}`]) || 0), 0);
+  if (Math.round(wsum) !== 100) e('market.biasWeights.btc', `Markt-Bias: Gewichte ergeben ${wsum} %, es müssen genau 100 % sein`);
   if (!(v['alerts.styles'] || []).length) e('alerts.styles', 'Telegram: mindestens einen Stil auswählen');
   return err;
 }

@@ -1,6 +1,10 @@
 // Marktüberblick für die Startseite: Fear & Greed, Gesamt-Marktkapitalisierung, BTC-Dominanz, Markt-Bias.
-// Reine Funktionen (fngLabel, biasFrom) haben Tests in test-market.js.
-import { getCandles } from './core-scanner.js';
+// Reine Funktionen (fngLabel, biasFrom, breadthFrom, ratioCandles, compositeBias) haben Tests in test-market.js.
+import { CONFIG } from './config.js';
+import { hl } from './core-api.js';
+import { getCandles, getMarketCtx } from './core-scanner.js';
+import { getUniverse } from './core-universe.js';
+import { ema } from './core-indicators.js';
 import { analyzeTimeframe, scoreTimeframe } from './core-signals.js';
 
 const FNG_URL = 'https://api.alternative.me/fng/?limit=2';
@@ -63,10 +67,81 @@ async function loadGlobal() {
 }
 
 async function loadBias() {
-  const [c4, cd] = [await getCandles('BTC', '4h'), await getCandles('BTC', '1d')];
-  const s4 = c4.length >= 60 ? scoreTimeframe(analyzeTimeframe(c4, '4h')) : null;
-  const sd = cd.length >= 60 ? scoreTimeframe(analyzeTimeframe(cd, '1d')) : null;
-  return biasFrom(s4, sd);
+  const btc4 = await getCandles('BTC', '4h'), btcD = await getCandles('BTC', '1d');
+  const eth4 = await getCandles('ETH', '4h'), ethD = await getCandles('ETH', '1d');
+  const parts = {
+    btc: valueOf(scoreOf(btc4, '4h'), scoreOf(btcD, '1d')),
+    eth: valueOf(scoreOf(eth4, '4h'), scoreOf(ethD, '1d')),
+    ratio: valueOf(null, scoreOf(ratioCandles(ethD, btcD), '1d')),
+    breadth: market.breadth?.value ?? null,
+  };
+  // Marktbreite läuft im Hintergrund nach und aktualisiert den Tacho, sobald sie fertig ist
+  if (!breadthRun) {
+    breadthRun = loadBreadth().then((b) => {
+      market.breadth = b;
+      market.bias = compositeBias({ ...market.bias?.parts, breadth: b?.value ?? null });
+      emit();
+    }).catch(() => { market.breadthProgress = null; }).finally(() => { setTimeout(() => { breadthRun = null; }, 30 * 60e3); });
+  }
+  return compositeBias(parts);
+}
+
+// ===== Zusammengesetzter Markt-Bias =====
+const labelOf = (value) => ({
+  value,
+  label: value >= 40 ? 'Long-Markt' : value >= 15 ? 'Leicht bullisch' : value > -15 ? 'Neutral' : value > -40 ? 'Leicht bärisch' : 'Short-Markt',
+  cls: value >= 15 ? 'long' : value <= -15 ? 'short' : 'muted',
+});
+
+// Marktbreite: Anteil der Märkte, deren Tagesschluss über der EMA liegt. Wert −100 (alle darunter) bis +100 (alle darüber)
+export function breadthFrom(dailyList, emaLen = 50) {
+  const usable = (dailyList || []).filter((c) => c?.length >= emaLen + 5);
+  if (usable.length < 5) return null;
+  const above = usable.filter((c) => { const e = ema(c.map((x) => x.c), emaLen).at(-1); return e != null && c.at(-1).c > e; }).length;
+  const pct = (above / usable.length) * 100;
+  return { pct, n: usable.length, value: Math.round((pct - 50) * 2) };
+}
+
+// ETH/BTC als eigene Kerzenreihe (nur gemeinsame Tage)
+export function ratioCandles(eth, btc) {
+  const b = new Map((btc || []).map((c) => [c.t, c]));
+  return (eth || []).filter((c) => b.has(c.t) && b.get(c.t).c > 0).map((c) => {
+    const x = b.get(c.t), r = c.c / x.c, o = c.o / x.o;
+    return { t: c.t, T: c.T, o, h: Math.max(o, r), l: Math.min(o, r), c: r, v: 0 };
+  });
+}
+
+// Gewichteter Mittelwert der verfügbaren Bausteine (fehlende werden herausgerechnet)
+export function compositeBias(parts, weights = CONFIG.market.biasWeights) {
+  const keys = Object.keys(weights).filter((k) => parts[k] != null && Number.isFinite(parts[k]) && weights[k] > 0);
+  if (!keys.length) return null;
+  const w = keys.reduce((s, k) => s + weights[k], 0);
+  const value = Math.max(-100, Math.min(100, Math.round(keys.reduce((s, k) => s + parts[k] * weights[k], 0) / w)));
+  return { ...labelOf(value), parts, used: keys };
+}
+
+const scoreOf = (candles, tf) => (candles?.length >= 60 ? scoreTimeframe(analyzeTimeframe(candles, tf)) : null);
+const valueOf = (s4, sd) => biasFrom(s4, sd)?.value ?? null;
+
+// Marktbreite im Hintergrund (gedrosselt), Fortschritt wird laufend angezeigt
+let breadthRun = null;
+async function loadBreadth() {
+  const names = [];
+  for (const dex of CONFIG.dexes.filter((d) => !d)) {
+    const m = await hl.meta(dex).catch(() => null);
+    (m?.universe || []).filter((u) => !u.isDelisted).forEach((u) => names.push(u.name));
+  }
+  const ctx = await getMarketCtx().catch(() => ({ ctx: {} }));
+  const uni = await getUniverse(names, ctx.ctx);
+  const coins = uni.coins.slice(0, CONFIG.market.breadthTop);
+  const list = [];
+  for (const [i, c] of coins.entries()) {
+    try { list.push(await getCandles(c, '1d', true)); } catch { /* einzelner Markt fehlt */ }
+    market.breadthProgress = { done: i + 1, total: coins.length };
+    if ((i + 1) % 10 === 0) emit();
+  }
+  market.breadthProgress = null;
+  return breadthFrom(list, CONFIG.market.breadthEma);
 }
 
 export async function refreshMarket(force = false) {

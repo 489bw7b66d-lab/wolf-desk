@@ -58,6 +58,20 @@ const bigUsd = (v) => {
   return new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(t[0]) + ' ' + t[1] + ' $';
 };
 
+// Aufschlüsselung unter dem Tacho: BTC ▲ · ETH ▲ · Breite 64 % · Altcoins stärker
+const arrow = (v) => (v == null ? '·' : v >= 15 ? '▲' : v <= -15 ? '▼' : '►');
+const acls = (v) => (v == null ? 'muted' : v >= 15 ? 'long' : v <= -15 ? 'short' : 'muted');
+function biasParts(bias, m) {
+  const p = bias?.parts;
+  if (!p) return '';
+  const r = p.ratio == null ? '' : p.ratio >= 15 ? 'Altcoins stärker' : p.ratio <= -15 ? 'BTC stärker' : 'ETH/BTC neutral';
+  const breadth = m.breadth ? `Breite ${f.pct(m.breadth.pct, 0)}`
+    : m.breadthProgress ? `Breite ${m.breadthProgress.done}/${m.breadthProgress.total} …` : 'Breite …';
+  return `<span class="mkt-parts">
+    <b class="${acls(p.btc)}">BTC ${arrow(p.btc)}</b> · <b class="${acls(p.eth)}">ETH ${arrow(p.eth)}</b> ·
+    <b class="${acls(m.breadth?.value ?? null)}">${breadth}</b>${r ? ` · <b class="${acls(p.ratio)}">${r}</b>` : ''}</span>`;
+}
+
 export function renderMarket() {
   const box = $('market');
   if (!box) return;
@@ -68,7 +82,8 @@ export function renderMarket() {
       <div class="mkt-bias">
         ${biasGauge(bias)}
         <b class="mkt-label ${bias?.cls || 'muted'}">${bias ? bias.label : errors.bias ? 'Nicht verfügbar' : 'Lädt …'}</b>
-        <span class="k">Markt-Bias aus BTC 4H + 1D</span>
+        <span class="k">Markt-Bias</span>
+        ${biasParts(bias, market)}
       </div>
       <div class="mkt-fng">
         ${fngGauge(fng?.value ?? null)}
