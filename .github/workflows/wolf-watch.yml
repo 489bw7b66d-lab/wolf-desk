@@ -22,14 +22,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       # Gedächtnis zwischen den Läufen (was schon gemeldet wurde)
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         with:
           path: .watch-state.json
           key: watch-state-${{ github.run_id }}
@@ -46,7 +47,7 @@ jobs:
           WALLET: ${{ secrets.WALLET }}
           TEST_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}
 
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         if: always()
         with:
           path: .watch-state.json
