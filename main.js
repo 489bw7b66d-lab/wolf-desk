@@ -21,6 +21,23 @@ import { refreshTrade } from './ui-trade.js';
 import * as fmt from './core-format.js';
 
 const ADDR_KEY = 'wolfdesk.address';
+
+// Automatische Update-Prüfung: liegt bei GitHub eine neuere Version, lädt sich die App einmal neu
+// (über eine neue Adresse, damit das iPhone nicht die zwischengespeicherte Startseite nimmt).
+const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content || '';
+async function checkUpdate() {
+  try {
+    const res = await fetch('index.html?check=' + Date.now(), { cache: 'no-store' });
+    const live = (await res.text()).match(/name="app-version" content="([^"]+)"/)?.[1];
+    if (!live || live === APP_VERSION) return;
+    const url = new URL(location.href);
+    if (url.searchParams.get('v') === live) return; // schon versucht, nicht in Schleife laufen
+    url.searchParams.set('v', live);
+    location.replace(url.toString());
+  } catch { /* offline: später erneut */ }
+}
+checkUpdate();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 let address = '';
 try { address = localStorage.getItem(ADDR_KEY) || ''; } catch { /* Speicher nicht verfügbar */ }

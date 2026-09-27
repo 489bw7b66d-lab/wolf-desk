@@ -1,4 +1,5 @@
-import { signalAlert, riskDiff, badChecks, signalText, riskText, telegramView, judgeSignal, journalStats, reportText } from './core-alerts.js';
+import { signalAlert, riskDiff, badChecks, signalText, riskText, telegramView, judgeSignal, journalStats, reportText, linkTrades, executionStats } from './core-alerts.js';
+const FL = (coin, time, side, sz, start, pnl = 0) => ({ coin, time, side, sz: String(sz), px: '10', startPosition: String(start), closedPnl: String(pnl), fee: '0' });
 
 const CFG = { minScore: 75, repeatHours: 12, states: ['zone', 'early'], appUrl: 'https://x' };
 const R = (score = 82, over = {}) => ({
@@ -65,5 +66,20 @@ export const tests = [
     return st.n === 3 && Math.round(st.hit) === 67 && st.open === 1;
   }],
   ['Tagebuch: Auswertung ohne Dollarbeträge', () => !reportText([{ status: 'tp1', r: 1, style: 'swing', score: 80, dir: 'long', events: [] }]).includes('$')],
+  ['Umsetzung: Trade 2 Std. nach dem Signal wird zugeordnet', () => {
+    const j = [{ coin: 'SOL', dir: 'long', at: 0, status: 'tp1', r: 1 }];
+    const l = linkTrades(j, [FL('SOL', 2 * H, 'B', 5, 0), FL('SOL', 5 * H, 'A', 5, 5, 40)]);
+    return l.journal[0].taken?.closed === true && l.journal[0].taken.realized === 40 && l.own.length === 0;
+  }],
+  ['Umsetzung: falsche Richtung = nicht umgesetzt', () => linkTrades([{ coin: 'SOL', dir: 'long', at: 0 }], [FL('SOL', H, 'A', 5, 0)]).journal[0].taken === null],
+  ['Umsetzung: 30 Std. später = eigener Trade ohne Signal', () => {
+    const l = linkTrades([{ coin: 'SOL', dir: 'long', at: 0 }], [FL('SOL', 30 * H, 'B', 5, 0), FL('SOL', 31 * H, 'A', 5, 5, -10)]);
+    return l.journal[0].taken === null && l.own.length === 1 && l.own[0].realized === -10;
+  }],
+  ['Umsetzung: Auswertung trennt gehandelt und nicht gehandelt', () => {
+    const j = [{ status: 'tp2', r: 2, taken: { closed: true, realized: 50 } }, { status: 'stop', r: -1, taken: null }, { status: 'tp1', r: 1, taken: null }];
+    const x = executionStats(j, [{ realized: -20 }]);
+    return x.takenCount === 1 && x.picked.hit === 100 && x.skipped.n === 2 && x.real.sum === 50 && x.own.hit === 0;
+  }],
   ['Text: Risiko-Meldung ohne Dollarbeträge', () => !riskText(['NEAR|Abstand Liquidation'], [], { 'NEAR|Abstand Liquidation': '2,4 % von anfangs ca. 9,0 %' }, {}).includes('$')],
 ];

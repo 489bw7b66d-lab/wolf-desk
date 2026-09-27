@@ -11,7 +11,7 @@ import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.
 import { getUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText } from './core-alerts.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
 // Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
@@ -113,6 +113,16 @@ async function updateJournal(state, now) {
   }
   // Aufräumen: ausgewertete Einträge nach 60 Tagen entfernen, höchstens 400 behalten
   state.journal = state.journal.filter((e) => e.status === 'offen' || now - e.at < 60 * 864e5).slice(-400);
+  // Mit deinen echten Trades verbinden (nur mit hinterlegter Wallet)
+  if (WALLET && state.journal.length) {
+    try {
+      const since = Math.min(...state.journal.map((e) => e.at)) - 7 * 864e5;
+      const fills = await hl.fillsSince(WALLET, since);
+      const linked = linkTrades(state.journal, fills);
+      state.journal = linked.journal;
+      state.own = linked.own.map((t) => ({ coin: t.coin, openedAt: t.openedAt, closedAt: t.closedAt, realized: t.realized }));
+    } catch (err) { log('Trades verknüpfen:', err.message); }
+  }
 }
 
 async function main() {
@@ -149,7 +159,11 @@ async function main() {
       CHANNEL ? 'Signale gehen in deinen Kanal, Regelverstöße bleiben hier privat.' : 'Signale und Regelverstöße kommen hierher.',
       WALLET ? (risk ? `Konto gelesen: ${risk.positions.length} Positionen, ${Object.keys(bad).length} Regelverstöße.` : 'Konto konnte nicht gelesen werden.') : 'Keine Wallet hinterlegt, nur Signale.',
       `Signale ab Score ${CONFIG.alerts.minScore} (${CONFIG.alerts.styles.map((k) => CONFIG.signals.modes[k].label).join(' und ')}), alle 15 Minuten.`].join('\n'));
-    if (state.journal.length) await send(reportText(state.journal, 'bisher'));
+    if (state.journal.length) {
+      await updateJournal(state, now);
+      await send(reportText(state.journal, 'bisher') + executionText(executionStats(state.journal, state.own || [])));
+      await writeFile(STATE_FILE, JSON.stringify(state));
+    }
     else await send('📒 <b>Signal-Tagebuch</b> ist bereit. Ab jetzt wird jedes gemeldete Signal mitgeschrieben und ausgewertet.');
     log('Testnachricht gesendet');
     return;
@@ -189,7 +203,8 @@ async function main() {
   if (!state.lastReport) state.lastReport = now;
   else if (now - state.lastReport >= every) {
     const period = state.journal.filter((e) => e.status === 'offen' || (e.doneAt || e.at) >= state.lastReport);
-    await send(reportText(period, `letzte ${CONFIG.alerts.reportDays || 7} Tage`));
+    const ownPeriod = (state.own || []).filter((t) => t.closedAt >= state.lastReport);
+    await send(reportText(period, `letzte ${CONFIG.alerts.reportDays || 7} Tage`) + executionText(executionStats(period, ownPeriod)));
     state.lastReport = now;
   }
   Object.keys(state.lastDir).forEach((k) => { if (now - state.lastDir[k].at > 3 * 864e5) delete state.lastDir[k]; });

@@ -4,6 +4,7 @@ import { CONFIG } from './config.js';
 import { priceVsPlan } from './core-risk.js';
 import { topReasons } from './ui-parts.js';
 import * as f from './core-format.js';
+import { tradeHistory } from './core-trades.js';
 
 const dn = (c) => String(c ?? '').replace(/^[a-z]+:/, '');
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -183,5 +184,48 @@ export function reportText(list, title = 'letzte 7 Tage') {
     s.events.slice(0, 4).forEach((e) => lines.push(`${esc(e.name)}: ${e.n} · ${rr(e.edge)}`));
   }
   if (s.n < 30) lines.push('', `Bei ${s.n} Signalen noch ein vorläufiges Bild.`);
+  return lines.join('\n');
+}
+
+// ===== Umsetzung: Signale mit deinen echten Trades verbinden =====
+// Ein Signal gilt als umgesetzt, wenn du auf demselben Markt in derselben Richtung
+// zwischen 1 Std. vor und 24 Std. nach der Meldung eine Position eröffnet hast.
+export function linkTrades(journal, fills, windowH = 24) {
+  const trades = tradeHistory(fills).filter((t) => !t.partial);
+  const used = new Set();
+  const out = journal.map((e) => {
+    const t = trades.find((x) => x.coin === e.coin && x.side === e.dir && !used.has(x)
+      && x.openedAt >= e.at - 36e5 && x.openedAt <= e.at + windowH * 36e5);
+    if (!t) return e.taken ? e : { ...e, taken: null };
+    used.add(t);
+    return { ...e, taken: { openedAt: t.openedAt, closed: t.closedAt != null, realized: t.realized } };
+  });
+  // Deine Trades ohne Signal (nur abgeschlossene)
+  const own = trades.filter((t) => !used.has(t) && t.closedAt != null);
+  return { journal: out, own };
+}
+
+export function executionStats(journal, own) {
+  const done = journal.filter((e) => e.status !== 'offen' && e.status !== 'ungültig');
+  const taken = done.filter((e) => e.taken);
+  const real = journal.filter((e) => e.taken?.closed);
+  const winRate = (l, fn) => (l.length ? (l.filter(fn).length / l.length) * 100 : null);
+  const sig = (l) => ({ n: l.length, hit: winRate(l.filter((e) => e.status !== 'abgelaufen'), (e) => e.status === 'tp1' || e.status === 'tp2'), avgR: l.length ? l.reduce((s, e) => s + (e.r || 0), 0) / l.length : null });
+  const money = (l) => ({ n: l.length, hit: winRate(l, (x) => x > 0), sum: l.reduce((s, x) => s + x, 0) });
+  return {
+    signals: journal.length, takenCount: journal.filter((e) => e.taken).length,
+    all: sig(done), picked: sig(taken), skipped: sig(done.filter((e) => !e.taken)),
+    real: money(real.map((e) => e.taken.realized)), own: money(own.map((t) => t.realized)),
+  };
+}
+
+export function executionText(x) {
+  if (!x.signals) return '';
+  const pc2 = (v) => (v == null ? '–' : f.pct(v, 0));
+  const usd = (v) => (v >= 0 ? '+' : '−') + new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(Math.abs(v)) + ' $';
+  const lines = ['', '', '<b>Umsetzung</b>', `Von dir gehandelt: ${x.takenCount} von ${x.signals} Signalen`];
+  if (x.picked.n) lines.push(`Deine Auswahl (Signal-Ergebnis): ${pc2(x.picked.hit)} · ${rr(x.picked.avgR)}`, `Nicht gehandelt: ${pc2(x.skipped.hit)} · ${rr(x.skipped.avgR)}`);
+  if (x.real.n) lines.push(`Deine Trades zu Signalen: ${x.real.n} · Treffer ${pc2(x.real.hit)} · ${usd(x.real.sum)}`);
+  if (x.own.n) lines.push(`Deine Trades ohne Signal: ${x.own.n} · Treffer ${pc2(x.own.hit)} · ${usd(x.own.sum)}`);
   return lines.join('\n');
 }
