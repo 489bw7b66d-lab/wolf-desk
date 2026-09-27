@@ -46,14 +46,18 @@ export function tradePath(p, orders, exits, exitPlan, targets = null) {
   // Linkes Ende: der Punkt, der am weitesten auf der Verlustseite liegt (Stop, bei Stop im Gewinn der Einstieg;
   // ohne Stop die Liquidation, sonst ein Stück vor dem Einstieg)
   const last = tps.at(-1).price;
-  const base = p.stop != null ? p.stop : p.liq != null ? p.liq : p.entry - (last - p.entry) * 0.3;
-  const left = (base - p.entry) * sg < 0 ? base : p.entry;
+  const orig = targets?.stop != null && (targets.stop - p.entry) * sg < 0 ? targets.stop : null;
+  const base = orig ?? (p.stop != null ? p.stop : p.liq != null ? p.liq : p.entry - (last - p.entry) * 0.3);
+  // Liegt der aktuelle Stop noch unter dem ursprünglichen (weiter weg), beginnt der Balken dort
+  const far = p.stop != null && orig != null && (p.stop - orig) * sg < 0 ? p.stop : base;
+  const left = (far - p.entry) * sg < 0 ? far : p.entry;
   const span = (last - left) * sg;
   if (!(span > 0)) return null;
   const frac = (x) => Math.max(0, Math.min(1, ((x - left) * sg) / span));
   const next = tps.find((t) => !t.reached && (p.mark == null || (t.price - p.mark) * sg > 0)) || null;
   return {
-    left: { price: left, kind: p.stop != null ? 'stop' : p.liq != null ? 'liq' : 'none', at: 0 },
+    left: { price: left, kind: orig != null ? 'plan' : p.stop != null ? 'stop' : p.liq != null ? 'liq' : 'none', at: 0 },
+    origStop: orig != null ? { price: orig, at: frac(orig) } : null,
     stop: p.stop != null ? { price: p.stop, at: frac(p.stop), inProfit: (p.stop - p.entry) * sg >= 0 } : null,
     source: targets?.tps?.length ? targets : { source: 'orders', label: 'aus deinen Take-Profit-Orders' },
     entry: { price: p.entry, at: frac(p.entry) },

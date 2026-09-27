@@ -36,9 +36,10 @@ export function signalFor(signals, coin, side, openedAt) {
 }
 
 // Ziele für den Trade-Weg: { tps: [...], source: 'plan'|'signal', label }
-export function targetsFor({ plan, signal }) {
-  if (plan?.tps?.length) return { tps: plan.tps, source: 'plan', label: plan.source === 'analyse' ? 'aus der Analyse übernommen' : plan.source === 'signal' ? 'aus dem Signal übernommen' : 'selbst festgelegt' };
-  if (signal?.tps?.length) return { tps: signal.tps, source: 'signal', label: `aus dem Telegram-Signal vom ${new Date(signal.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}` };
+export function targetsFor({ plan, signal, auto }) {
+  if (plan?.tps?.length) return { tps: plan.tps, stop: plan.stop ?? auto?.stop ?? signal?.stop ?? null, source: 'plan', label: plan.source === 'analyse' ? 'aus der Analyse übernommen' : plan.source === 'signal' ? 'aus dem Signal übernommen' : 'selbst festgelegt' };
+  if (signal?.tps?.length) return { tps: signal.tps, stop: signal.stop ?? null, source: 'signal', label: `aus dem Telegram-Signal vom ${new Date(signal.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}` };
+  if (auto?.tps?.length) return { tps: auto.tps, stop: auto.stop, source: 'auto', label: `automatisch berechnet (${auto.style === 'intraday' ? 'Daytrade' : 'Swing'}, ${auto.method})` };
   return null;
 }
 

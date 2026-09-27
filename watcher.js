@@ -14,6 +14,7 @@ import { accountRisk } from './core-positions.js';
 import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText } from './core-alerts.js';
 import { viewFor, alignment, viewEvents } from './core-views.js';
 import { planFor, signalFor, targetsFor, targetHits } from './core-plans.js';
+import { computeAutoPlan } from './core-autoplan.js';
 import { tradeHistory, openTradeFor } from './core-trades.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
@@ -34,7 +35,7 @@ async function send(text, chat = CHAT) {
 async function loadState() {
   let st = {};
   try { st = JSON.parse(await readFile(STATE_FILE, 'utf8')); } catch { /* erster Lauf */ }
-  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, tpHits: {}, ...st };
+  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, tpHits: {}, autoPlans: {}, ...st };
 }
 
 async function marketNames() {
@@ -216,7 +217,14 @@ async function main() {
         const t = openTradeFor(trades, p.coin);
         const plan = planFor(CONFIG.plans, p.coin, p.side, t?.openedAt);
         const signal = signalFor(state.journal, p.coin, p.side, t?.openedAt);
-        const targets = targetsFor({ plan, signal });
+        // Ohne eigenen Plan und ohne Signal: automatischer Plan (einmal berechnen, dann gemerkt)
+        let auto = null;
+        if (!plan && !signal && t?.openedAt && !t.partial) {
+          const k = `${p.coin}|${t.openedAt}|${CONFIG.positions?.autoStyle || 'swing'}`;
+          auto = state.autoPlans[k] || null;
+          if (!auto) { auto = await computeAutoPlan(p.coin, p.side, p.entry, t.openedAt).catch(() => null); if (auto) state.autoPlans[k] = auto; }
+        }
+        const targets = targetsFor({ plan, signal, auto });
         if (!targets) continue;
         const tps = targets.tps.slice(0, n);
         const key = t?.openedAt || plan?.at || signal?.at;
@@ -228,6 +236,7 @@ async function main() {
     } catch (err) { log('Ziele prüfen:', err.message); }
   }
   Object.keys(state.tpHits).forEach((k) => { if (now - state.tpHits[k] > 60 * 864e5) delete state.tpHits[k]; });
+  Object.keys(state.autoPlans).forEach((k) => { if (now - state.autoPlans[k].at > 60 * 864e5) delete state.autoPlans[k]; });
 
   // Deine Marken: Bruch, Bestätigung oder Ziel erreicht → privat an dich
   for (const [coin, v] of Object.entries(CONFIG.views || {})) {

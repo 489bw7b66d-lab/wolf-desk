@@ -20,6 +20,7 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-fees.js` – Kosten: Gebühren, Funding, deine Gebührensätze, Schätzung je Trade
 - `core-path.js` – Trade-Weg einer Position (Stop → Einstieg → Ziele aus echten Orders und Teilverkäufen)
 - `core-plans.js` – Ziele je offener Position (eigener Plan, passendes Signal), Meldungen beim Erreichen
+- `core-autoplan.js` – automatischer Plan (SL, TP1–TP4) für jede offene Position, berechnet mit den Kerzen zum Einstiegszeitpunkt
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -50,3 +51,5 @@ Etappe 3v: Menüleiste Start · Konto · Signale · Backtest · Risiko
 Etappe 3w: Kosten-Karte im Konto (Gebühren und Funding 7/30/90 Tage, Anteil am Bruttogewinn), Funding und Netto je Trade, geschätzte Gebühren auf der Trade-Karte mit deinem echten Satz, Backtest rechnet mit deinem Satz
 Etappe 3y: Trade-Weg in den Positionskarten: Fortschrittsbalken vom Stop bis zum Kurs mit beschrifteten Strichen für SL, Einstieg und TP1–TP4 (Anzahl nach Ausstiegsplan), erreichte Ziele mit ✓, nächstes Ziel in %
 Etappe 3z: Ziele je Position für manuelles Schließen (aus Signal, aus Analyse oder selbst eingetragen, im Markt-Blatt), Trade-Weg nutzt diese Ziele, rot bis Einstieg und grün ab Einstieg, 🏁 am letzten Ziel, Beschriftungen ohne Überlappung, Wächter meldet erreichte Ziele privat mit Verkaufsanteil laut Plan
+Etappe 3za: Auswahlknöpfe eindeutig (ausgewählt gold mit ✓)
+Etappe 3zb: Automatischer Plan für jede Position nach den Regeln des Signalgebers (Kerzen zum Einstieg, Fibonacci sonst ATR, Stil wählbar), Trade-Weg mit ursprünglichem SL₀ und nachgezogenem SL (schraffiert = abgesichert), Wächter meldet Ziele auch für eigene Trades

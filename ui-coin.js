@@ -5,6 +5,7 @@ import { getCandles } from './core-scanner.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { fundingForTrade } from './core-fees.js';
 import { getPlans, savePlan, planFor, signalFor, targetsFor, cleanTargets } from './core-plans.js';
+import { getAutoPlan } from './core-autoplan.js';
 import { getFeedSignals } from './ui-feed.js';
 import { analyzeAllModes } from './core-scanner.js';
 import { CONFIG } from './config.js';
@@ -120,6 +121,8 @@ export function openCoin(name) {
   loadChart();
   renderLive();
   renderPlan();
+  // Der automatische Plan wird im Hintergrund berechnet: kurz danach neu zeichnen
+  [3000, 8000, 15000].forEach((ms) => setTimeout(() => { if (!planEdit && $('coin-plan') && coin === name) renderPlan(); }, ms));
   clearInterval(timer);
   timer = setInterval(renderLive, 1000);
   $('sheet-close').focus();
@@ -173,7 +176,8 @@ function planCtx() {
   const t = openTradeFor(tradeHistory(s.fills), coin);
   const plan = planFor(getPlans(), coin, p.side, t?.openedAt);
   const signal = signalFor(getFeedSignals(), coin, p.side, t?.openedAt);
-  return { p, t, plan, signal, targets: targetsFor({ plan, signal }) };
+  const auto = t?.partial ? null : getAutoPlan(coin, p.side, p.entry, t?.openedAt);
+  return { p, t, plan, signal, auto, targets: targetsFor({ plan, signal, auto }) };
 }
 
 function renderPlan() {
@@ -194,8 +198,8 @@ function renderPlan() {
   }
   box.innerHTML = `<h3 class="sub-h">Ziele für diesen Trade</h3>
     ${targets ? `<div class="plan-list">${targets.tps.slice(0, n).map((x, i) => `<div><span>${i === Math.min(n, targets.tps.length) - 1 ? '🏁 ' : ''}TP${i + 1}</span><b>${f.price(x)}</b><small class="long">${rel(x)}</small></div>`).join('')}</div>
-      <p class="meta" style="font-size:12px;margin:6px 0 0">Ziele ${esc(targets.label)}.</p>`
-      : '<p class="empty" style="margin:0">Noch keine festen Ziele. Ohne sie nutzt der Trade-Weg deine Take-Profit-Orders bei Hyperliquid.</p>'}
+      <p class="meta" style="font-size:12px;margin:6px 0 0">Ziele ${esc(targets.label)}${targets.stop != null ? ` · Plan-SL ${f.price(targets.stop)}` : ''}.</p>`
+      : '<p class="empty" style="margin:0">Der automatische Plan wird gerade berechnet … Ohne ihn nutzt der Trade-Weg deine Take-Profit-Orders bei Hyperliquid.</p>'}
     ${planMsg ? `<p class="meta" style="color:var(--gold);font-size:12.5px">${esc(planMsg)}</p>` : ''}
     <div class="set-actions">
       ${signal && targets?.source !== 'signal' ? '<button type="button" id="pl-signal" class="ghost">Aus Telegram-Signal übernehmen</button>' : ''}

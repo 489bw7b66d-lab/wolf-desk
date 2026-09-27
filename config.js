@@ -31,6 +31,11 @@ export const CONFIG = {
   // DEINE ZIELE je offener Position (für manuelles Schließen; über my-settings.js auch für den Wächter)
   plans: {},
 
+  // AUTOMATISCHER PLAN für offene Positionen ohne eigene Ziele und ohne Signal
+  positions: {
+    autoStyle: 'swing',      // nach welchem Stil SL und Ziele berechnet werden: 'swing' oder 'intraday'
+  },
+
   // LETZTE SIGNALE: vom Wächter veröffentlicht (eigener Zweig "signals", nur öffentliche Signaldaten)
   feed: {
     url: 'https://raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/signals/signals.json',

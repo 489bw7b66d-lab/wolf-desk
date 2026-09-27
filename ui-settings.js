@@ -14,6 +14,7 @@ const shownRec = (f) => {
   const r = recommendedValue(f.path);
   if (f.type === 'bool') return r ? 'an' : 'aus';
   if (f.type === 'styles') return r.map((k) => CONFIG.signals.modes[k].label).join(', ');
+  if (f.type === 'choice') return (f.options.find((o) => o[0] === r) || [r, r])[1];
   return `${num(toShown(f, r))}${f.unit ? ' ' + f.unit : ''}`;
 };
 
@@ -21,6 +22,9 @@ function input(f) {
   const v = values[f.path], id = 'set-' + f.path.replace(/\./g, '-');
   if (f.type === 'bool') {
     return `<label class="set-switch"><input type="checkbox" id="${id}" data-path="${f.path}" ${v ? 'checked' : ''}><span>${v ? 'an' : 'aus'}</span></label>`;
+  }
+  if (f.type === 'choice') {
+    return `<div class="set-styles" role="group" aria-label="${esc(f.label)}">${f.options.map(([k, l]) => `<button type="button" data-choice="${k}" data-path="${f.path}" aria-pressed="${v === k}">${l}</button>`).join('')}</div>`;
   }
   if (f.type === 'styles') {
     return `<div class="set-styles" role="group" aria-label="${esc(f.label)}">${STYLE_KEYS.map((k) => `<button type="button" data-style="${k}" data-path="${f.path}" aria-pressed="${v.includes(k)}">${CONFIG.signals.modes[k].label}</button>`).join('')}</div>`;
@@ -106,6 +110,8 @@ export function initSettings() {
     renderSettings();
   });
   box.addEventListener('click', (e) => {
+    const ch = e.target.closest('button[data-choice]');
+    if (ch) { setValue(ch.dataset.path, ch.dataset.choice); renderSettings(); return; }
     const st = e.target.closest('button[data-style]');
     if (st) {
       const cur = new Set(values[st.dataset.path]);

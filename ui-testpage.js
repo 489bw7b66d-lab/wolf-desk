@@ -8,6 +8,7 @@ import { enrichPositions } from './core-positions.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { tradePath } from './core-path.js';
 import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
+import { getAutoPlan } from './core-autoplan.js';
 import { getFeedSignals } from './ui-feed.js';
 import * as f from './core-format.js';
 
@@ -92,7 +93,7 @@ function renderPositions(s, now) {
           <div><span class="k">Stop-Quelle</span>${p.stopSource || '–'}</div>
         </div>
       </details>
-      ${pathBar(tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan, targetsFor({ plan: planFor(getPlans(), p.coin, p.side, t?.openedAt), signal: signalFor(getFeedSignals(), p.coin, p.side, t?.openedAt) })))}
+      ${pathBar(tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan, targetsFor({ plan: planFor(getPlans(), p.coin, p.side, t?.openedAt), signal: signalFor(getFeedSignals(), p.coin, p.side, t?.openedAt), auto: t?.partial ? null : getAutoPlan(p.coin, p.side, p.entry, t?.openedAt) })))}
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
       <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
@@ -148,8 +149,10 @@ export function pathBar(path) {
   const e = path.entry.at, at = m ? m.at : 0;
   const red = Math.min(at, e), green = Math.max(0, at - e);
   const last = path.tps.length - 1;
+  const moved = path.origStop && path.stop && Math.abs(path.stop.at - path.origStop.at) > 0.005;
   let ticks = [
     path.left.kind === 'liq' ? { at: 0, label: 'Liq', cls: 'liq' } : null,
+    path.origStop && (moved || !path.stop) ? { at: path.origStop.at, label: 'SL₀', cls: 'sl0' } : null,
     path.stop ? { at: path.stop.at, label: path.stop.inProfit ? 'SL✓' : 'SL', cls: path.stop.inProfit ? 'sl-gain' : 'sl' } : null,
     { at: path.entry.at, label: 'E', cls: 'e' },
     ...path.tps.map((t, i) => ({ at: t.at, label: i === last ? `🏁 TP${t.n}${t.reached ? '✓' : ''}` : `TP${t.n}${t.reached ? '✓' : ''}`, cls: t.passed ? 'tp done' : 'tp' })),
@@ -165,12 +168,13 @@ export function pathBar(path) {
   const twoRows = ticks.some((x) => x.row === 1);
   const info = [];
   if (path.left.kind === 'liq') info.push('kein Stop: Balken beginnt bei der Liquidation');
+  if (moved && path.stop.at > path.origStop.at) info.push('Stop nachgezogen, schraffiert = abgesichert');
   if (path.next) info.push(`nächstes Ziel TP${path.next.n}: ${path.next.pct >= 0 ? '+' : '−'}${f.pct(Math.abs(path.next.pct), 1)}`);
   else if (m?.beyond) info.push('🏁 Ziel erreicht');
   if (path.found < path.planned) info.push(`${path.planned - path.found} von ${path.planned} Zielen fehlen`);
   const edge = (x) => (x.at < 0.06 ? ' first' : x.at > 0.94 ? ' last' : '');
   return `<div class="path" role="img" aria-label="Trade-Weg: ${ticks.map((x) => x.label).join(', ')}">
-    <div class="path-track"><span class="path-fill loss" style="left:0;width:${pct(red)}%"></span><span class="path-fill gain" style="left:${pct(e)}%;width:${pct(green)}%"></span>
+    <div class="path-track"><span class="path-fill loss" style="left:0;width:${pct(red)}%"></span><span class="path-fill gain" style="left:${pct(e)}%;width:${pct(green)}%"></span>${moved && path.stop.at > path.origStop.at ? `<span class="path-secured" style="left:${pct(path.origStop.at)}%;width:${pct(path.stop.at - path.origStop.at)}%" title="durch nachgezogenen Stop abgesichert"></span>` : ''}
       ${ticks.map((x) => `<i class="path-tick ${x.cls}" style="left:${pct(x.at)}%"></i>`).join('')}</div>
     <div class="path-labels${twoRows ? ' two' : ''}">${ticks.map((x) => `<span class="${x.cls}${edge(x)} r${x.row}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
     <p class="path-info meta">${info.join(' · ')}${info.length ? ' · ' : ''}<span class="path-src">Ziele ${path.source.label}</span></p>

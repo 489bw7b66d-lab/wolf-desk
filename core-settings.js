@@ -49,6 +49,8 @@ export const FIELDS = [
   n('markt', 'market.breadthTop', 'Marktbreite: Top … Coins', 10, 150, 10),
   n('markt', 'market.breadthEma', 'Marktbreite: über EMA', 10, 200, 5),
 
+  { group: 'signal', path: 'positions.autoStyle', label: 'Automatischer Plan für eigene Trades', type: 'choice', options: [['swing', 'Swing'], ['intraday', 'Daytrade']], hint: 'SL und Ziele für Positionen ohne Signal' },
+
   n('telegram', 'alerts.minScore', 'Signal melden ab Score', 50, 100, 1),
   { group: 'telegram', path: 'alerts.styles', label: 'Welche Stile melden', type: 'styles' },
   n('telegram', 'alerts.minVolumeUsd', 'Mindestumsatz (24 Std.)', 0, 1000, 1, 'Mio. $', { scale: 1e6 }),

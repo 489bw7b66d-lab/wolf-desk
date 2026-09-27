@@ -503,3 +503,6 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .plan-list div { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; font-size: 14px; }
 .plan-list b { font-weight: 800; }
 .plan-list small { font-size: 12px; font-weight: 700; }
+.path-secured { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, rgba(0,0,0,.55) 0 3px, rgba(0,0,0,0) 3px 7px); border-radius: 5px 0 0 5px; }
+.path-tick.sl0 { background: var(--muted); height: 12px; top: -1px; }
+.path-labels .sl0 { color: var(--muted); }
