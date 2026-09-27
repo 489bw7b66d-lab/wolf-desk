@@ -11,7 +11,7 @@ import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.
 import { getUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals } from './core-alerts.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
 // Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
@@ -125,6 +125,11 @@ async function updateJournal(state, now) {
   }
 }
 
+// Öffentliche Signal-Liste für die App (wird vom Zeitplan in den Zweig "signals" gelegt)
+async function publish(state) {
+  await writeFile('signals.json', JSON.stringify({ signals: publicSignals(state.journal) }, null, 1));
+}
+
 async function main() {
   if (!TOKEN) throw new Error('TELEGRAM_TOKEN fehlt (GitHub Secrets prüfen)');
   if (!CHAT) {
@@ -164,6 +169,7 @@ async function main() {
       await send(reportText(state.journal, 'bisher') + executionText(executionStats(state.journal, state.own || [])));
       await writeFile(STATE_FILE, JSON.stringify(state));
     }
+    await publish(state);
     else await send('📒 <b>Signal-Tagebuch</b> ist bereit. Ab jetzt wird jedes gemeldete Signal mitgeschrieben und ausgewertet.');
     log('Testnachricht gesendet');
     return;
@@ -212,6 +218,7 @@ async function main() {
   // Alte Einträge aufräumen (älter als 3 Tage)
   Object.keys(state.sent).forEach((k) => { if (now - state.sent[k] > 3 * 864e5) delete state.sent[k]; });
   await writeFile(STATE_FILE, JSON.stringify(state));
+  await publish(state);
   log(`Fertig: ${results.length} geprüft, ${alerts.length} Signale gemeldet, Tagebuch: ${journalStats(state.journal).open} offen`);
 }
 

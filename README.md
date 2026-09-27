@@ -15,6 +15,7 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-backtest.js`, `ui-backtest.js` – Backtest des Signalgebers auf vergangenen Kerzen
 - `core-alerts.js`, `watcher.js` – Telegram-Wächter: läuft alle 15 Minuten bei GitHub Actions (`.github/workflows/wolf-watch.yml`), meldet starke Signale und Regelverstöße
 - `core-settings.js`, `ui-settings.js`, `my-settings.js` – Einstellungen (Zahnrad): empfohlene Werte in config.js, deine Abweichungen in my-settings.js (auch für den Wächter)
+- `ui-feed.js` – Letzte Signale im Signale-Tab (liest signals.json aus dem Zweig „signals“, vom Wächter veröffentlicht)
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -38,3 +39,4 @@ Etappe 3o: Einstellungen mit Zahnrad (Konto, Risiko, Ausstiegsplan, Signalgeber,
 Etappe 3p: Wächter-Beruhigung: Entwarnung erst, wenn eine Regel wieder grün ist (kein Hin und Her bei Werten an der Grenze)
 Etappe 3q: Tagebuch verknüpft Signale mit deinen echten Trades (Umsetzung, Auswahl, eigene Trades ohne Signal), automatische Update-Prüfung der App
 Etappe 3r: Markt-Bias aus BTC (40 %), ETH (20 %), Marktbreite Top 50 über EMA 50 (25 %) und ETH/BTC (15 %), Aufschlüsselung unter dem Tacho, Gewichte in den Einstellungen
+Etappe 3s: Signale-Tab zeigt die letzten 5 Telegram-Signale mit Live-Kurs, Abstand und Status statt der Watchlist-Liste; Wächter veröffentlicht signals.json im Zweig „signals“

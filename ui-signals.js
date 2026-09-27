@@ -133,6 +133,7 @@ function renderQuick() {
 }
 
 function renderList() {
+  if (!$('sig-list')) return;
   $('sig-list').innerHTML = getWatchlist().map((c) => {
     const r = results.get(mode + '|' + c);
     return `<button type="button" class="sig-row" data-coin="${esc(c)}">
@@ -168,7 +169,7 @@ export function renderWatchLive(s) {
 let scanning = false, lastScan = 0;
 // background = gedrosselt (automatischer Scan), sonst so schnell wie möglich (Knopf)
 async function scanWatchlist(background = false) {
-  if (scanning) return;
+  if (scanning || !$('sig-scan')) return;
   scanning = true;
   renderList();
   const btn = $('sig-scan');
@@ -187,6 +188,7 @@ async function scanWatchlist(background = false) {
 
 // Beim Öffnen des Signale-Bereichs: automatisch scannen, wenn der letzte Scan älter als 15 Minuten ist
 export function autoScan() {
+  if (!$('sig-list')) return; // Watchlist-Liste ist nicht mehr im Signale-Tab
   if (!scanning && Date.now() - lastScan > 15 * 60e3) scanWatchlist(true);
 }
 
@@ -229,9 +231,9 @@ export function initSignals(stateGetter, openTrade, openCoin) {
     if (!b) return;
     if (editing) removeFromWatchlist(b.dataset.coin); else analyze(b.dataset.coin);
   });
-  $('sig-scan').addEventListener('click', () => scanWatchlist(false));
+  $('sig-scan')?.addEventListener('click', () => scanWatchlist(false));
   // Tipp auf einen Watchlist-Markt: mit Signal die Trade-Karte, sonst das Markt-Blatt mit Chart
-  $('sig-list').addEventListener('click', (e) => {
+  $('sig-list')?.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-coin]');
     if (!b) return;
     const r = results.get(mode + '|' + b.dataset.coin);

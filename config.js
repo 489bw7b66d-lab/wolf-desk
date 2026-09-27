@@ -25,6 +25,12 @@ export const CONFIG = {
   // Standard-Watchlist. In der App bearbeitest du sie direkt, der Telegram-Wächter nutzt diese Liste.
   watchlist: ['BTC', 'ETH', 'SOL', 'LINK', 'NEAR', 'XRP', 'XLM', 'LTC', 'xyz:QNT', 'ZEC', 'SUI'],
 
+  // LETZTE SIGNALE: vom Wächter veröffentlicht (eigener Zweig "signals", nur öffentliche Signaldaten)
+  feed: {
+    url: 'https://raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/signals/signals.json',
+    count: 5,                   // so viele Signale im Signale-Tab
+  },
+
   // TELEGRAM-WÄCHTER (läuft alle 15 Minuten bei GitHub)
   alerts: {
     minScore: 75,               // Signal melden ab diesem Score

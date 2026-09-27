@@ -100,7 +100,7 @@ export function journalEntry(r, alert, now = Date.now()) {
   const p = r.plan;
   return {
     id: `${r.coin}|${r.dir}|${now}`, coin: r.coin, dir: r.dir, style: r.best, score: alert.score, state: alert.pos.state,
-    px: alert.price, stop: p.stop, tps: p.tps.slice(0, 2), at: now, status: 'offen',
+    px: alert.price, zone: p.zone, stop: p.stop, tps: p.tps.slice(0, 2), at: now, status: 'offen',
     events: [...new Set((r.events || []).filter((e) => e.dir === r.dir).map((e) => eventName(e.name)))],
     seal: (r.confirms || []).some((c) => c.dir === r.dir),
   };
@@ -228,4 +228,13 @@ export function executionText(x) {
   if (x.real.n) lines.push(`Deine Trades zu Signalen: ${x.real.n} · Treffer ${pc2(x.real.hit)} · ${usd(x.real.sum)}`);
   if (x.own.n) lines.push(`Deine Trades ohne Signal: ${x.own.n} · Treffer ${pc2(x.own.hit)} · ${usd(x.own.sum)}`);
   return lines.join('\n');
+}
+
+// ===== Öffentliche Signal-Liste für die App (nur, was auch im Kanal steht; nichts über deine Trades) =====
+export function publicSignals(journal, max = 20) {
+  return [...(journal || [])].sort((a, b) => b.at - a.at).slice(0, max).map((e) => ({
+    coin: e.coin, dir: e.dir, style: e.style, score: e.score, seal: !!e.seal, at: e.at,
+    px: e.px, zone: e.zone || null, stop: e.stop, tps: e.tps, status: e.status, r: e.r ?? null, doneAt: e.doneAt ?? null,
+    events: (e.events || []).slice(0, 3),
+  }));
 }

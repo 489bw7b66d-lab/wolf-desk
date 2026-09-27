@@ -434,3 +434,16 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 
 .mkt-parts { font-size: 11px; line-height: 1.5; color: var(--muted); margin-top: 2px; }
 .mkt-parts b { font-weight: 800; white-space: nowrap; }
+
+/* ===== Etappe 3s: Letzte Signale ===== */
+.feed { display: grid; gap: 8px; }
+.feed-row { display: block; width: 100%; height: auto; text-align: left; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.02); font: inherit; color: var(--text); }
+.feed-top { display: flex; align-items: center; gap: 8px; }
+.feed-top .sym { font-size: 17px; font-weight: 800; flex: 1; }
+.feed-top .sig-badge { font-size: 11px; padding: 3px 8px; }
+.feed-status { font-size: 12px; font-weight: 800; white-space: nowrap; }
+.feed-mid { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: 12.5px; }
+.feed-live { font-weight: 700; }
+.feed-live b { font-weight: 800; }
+.feed-plan { margin-top: 4px; font-size: 12px; }
+.seal-mini { font-size: 13px; }

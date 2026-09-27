@@ -15,6 +15,7 @@ import { initMarket } from './ui-market.js';
 import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
 import { initSettings } from './ui-settings.js';
+import { initFeed, renderFeedLive } from './ui-feed.js';
 import { getMarketCtx } from './core-scanner.js';
 import { refreshMarket } from './core-market.js';
 import { refreshTrade } from './ui-trade.js';
@@ -154,7 +155,7 @@ document.addEventListener('touchstart', () => { touching = true; clearTimeout(to
 ['touchend', 'touchcancel'].forEach((ev) => document.addEventListener(ev, () => { clearTimeout(touchTimer); touchTimer = setTimeout(() => { touching = false; }, 350); }, { passive: true }));
 const renderAll = (s) => {
   if (touching) return; 
-  render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderWatchLive(s); renderMiniHealth(s);
+  render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderWatchLive(s); renderFeedLive(s); renderMiniHealth(s);
 };
 const openFull = (r) => { location.hash = 'signale'; setTimeout(() => showDetail(r), 50); };
 const openCalc = (r) => {
@@ -170,6 +171,7 @@ initHome(getState, openTrade, openFull, openCoin);
 initMarket();
 initBacktest();
 initSettings();
+initFeed(getState, openTrade, openCoin);
 document.getElementById('gear').addEventListener('click', () => { location.hash = 'einstellungen'; });
 
 // Privatmodus: Auge im Kopfbereich blendet alle Geldbeträge und Stückzahlen aus, Prozente bleiben

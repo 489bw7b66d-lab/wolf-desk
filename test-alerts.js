@@ -1,4 +1,5 @@
-import { signalAlert, riskDiff, badChecks, signalText, riskText, telegramView, judgeSignal, journalStats, reportText, linkTrades, executionStats } from './core-alerts.js';
+import { signalAlert, riskDiff, badChecks, signalText, riskText, telegramView, judgeSignal, journalStats, reportText, linkTrades, executionStats, publicSignals } from './core-alerts.js';
+import { ago } from './ui-feed.js';
 const FL = (coin, time, side, sz, start, pnl = 0) => ({ coin, time, side, sz: String(sz), px: '10', startPosition: String(start), closedPnl: String(pnl), fee: '0' });
 
 const CFG = { minScore: 75, repeatHours: 12, states: ['zone', 'early'], appUrl: 'https://x' };
@@ -81,5 +82,8 @@ export const tests = [
     const x = executionStats(j, [{ realized: -20 }]);
     return x.takenCount === 1 && x.picked.hit === 100 && x.skipped.n === 2 && x.real.sum === 50 && x.own.hit === 0;
   }],
+  ['Öffentliche Liste: neueste zuerst, höchstens 20', () => { const p = publicSignals([...Array(25)].map((_, i) => ({ coin: 'A', at: i, status: 'offen' }))); return p.length === 20 && p[0].at === 24; }],
+  ['Öffentliche Liste: nichts über deine Trades', () => { const p = publicSignals([{ coin: 'SOL', at: 1, status: 'tp1', taken: { realized: 55 }, id: 'x' }]); return !JSON.stringify(p).includes('55') && !('taken' in p[0]); }],
+  ['Letzte Signale: Zeitangabe', () => ago(0, 5 * 60e3) === 'vor 5 Min.' && ago(0, 3 * 36e5) === 'vor 3 Std.' && ago(0, 3 * 864e5) === 'vor 3 Tagen'],
   ['Text: Risiko-Meldung ohne Dollarbeträge', () => !riskText(['NEAR|Abstand Liquidation'], [], { 'NEAR|Abstand Liquidation': '2,4 % von anfangs ca. 9,0 %' }, {}).includes('$')],
 ];
