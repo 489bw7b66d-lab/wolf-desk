@@ -7,11 +7,11 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { getCandles, getMarketCtx, analyzeAllModes, heat } from './core-scanner.js';
-import { analyzeTimeframe, scoreTimeframe } from './core-signals.js';
+import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.js';
 import { getUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats } from './core-alerts.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
 // Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
@@ -29,7 +29,9 @@ async function send(text, chat = CHAT) {
 }
 
 async function loadState() {
-  try { return JSON.parse(await readFile(STATE_FILE, 'utf8')); } catch { return { sent: {}, bad: null }; }
+  let st = {};
+  try { st = JSON.parse(await readFile(STATE_FILE, 'utf8')); } catch { /* erster Lauf */ }
+  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, ...st };
 }
 
 async function marketNames() {
@@ -75,7 +77,7 @@ async function scan() {
   for (const c of deep) {
     try { results.push(await analyzeAllModes(c, true)); } catch { /* weiter */ }
   }
-  return { results, prices: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.price])) };
+  return { results, prices: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.price])), volumes: ctx.map || {} };
 }
 
 // Ohne hinterlegte Chat-ID: beim Bot nachsehen, wer ihm zuletzt geschrieben hat, und die ID dorthin schicken
@@ -97,6 +99,20 @@ async function findChannels() {
     if (c?.type === 'channel') found.set(c.id, c.title || String(c.id));
   });
   return [...found.entries()];
+}
+
+// Offene Tagebuch-Einträge mit den Kerzen seit der Meldung auswerten
+async function updateJournal(state, now) {
+  for (const [i, e] of state.journal.entries()) {
+    if (e.status !== 'offen') continue;
+    try {
+      const tf = e.style === 'swing' ? '1h' : '15m';
+      const raw = await hl.candles(e.coin, tf, e.at - 36e5, now);
+      state.journal[i] = judgeSignal(e, closedCandles(raw, Infinity), now, CONFIG.alerts.journalDays?.[e.style] || 7);
+    } catch (err) { log('Tagebuch', e.coin, err.message); }
+  }
+  // Aufräumen: ausgewertete Einträge nach 60 Tagen entfernen, höchstens 400 behalten
+  state.journal = state.journal.filter((e) => e.status === 'offen' || now - e.at < 60 * 864e5).slice(-400);
 }
 
 async function main() {
@@ -132,7 +148,9 @@ async function main() {
     await send(['✅ <b>Wolf Desk Wächter ist verbunden</b>',
       CHANNEL ? 'Signale gehen in deinen Kanal, Regelverstöße bleiben hier privat.' : 'Signale und Regelverstöße kommen hierher.',
       WALLET ? (risk ? `Konto gelesen: ${risk.positions.length} Positionen, ${Object.keys(bad).length} Regelverstöße.` : 'Konto konnte nicht gelesen werden.') : 'Keine Wallet hinterlegt, nur Signale.',
-      `Signale ab Score ${CONFIG.alerts.minScore}, alle 15 Minuten.`].join('\n'));
+      `Signale ab Score ${CONFIG.alerts.minScore} (${CONFIG.alerts.styles.map((k) => CONFIG.signals.modes[k].label).join(' und ')}), alle 15 Minuten.`].join('\n'));
+    if (state.journal.length) await send(reportText(state.journal, 'bisher'));
+    else await send('📒 <b>Signal-Tagebuch</b> ist bereit. Ab jetzt wird jedes gemeldete Signal mitgeschrieben und ausgewertet.');
     log('Testnachricht gesendet');
     return;
   }
@@ -148,21 +166,37 @@ async function main() {
     state.bad = bad;
   }
 
-  const { results, prices } = await scan();
+  await updateJournal(state, now);
+
+  const { results, prices, volumes } = await scan();
   const alerts = results
-    .map((r) => ({ r, a: signalAlert(r, prices[r.coin], state.sent, now) }))
+    .map((r0) => telegramView(r0))
+    .filter(Boolean)
+    .map((r) => ({ r, a: signalAlert(r, prices[r.coin], state.sent, now, CONFIG.alerts, { volume: volumes[r.coin], lastDir: state.lastDir }) }))
     .filter((x) => x.a)
     .sort((x, y) => heat(y.r) - heat(x.r))
     .slice(0, CONFIG.alerts.maxPerRun);
   for (const { r, a } of alerts) {
     await send(signalText(r, a, { noCapital }), CHANNEL || CHAT);
     state.sent[a.key] = now;
+    state.lastDir[r.coin] = { dir: r.dir, at: now };
+    state.journal.push(journalEntry(r, a, now));
     log('Signal gemeldet:', a.key, a.score);
   }
+  // Auswertung alle reportDays Tage privat an dich
+  const every = (CONFIG.alerts.reportDays || 7) * 864e5;
+  if (!state.lastReport) state.lastReport = now;
+  else if (now - state.lastReport >= every) {
+    const period = state.journal.filter((e) => e.status === 'offen' || (e.doneAt || e.at) >= state.lastReport);
+    await send(reportText(period, `letzte ${CONFIG.alerts.reportDays || 7} Tage`));
+    state.lastReport = now;
+  }
+  Object.keys(state.lastDir).forEach((k) => { if (now - state.lastDir[k].at > 3 * 864e5) delete state.lastDir[k]; });
+
   // Alte Einträge aufräumen (älter als 3 Tage)
   Object.keys(state.sent).forEach((k) => { if (now - state.sent[k] > 3 * 864e5) delete state.sent[k]; });
   await writeFile(STATE_FILE, JSON.stringify(state));
-  log(`Fertig: ${results.length} geprüft, ${alerts.length} Signale gemeldet`);
+  log(`Fertig: ${results.length} geprüft, ${alerts.length} Signale gemeldet, Tagebuch: ${journalStats(state.journal).open} offen`);
 }
 
 main().catch(async (e) => {

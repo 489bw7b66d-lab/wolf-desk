@@ -1,4 +1,4 @@
-import { signalAlert, riskDiff, badChecks, signalText, riskText } from './core-alerts.js';
+import { signalAlert, riskDiff, badChecks, signalText, riskText, telegramView, judgeSignal, journalStats, reportText } from './core-alerts.js';
 
 const CFG = { minScore: 75, repeatHours: 12, states: ['zone', 'early'], appUrl: 'https://x' };
 const R = (score = 82, over = {}) => ({
@@ -29,5 +29,31 @@ export const tests = [
     return t.includes('LONG · GOLD') && t.includes('Stop') && t.includes('href="https://x"') && !t.includes('xyz');
   }],
   ['Text: ohne Kapital mit Hinweis', () => signalText(R(), { score: 82, price: 3.15, pos: { state: 'zone' } }, { noCapital: true, appUrl: 'x' }).includes('Kein Kapital frei')],
+  ['Filter: nur Swing/Daytrade, Scalp wird nicht gemeldet', () => signalAlert(R(82, { best: 'scalp' }), 3.15, {}, 0, { ...CFG, styles: ['swing', 'intraday'] }) === null],
+  ['Filter: bester erlaubter Stil statt Scalp', () => {
+    const v = telegramView({ styles: { scalp: { ok: true, score: 90 }, intraday: { ok: true, score: 80 }, swing: { ok: false } }, all: { intraday: R(80, { best: null }), scalp: R(90) } }, ['swing', 'intraday']);
+    return v?.best === 'intraday';
+  }],
+  ['Filter: nur Scalp passt = keine Meldung', () => telegramView({ styles: { scalp: { ok: true, score: 90 } }, all: { scalp: R() } }, ['swing', 'intraday']) === null],
+  ['Filter: zu wenig Umsatz = keine Meldung', () => signalAlert(R(), 3.15, {}, 0, { ...CFG, minVolumeUsd: 20e6 }, { volume: 5e6 }) === null],
+  ['Filter: Richtungswechsel nach 5 Std. gesperrt', () => signalAlert(R(), 3.15, {}, 5 * H, CFG, { lastDir: { TIA: { dir: 'short', at: 0 } } }) === null],
+  ['Filter: Richtungswechsel nach 25 Std. erlaubt', () => signalAlert(R(), 3.15, {}, 25 * H, CFG, { lastDir: { TIA: { dir: 'short', at: 0 } } }) !== null],
+  ['Text: Long knapp unter der Zone richtig beschriftet', () => signalText(R(), { score: 82, price: 3.05, pos: { state: 'early' } }, { appUrl: 'x' }).includes('unter der Zone')],
+  ['Tagebuch: zuerst TP1 = Treffer', () => {
+    const e = { dir: 'long', px: 100, stop: 90, tps: [110, 120], at: 0, status: 'offen' };
+    return judgeSignal(e, [{ t: 1, T: 2, h: 111, l: 101, c: 109 }, { t: 3, T: 4, h: 105, l: 99, c: 100 }], 5).status === 'tp1';
+  }],
+  ['Tagebuch: zuerst Stop = Fehlsignal −1R', () => {
+    const x = judgeSignal({ dir: 'long', px: 100, stop: 90, tps: [110, 120], at: 0, status: 'offen' }, [{ t: 1, T: 2, h: 111, l: 89, c: 95 }], 5);
+    return x.status === 'stop' && x.r === -1;
+  }],
+  ['Tagebuch: Short bis TP2 = +2R', () => judgeSignal({ dir: 'short', px: 100, stop: 110, tps: [90, 80], at: 0, status: 'offen' }, [{ t: 1, T: 2, h: 99, l: 89, c: 90 }, { t: 3, T: 4, h: 95, l: 79, c: 80 }], 5).r === 2],
+  ['Tagebuch: noch nichts passiert = bleibt offen', () => judgeSignal({ dir: 'long', px: 100, stop: 90, tps: [110, 120], at: 0, status: 'offen' }, [{ t: 1, T: 2, h: 105, l: 95, c: 101 }], 5).status === 'offen'],
+  ['Tagebuch: Trefferquote 2 von 3', () => {
+    const l = [{ status: 'tp1', r: 1 }, { status: 'tp2', r: 2 }, { status: 'stop', r: -1 }, { status: 'offen' }];
+    const st = journalStats(l);
+    return st.n === 3 && Math.round(st.hit) === 67 && st.open === 1;
+  }],
+  ['Tagebuch: Auswertung ohne Dollarbeträge', () => !reportText([{ status: 'tp1', r: 1, style: 'swing', score: 80, dir: 'long', events: [] }]).includes('$')],
   ['Text: Risiko-Meldung ohne Dollarbeträge', () => !riskText(['NEAR|Abstand Liquidation'], [], { 'NEAR|Abstand Liquidation': '2,4 % von anfangs ca. 9,0 %' }, {}).includes('$')],
 ];
