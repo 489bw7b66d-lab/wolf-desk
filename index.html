@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="3s">
+<meta name="app-version" content="3t">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,7 +14,7 @@
 <title>Wolf Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=3s">
+<link rel="stylesheet" href="styles.css?v=3t">
 </head>
 <body>
 <div id="ptr" class="ptr" aria-hidden="true"><span class="ptr-spin"></span><span id="ptr-text">Zum Aktualisieren ziehen</span></div>
@@ -139,6 +139,11 @@
     <div id="feed" class="feed"></div>
   </section>
 
+  <section data-tab="signale" class="card" aria-labelledby="h-views">
+    <h2 id="h-views">Meine Einschätzung</h2>
+    <div id="views"></div>
+  </section>
+
   <section data-tab="signale" class="card" id="sig-card" aria-labelledby="h-sig">
     <h2 id="h-sig">Signalgeber</h2>
     <div id="sig-modes" class="tabs modes" role="group" aria-label="Modus"></div>
@@ -198,62 +203,65 @@
 <script type="importmap">
 {
  "imports": {
-  "./config.js": "./config.js?v=3s",
-  "./core-account.js": "./core-account.js?v=3s",
-  "./core-alerts.js": "./core-alerts.js?v=3s",
-  "./core-api.js": "./core-api.js?v=3s",
-  "./core-backtest.js": "./core-backtest.js?v=3s",
-  "./core-calc.js": "./core-calc.js?v=3s",
-  "./core-candlesticks.js": "./core-candlesticks.js?v=3s",
-  "./core-confirm.js": "./core-confirm.js?v=3s",
-  "./core-elliott.js": "./core-elliott.js?v=3s",
-  "./core-fib.js": "./core-fib.js?v=3s",
-  "./core-format.js": "./core-format.js?v=3s",
-  "./core-health.js": "./core-health.js?v=3s",
-  "./core-hotscan.js": "./core-hotscan.js?v=3s",
-  "./core-indicators.js": "./core-indicators.js?v=3s",
-  "./core-market.js": "./core-market.js?v=3s",
-  "./core-patterns.js": "./core-patterns.js?v=3s",
-  "./core-performance.js": "./core-performance.js?v=3s",
-  "./core-positions.js": "./core-positions.js?v=3s",
-  "./core-risk.js": "./core-risk.js?v=3s",
-  "./core-scanner.js": "./core-scanner.js?v=3s",
-  "./core-settings.js": "./core-settings.js?v=3s",
-  "./core-signals.js": "./core-signals.js?v=3s",
-  "./core-stops.js": "./core-stops.js?v=3s",
-  "./core-store.js": "./core-store.js?v=3s",
-  "./core-stream.js": "./core-stream.js?v=3s",
-  "./core-trades.js": "./core-trades.js?v=3s",
-  "./core-universe.js": "./core-universe.js?v=3s",
-  "./core-watchlist.js": "./core-watchlist.js?v=3s",
-  "./main.js": "./main.js?v=3s",
-  "./my-settings.js": "./my-settings.js?v=3s",
-  "./test-alerts.js": "./test-alerts.js?v=3s",
-  "./test-backtest.js": "./test-backtest.js?v=3s",
-  "./test-calc.js": "./test-calc.js?v=3s",
-  "./test-market.js": "./test-market.js?v=3s",
-  "./test-performance.js": "./test-performance.js?v=3s",
-  "./test-risk.js": "./test-risk.js?v=3s",
-  "./test-settings.js": "./test-settings.js?v=3s",
-  "./test-signals.js": "./test-signals.js?v=3s",
-  "./test-trades.js": "./test-trades.js?v=3s",
-  "./ui-backtest.js": "./ui-backtest.js?v=3s",
-  "./ui-chart.js": "./ui-chart.js?v=3s",
-  "./ui-coin.js": "./ui-coin.js?v=3s",
-  "./ui-feed.js": "./ui-feed.js?v=3s",
-  "./ui-home.js": "./ui-home.js?v=3s",
-  "./ui-market.js": "./ui-market.js?v=3s",
-  "./ui-parts.js": "./ui-parts.js?v=3s",
-  "./ui-performance.js": "./ui-performance.js?v=3s",
-  "./ui-risk.js": "./ui-risk.js?v=3s",
-  "./ui-settings.js": "./ui-settings.js?v=3s",
-  "./ui-signals.js": "./ui-signals.js?v=3s",
-  "./ui-testpage.js": "./ui-testpage.js?v=3s",
-  "./ui-trade.js": "./ui-trade.js?v=3s",
-  "./watcher.js": "./watcher.js?v=3s"
+  "./config.js": "./config.js?v=3t",
+  "./core-account.js": "./core-account.js?v=3t",
+  "./core-alerts.js": "./core-alerts.js?v=3t",
+  "./core-api.js": "./core-api.js?v=3t",
+  "./core-backtest.js": "./core-backtest.js?v=3t",
+  "./core-calc.js": "./core-calc.js?v=3t",
+  "./core-candlesticks.js": "./core-candlesticks.js?v=3t",
+  "./core-confirm.js": "./core-confirm.js?v=3t",
+  "./core-elliott.js": "./core-elliott.js?v=3t",
+  "./core-fib.js": "./core-fib.js?v=3t",
+  "./core-format.js": "./core-format.js?v=3t",
+  "./core-health.js": "./core-health.js?v=3t",
+  "./core-hotscan.js": "./core-hotscan.js?v=3t",
+  "./core-indicators.js": "./core-indicators.js?v=3t",
+  "./core-market.js": "./core-market.js?v=3t",
+  "./core-patterns.js": "./core-patterns.js?v=3t",
+  "./core-performance.js": "./core-performance.js?v=3t",
+  "./core-positions.js": "./core-positions.js?v=3t",
+  "./core-risk.js": "./core-risk.js?v=3t",
+  "./core-scanner.js": "./core-scanner.js?v=3t",
+  "./core-settings.js": "./core-settings.js?v=3t",
+  "./core-signals.js": "./core-signals.js?v=3t",
+  "./core-stops.js": "./core-stops.js?v=3t",
+  "./core-store.js": "./core-store.js?v=3t",
+  "./core-stream.js": "./core-stream.js?v=3t",
+  "./core-trades.js": "./core-trades.js?v=3t",
+  "./core-universe.js": "./core-universe.js?v=3t",
+  "./core-views.js": "./core-views.js?v=3t",
+  "./core-watchlist.js": "./core-watchlist.js?v=3t",
+  "./main.js": "./main.js?v=3t",
+  "./my-settings.js": "./my-settings.js?v=3t",
+  "./test-alerts.js": "./test-alerts.js?v=3t",
+  "./test-backtest.js": "./test-backtest.js?v=3t",
+  "./test-calc.js": "./test-calc.js?v=3t",
+  "./test-market.js": "./test-market.js?v=3t",
+  "./test-performance.js": "./test-performance.js?v=3t",
+  "./test-risk.js": "./test-risk.js?v=3t",
+  "./test-settings.js": "./test-settings.js?v=3t",
+  "./test-signals.js": "./test-signals.js?v=3t",
+  "./test-trades.js": "./test-trades.js?v=3t",
+  "./test-views.js": "./test-views.js?v=3t",
+  "./ui-backtest.js": "./ui-backtest.js?v=3t",
+  "./ui-chart.js": "./ui-chart.js?v=3t",
+  "./ui-coin.js": "./ui-coin.js?v=3t",
+  "./ui-feed.js": "./ui-feed.js?v=3t",
+  "./ui-home.js": "./ui-home.js?v=3t",
+  "./ui-market.js": "./ui-market.js?v=3t",
+  "./ui-parts.js": "./ui-parts.js?v=3t",
+  "./ui-performance.js": "./ui-performance.js?v=3t",
+  "./ui-risk.js": "./ui-risk.js?v=3t",
+  "./ui-settings.js": "./ui-settings.js?v=3t",
+  "./ui-signals.js": "./ui-signals.js?v=3t",
+  "./ui-testpage.js": "./ui-testpage.js?v=3t",
+  "./ui-trade.js": "./ui-trade.js?v=3t",
+  "./ui-views.js": "./ui-views.js?v=3t",
+  "./watcher.js": "./watcher.js?v=3t"
  }
 }
 </script>
-<script type="module" src="main.js?v=3s"></script>
+<script type="module" src="main.js?v=3t"></script>
 </body>
 </html>

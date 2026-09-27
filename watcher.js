@@ -11,7 +11,8 @@ import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.
 import { getUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText } from './core-alerts.js';
+import { viewFor, alignment, viewEvents } from './core-views.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
 // Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
@@ -31,7 +32,7 @@ async function send(text, chat = CHAT) {
 async function loadState() {
   let st = {};
   try { st = JSON.parse(await readFile(STATE_FILE, 'utf8')); } catch { /* erster Lauf */ }
-  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, ...st };
+  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, ...st };
 }
 
 async function marketNames() {
@@ -197,12 +198,23 @@ async function main() {
     .sort((x, y) => heat(y.r) - heat(x.r))
     .slice(0, CONFIG.alerts.maxPerRun);
   for (const { r, a } of alerts) {
-    await send(signalText(r, a, { noCapital }), CHANNEL || CHAT);
+    const al = alignment(viewFor(CONFIG.views, r.coin, now), r.dir);
+    await send(signalText(r, a, { noCapital, star: al === 'mit' }), CHANNEL || CHAT);
     state.sent[a.key] = now;
     state.lastDir[r.coin] = { dir: r.dir, at: now };
-    state.journal.push(journalEntry(r, a, now));
+    state.journal.push(journalEntry(r, a, now, al));
     log('Signal gemeldet:', a.key, a.score);
   }
+  // Deine Marken: Bruch, Bestätigung oder Ziel erreicht → privat an dich
+  for (const [coin, v] of Object.entries(CONFIG.views || {})) {
+    if (!viewFor(CONFIG.views, coin, now)) continue;
+    for (const ev of viewEvents(coin, v, prices[coin], state.viewHits)) {
+      await send(viewEventText(coin, v, ev, prices[coin]));
+      state.viewHits[ev.key] = now;
+    }
+  }
+  Object.keys(state.viewHits).forEach((k) => { if (now - state.viewHits[k] > 120 * 864e5) delete state.viewHits[k]; });
+
   // Auswertung alle reportDays Tage privat an dich
   const every = (CONFIG.alerts.reportDays || 7) * 864e5;
   if (!state.lastReport) state.lastReport = now;

@@ -4,7 +4,8 @@ import { accountSummary } from './core-calc.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, priceVsPlan, withEntry, leverageIssues } from './core-risk.js';
 import { chartSvg } from './ui-chart.js';
 import { switchStyle, getCandles } from './core-scanner.js';
-import { badge, ladder, esc, dn, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
+import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.js';
+import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -58,6 +59,7 @@ function render() {
     ${sum && sum.equity > 0 && (sum.available / sum.equity) * 100 < (CONFIG.rules.freeCapitalMinPct ?? 2)
       ? `<p class="cap-note bad">Kein Kapital frei (${f.pct(Math.max(0, (sum.available / sum.equity) * 100), 1)}). Dieser Plan ist nur zur Beobachtung, erst eine Position schließen oder verkleinern.</p>` : ''}
     ${seal(r)}
+    ${viewBox(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((tf) => `<button type="button" data-ctf="${tf}" aria-pressed="${tf === chartTf}">${TFL[tf]}</button>`).join('')}</div>
     <div id="sheet-chart" class="chart-box"></div>
@@ -106,7 +108,7 @@ function renderLive() {
   const ch = $('sheet-chart');
   if (ch) {
     const cs = current.candles?.[chartTf] || extraCandles.get(current.coin + '|' + chartTf);
-    if (cs) ch.innerHTML = chartSvg({ candles: cs, tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current) });
+    if (cs) ch.innerHTML = chartSvg({ candles: cs, tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current), lines: viewLines(viewFor(getViews(), current.coin)) });
     else if (!ch.dataset.loading) {
       ch.dataset.loading = '1';
       ch.innerHTML = `<p class="empty">Lade ${TFL[chartTf]}-Kerzen …</p>`;
@@ -210,4 +212,15 @@ export function initTrade(stateGetter, onFull, onCalc) {
     if (e.target.id === 'sheet-full') { const r = current; closeTrade(); onFull(r); }
     if (e.target.id === 'sheet-calc') { const r = current; closeTrade(); onCalc(r); }
   });
+}
+
+// Deine Einschätzung zu diesem Markt, direkt unter dem Kopf der Trade-Karte
+export function viewBox(r) {
+  const v = viewFor(getViews(), r.coin);
+  if (!v) return '';
+  const al = alignment(v, r.plan?.dir || r.dir);
+  const long = v.bias !== 'short';
+  const lv = [v.invalid != null ? `ungültig ${long ? 'unter' : 'über'} ${f.price(v.invalid)}` : '', v.trigger != null ? `bestätigt ${long ? 'über' : 'unter'} ${f.price(v.trigger)}` : ''].filter(Boolean).join(' · ');
+  return `<div class="view-box ${al || ''}">${viewMark(al, true) || '<b>Deine Einschätzung</b>'}
+    <div class="meta">${BIAS_TXT[v.bias]}${lv ? ' · ' + esc(lv) : ''}${v.note ? ' · ' + esc(v.note) : ''}</div></div>`;
 }

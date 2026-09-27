@@ -5,6 +5,7 @@ import { getCandles } from './core-scanner.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { chartSvg } from './ui-chart.js';
 import { esc, dn, TFL, CHART_TFS } from './ui-parts.js';
+import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -63,7 +64,7 @@ function renderLive() {
       ...tpOrders(s, p).map((x, i) => ({ price: x, col: 'var(--ok)', label: 'TP' + (i + 1), dash: '4 3', fit: i < 2 })),
       { price: p.liq, col: 'var(--bad)', label: 'Liq', dash: '1 3', fit: false },
     ] : [];
-    box.innerHTML = chartSvg({ candles: cs, tf, price: px, lines });
+    box.innerHTML = chartSvg({ candles: cs, tf, price: px, lines: [...lines, ...viewLines(viewFor(getViews(), coin))] });
   }
 }
 
@@ -99,6 +100,7 @@ export function openCoin(name) {
       <span class="meta">${p ? 'Offene Position' : 'Markt'}</span></div>
       ${p ? `<span class="sig-badge ${p.side}">${p.side === 'long' ? 'LONG ▲' : 'SHORT ▼'}</span>` : ''}
     </div>
+    ${viewSummary(coin)}
     <div id="coin-live" class="live-box" aria-live="polite"></div>
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((t) => `<button type="button" data-ktf="${t}" aria-pressed="${t === tf}">${TFL[t]}</button>`).join('')}</div>
     <div id="coin-chart" class="chart-box"></div>
@@ -137,4 +139,13 @@ export function initCoin(stateGetter, analyzeFn) {
     }
   });
   $('sheet-close').addEventListener('click', () => { clearInterval(timer); lastFocus?.focus?.(); });
+}
+
+// Deine Einschätzung zu diesem Markt (falls vorhanden)
+function viewSummary(c) {
+  const v = viewFor(getViews(), c);
+  if (!v) return '';
+  const long = v.bias !== 'short';
+  const lv = [v.invalid != null ? `ungültig ${long ? 'unter' : 'über'} ${f.price(v.invalid)}` : '', v.trigger != null ? `bestätigt ${long ? 'über' : 'unter'} ${f.price(v.trigger)}` : '', v.targets?.length ? `Ziele ${v.targets.map((t) => f.price(t)).join(' / ')}` : ''].filter(Boolean).join(' · ');
+  return `<div class="view-box"><b>Deine Einschätzung: ${BIAS_TXT[v.bias]}</b><div class="meta">${esc(lv)}${v.note ? ' · ' + esc(v.note) : ''}</div></div>`;
 }

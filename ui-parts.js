@@ -3,6 +3,12 @@ import * as f from './core-format.js';
 import { levStatus } from './core-risk.js';
 
 // Anzeigename: Börsen-Präfix (z. B. „xyz:“) ausblenden, intern bleibt der volle Name
+// Markierung, ob ein Signal zu deiner Einschätzung passt (⭐) oder dagegen läuft (⚠︎)
+export function viewMark(al, long = false) {
+  if (al === 'mit') return `<span class="view-mark mit" title="passt zu deiner Einschätzung">⭐${long ? ' passt zu deiner Einschätzung' : ''}</span>`;
+  if (al === 'gegen') return `<span class="view-mark gegen" title="gegen deine Einschätzung">⚠︎${long ? ' gegen deine Einschätzung' : ''}</span>`;
+  return '';
+}
 export const dn = (c) => String(c ?? '').replace(/^[a-z]+:/, '');
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const TFL = { '5m': '5M', '15m': '15M', '1h': '1H', '4h': '4H', '1d': '1D' };

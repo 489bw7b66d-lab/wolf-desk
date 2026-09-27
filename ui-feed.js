@@ -3,7 +3,8 @@
 import { CONFIG } from './config.js';
 import { analyzeAllModes } from './core-scanner.js';
 import { change24h, entryDistance } from './core-trades.js';
-import { badge, esc, dn } from './ui-parts.js';
+import { badge, esc, dn, viewMark } from './ui-parts.js';
+import { getViews, viewFor, alignment } from './core-views.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -34,18 +35,21 @@ async function load() {
   render();
 }
 
+export function renderFeed() { render(); }
+
 function render() {
   const box = $('feed');
   if (!box) return;
   $('feed-meta').textContent = loadedAt ? `aktualisiert ${new Date(loadedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` : '';
   if (feed == null) { box.innerHTML = `<p class="empty">${error ? 'Signale konnten nicht geladen werden (' + esc(error) + ').' : 'Lade Signale …'}</p>`; return; }
   if (!feed.length) { box.innerHTML = '<p class="empty">Noch keine Signale veröffentlicht. Der Wächter legt sie nach seinem nächsten Lauf ab.</p>'; return; }
+  const views = getViews();
   box.innerHTML = feed.slice(0, CONFIG.feed.count).map((x, i) => {
     const [icon, label, cls] = STATUS[x.status] || STATUS.offen;
     const zone = x.zone ? `${f.price(x.zone[0])} – ${f.price(x.zone[1])}` : f.price(x.px);
     return `<button type="button" class="feed-row" data-i="${i}">
       <div class="feed-top">
-        <span class="sym">${esc(dn(x.coin))}${x.seal ? ' <span class="seal-mini" aria-label="Retest bestätigt">🛡</span>' : ''}</span>
+        <span class="sym">${esc(dn(x.coin))}${x.seal ? ' <span class="seal-mini" aria-label="Retest bestätigt">🛡</span>' : ''} ${viewMark(alignment(viewFor(views, x.coin), x.dir))}</span>
         ${badge(x.dir)}
         <span class="feed-status ${cls}">${icon} ${label}${x.r != null && x.status !== 'offen' ? ` ${x.r >= 0 ? '+' : '−'}${Math.abs(x.r).toFixed(1).replace('.', ',')}R` : ''}</span>
       </div>

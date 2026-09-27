@@ -60,12 +60,12 @@ export function badChecks(risk, status = 'bad') {
 const stateTxt = (state, dir) => (state === 'zone' ? 'in der Einstiegszone'
   : state === 'early' ? (dir === 'long' ? 'knapp unter der Zone, noch über dem Stop' : 'knapp über der Zone, noch unter dem Stop') : state);
 
-export function signalText(r, alert, { noCapital = false, appUrl = A().appUrl } = {}) {
+export function signalText(r, alert, { noCapital = false, appUrl = A().appUrl, star = false } = {}) {
   const p = r.plan, long = p.dir === 'long';
   const stopPct = ((p.stop - p.entry) / p.entry) * 100;
   const shield = (r.confirms || []).some((c) => c.dir === p.dir) ? ' 🛡' : '';
   const lines = [
-    `${long ? '🟢' : '🔴'} <b>${long ? 'LONG' : 'SHORT'} · ${esc(dn(r.coin))}</b> · ${esc(CONFIG.signals.modes[r.best].label)} · Score ${alert.score}${shield}`,
+    `${long ? '🟢' : '🔴'} <b>${long ? 'LONG' : 'SHORT'} · ${esc(dn(r.coin))}</b> · ${esc(CONFIG.signals.modes[r.best].label)} · Score ${alert.score}${shield}${star ? ' ⭐' : ''}`,
     `Kurs ${f.price(alert.price ?? p.entry)} · ${stateTxt(alert.pos.state, p.dir)}`,
     `Einstieg ${f.price(p.zone[0])} – ${f.price(p.zone[1])}`,
     `TP1 ${f.price(p.tps[0])} · TP2 ${f.price(p.tps[1])}`,
@@ -96,13 +96,14 @@ export function riskText(added, solved, bad, prev) {
 // ===== Signal-Tagebuch: jedes gemeldete Signal wird mitgeschrieben und später ausgewertet =====
 const eventName = (n) => n.replace(/ \(.*\)$/, '').replace(/ ×.*$/, '');
 
-export function journalEntry(r, alert, now = Date.now()) {
+export function journalEntry(r, alert, now = Date.now(), view = null) {
   const p = r.plan;
   return {
     id: `${r.coin}|${r.dir}|${now}`, coin: r.coin, dir: r.dir, style: r.best, score: alert.score, state: alert.pos.state,
     px: alert.price, zone: p.zone, stop: p.stop, tps: p.tps.slice(0, 2), at: now, status: 'offen',
     events: [...new Set((r.events || []).filter((e) => e.dir === r.dir).map((e) => eventName(e.name)))],
     seal: (r.confirms || []).some((c) => c.dir === r.dir),
+    view, // 'mit' | 'gegen' | 'neutral' | null: passte das Signal zu deiner Einschätzung?
   };
 }
 
@@ -157,6 +158,7 @@ export function journalStats(list) {
     byScore: [['75–79', 0, 80], ['80–84', 80, 85], ['85+', 85, 101]].map(([label, lo, hi]) => ({ label, ...stat(done.filter((e) => e.score >= lo && e.score < hi)) })).filter((x) => x.n),
     long: stat(done.filter((e) => e.dir === 'long')), short: stat(done.filter((e) => e.dir === 'short')),
     seal: stat(done.filter((e) => e.seal)), noSeal: stat(done.filter((e) => !e.seal)), events,
+    viewWith: stat(done.filter((e) => e.view === 'mit')), viewAgainst: stat(done.filter((e) => e.view === 'gegen')), viewNone: stat(done.filter((e) => !e.view || e.view === 'neutral')),
   };
 }
 
@@ -179,6 +181,12 @@ export function reportText(list, title = 'letzte 7 Tage') {
   if (s.long.n) lines.push(row('Long', s.long));
   if (s.short.n) lines.push(row('Short', s.short));
   if (s.seal.n && s.noSeal.n) lines.push(row('🛡 mit Siegel', s.seal), row('ohne Siegel', s.noSeal));
+  if (s.viewWith.n || s.viewAgainst.n) {
+    lines.push('', '<b>Deine Einschätzung</b>');
+    if (s.viewWith.n) lines.push(row('⭐ passt', s.viewWith));
+    if (s.viewAgainst.n) lines.push(row('⚠︎ dagegen', s.viewAgainst));
+    if (s.viewNone.n) lines.push(row('ohne Einschätzung', s.viewNone));
+  }
   if (s.events.length) {
     lines.push('', '<b>Ereignisse</b> (Vorteil in R gegenüber ohne)');
     s.events.slice(0, 4).forEach((e) => lines.push(`${esc(e.name)}: ${e.n} · ${rr(e.edge)}`));
@@ -237,4 +245,13 @@ export function publicSignals(journal, max = 20) {
     px: e.px, zone: e.zone || null, stop: e.stop, tps: e.tps, status: e.status, r: e.r ?? null, doneAt: e.doneAt ?? null,
     events: (e.events || []).slice(0, 3),
   }));
+}
+
+// ===== Meldungen zu deinen Marken =====
+export function viewEventText(coin, view, ev, price) {
+  const name = `<b>${esc(dn(coin))}</b>`, long = view.bias === 'long';
+  const px = f.price(price);
+  if (ev.type === 'invalid') return `🔔 ${name}: Deine ${long ? 'bullische' : 'bärische'} Einschätzung ist <b>ungültig</b> (Kurs ${px}, Marke ${f.price(ev.level)}).`;
+  if (ev.type === 'trigger') return `🔔 ${name}: <b>Bestätigung</b> deiner ${long ? 'bullischen' : 'bärischen'} Einschätzung, Kurs ${px} ${long ? 'über' : 'unter'} ${f.price(ev.level)}.`;
+  return `🎯 ${name}: <b>Ziel ${ev.n}</b> deiner Einschätzung erreicht (${f.price(ev.level)}).`;
 }

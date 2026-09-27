@@ -447,3 +447,27 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .feed-live b { font-weight: 800; }
 .feed-plan { margin-top: 4px; font-size: 12px; }
 .seal-mini { font-size: 13px; }
+
+/* ===== Etappe 3t: Meine Einschätzung ===== */
+.view-row { display: block; width: 100%; height: auto; text-align: left; padding: 12px 14px; margin-bottom: 8px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.02); font: inherit; color: var(--text); }
+.view-row.expired { opacity: .5; }
+.view-top { display: flex; align-items: center; gap: 8px; }
+.view-top .sym { font-size: 17px; font-weight: 800; }
+.view-top .meta { margin-left: auto; font-size: 12px; }
+.view-bias { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.view-bias.long { color: var(--ok); border-color: rgba(74,222,155,.5); }
+.view-bias.short { color: var(--bad); border-color: rgba(255,112,112,.5); }
+.view-bias.neutral { color: var(--muted); }
+.view-lv { margin-top: 4px; font-size: 12.5px; }
+.view-note { margin-top: 4px; font-size: 12.5px; color: var(--gold); }
+.view-form { display: grid; gap: 10px; }
+.vf { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 10px; }
+.vf > span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.vf input, .vf select { width: 100%; height: 44px; font: 600 16px var(--font); }
+.vf .set-styles { max-width: none; justify-content: flex-start; }
+.view-mark { font-size: 13px; font-weight: 800; }
+.view-mark.gegen { color: var(--warn); }
+.view-box { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: 13px; }
+.view-box.mit { border-color: rgba(227,176,75,.6); background: rgba(227,176,75,.06); }
+.view-box.gegen { border-color: rgba(242,181,68,.6); background: rgba(242,181,68,.06); }
+.view-box .meta { margin-top: 3px; }

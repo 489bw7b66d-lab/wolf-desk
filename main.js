@@ -15,7 +15,8 @@ import { initMarket } from './ui-market.js';
 import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
 import { initSettings } from './ui-settings.js';
-import { initFeed, renderFeedLive } from './ui-feed.js';
+import { initFeed, renderFeedLive, renderFeed } from './ui-feed.js';
+import { initViews } from './ui-views.js';
 import { getMarketCtx } from './core-scanner.js';
 import { refreshMarket } from './core-market.js';
 import { refreshTrade } from './ui-trade.js';
@@ -172,6 +173,7 @@ initMarket();
 initBacktest();
 initSettings();
 initFeed(getState, openTrade, openCoin);
+initViews(getState, () => { renderFeed(); renderHome(getState()); });
 document.getElementById('gear').addEventListener('click', () => { location.hash = 'einstellungen'; });
 
 // Privatmodus: Auge im Kopfbereich blendet alle Geldbeträge und Stückzahlen aus, Prozente bleiben

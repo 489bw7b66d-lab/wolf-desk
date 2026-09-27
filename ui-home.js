@@ -4,7 +4,8 @@ import { accountRisk } from './core-positions.js';
 import { parsePortfolio } from './core-performance.js';
 import { perfSplit, change24h } from './core-trades.js';
 import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
-import { badge, esc, dn, topReasons, seal } from './ui-parts.js';
+import { badge, esc, dn, topReasons, seal, viewMark } from './ui-parts.js';
+import { getViews, viewFor, alignment } from './core-views.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -86,7 +87,7 @@ function renderHot() {
   $('hot-status').innerHTML = `<p class="empty" style="font-size:13px">${esc(status)}${hot.source ? ` · ${esc(hot.source)}` : ''}</p>${prog}${hot.error ? `<p class="warnline">${esc(hot.error)}</p>` : ''}`;
   $('hot-list').innerHTML = hot.picks.length ? hot.picks.map(({ r }, i) => `<button type="button" class="hot-row" data-hot="${esc(r.coin)}">
       <span class="rank">${i + 1}</span>
-      <span class="hot-main"><span class="sym">${esc(dn(r.coin))} ${seal(r, true)}</span><span class="reasons">${topReasons(r, 2).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
+      <span class="hot-main"><span class="sym">${esc(dn(r.coin))} ${seal(r, true)} ${viewMark(alignment(viewFor(getViews(), r.coin), r.dir))}</span><span class="reasons">${topReasons(r, 2).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
       <span class="hot-side">${badge(r.dir)}<span class="heat">Score ${r.total[r.dir]}</span></span>
     </button>`).join('')
     : hot.lastRound ? '<p class="empty">Gerade kein Coin mit klarem Signal. Kein Trade ist auch eine Entscheidung.</p>'
