@@ -1,0 +1,72 @@
+{
+ "signals": [
+  {
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 75,
+   "seal": true,
+   "at": 1790510936619,
+   "px": 0.004507,
+   "zone": null,
+   "stop": 0.004267004503089267,
+   "tps": [
+    0.004669004503089268,
+    0.004870004503089269
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Hammer",
+    "Bullish Engulfing",
+    "MACD-Kreuzung aufwärts"
+   ]
+  },
+  {
+   "coin": "ZEC",
+   "dir": "long",
+   "style": "swing",
+   "score": 82,
+   "seal": true,
+   "at": 1790501901046,
+   "px": 1664.7,
+   "zone": null,
+   "stop": 1493.0094913346175,
+   "tps": [
+    1789.409491334618,
+    1937.6094913346183
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "MACD-Kreuzung aufwärts",
+    "Ausbruch aus Dreieck"
+   ]
+  },
+  {
+   "coin": "BTC",
+   "dir": "long",
+   "style": "intraday",
+   "score": 76,
+   "seal": false,
+   "at": 1790497536401,
+   "px": 84738,
+   "zone": null,
+   "stop": 83964.88419806746,
+   "tps": [
+    85345.08271566611,
+    86035.18197446543
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "EMA 8/21 Kreuzung aufwärts",
+    "Ausbruch aus Dreieck",
+    "EMA 21/55 Kreuzung aufwärts"
+   ]
+  }
+ ]
+}
