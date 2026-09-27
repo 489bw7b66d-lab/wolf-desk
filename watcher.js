@@ -168,9 +168,8 @@ async function main() {
       await updateJournal(state, now);
       await send(reportText(state.journal, 'bisher') + executionText(executionStats(state.journal, state.own || [])));
       await writeFile(STATE_FILE, JSON.stringify(state));
-    }
+    } else await send('📒 <b>Signal-Tagebuch</b> ist bereit. Ab jetzt wird jedes gemeldete Signal mitgeschrieben und ausgewertet.');
     await publish(state);
-    else await send('📒 <b>Signal-Tagebuch</b> ist bereit. Ab jetzt wird jedes gemeldete Signal mitgeschrieben und ausgewertet.');
     log('Testnachricht gesendet');
     return;
   }
