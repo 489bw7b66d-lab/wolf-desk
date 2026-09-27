@@ -1,6 +1,34 @@
 {
  "signals": [
   {
+   "coin": "WLD",
+   "dir": "long",
+   "style": "swing",
+   "score": 88,
+   "seal": true,
+   "at": 1790540644842,
+   "px": 0.55863,
+   "zone": [
+    0.5350911080367442,
+    0.56043
+   ],
+   "stop": 0.4985105540183721,
+   "tps": [
+    0.5970105540183721,
+    0.6462605540183721,
+    0.6955105540183721,
+    0.7447605540183722
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Starkes Momentum",
+    "Ausbruch aus Seitwärtsphase",
+    "Doppelboden bestätigt"
+   ]
+  },
+  {
    "coin": "PUMP",
    "dir": "long",
    "style": "intraday",
