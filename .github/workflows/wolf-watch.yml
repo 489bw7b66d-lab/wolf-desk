@@ -14,6 +14,9 @@ concurrency:
   group: wolf-watch
   cancel-in-progress: false
 
+permissions:
+  contents: write   # damit der Wächter signals.json im Zweig "signals" ablegen darf
+
 jobs:
   watch:
     runs-on: ubuntu-latest
@@ -48,3 +51,22 @@ jobs:
         with:
           path: .watch-state.json
           key: watch-state-${{ github.run_id }}
+
+      # Letzte Signale für die App veröffentlichen (eigener Zweig, die App-Seite wird dadurch nicht neu gebaut)
+      - name: Signale veröffentlichen
+        if: always()
+        run: |
+          [ -f signals.json ] || exit 0
+          cp signals.json /tmp/signals.json && rm -f signals.json
+          git config user.name "wolf-desk-waechter"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch -q origin signals 2>/dev/null; then
+            git checkout -q -B signals FETCH_HEAD
+          else
+            git checkout -q --orphan signals
+            git rm -rfq --cached . || true
+          fi
+          cp /tmp/signals.json signals.json
+          git add signals.json
+          git diff --cached --quiet || git commit -qm "Signale aktualisiert"
+          git push -q origin signals
