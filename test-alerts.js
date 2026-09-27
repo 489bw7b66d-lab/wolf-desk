@@ -19,6 +19,16 @@ export const tests = [
     const d = riskDiff({ 'ETH|Stop-Loss': 'x' }, { 'NEAR|Abstand Liquidation': 'y' });
     return d.added[0] === 'NEAR|Abstand Liquidation' && d.solved[0] === 'ETH|Stop-Loss';
   }],
+  ['Risiko: nur noch gelb = keine Entwarnung, Alarm bleibt aktiv', () => {
+    const d = riskDiff({ 'ZEC|Abstand Liquidation': 'x' }, {}, { 'ZEC|Abstand Liquidation': 'y' });
+    return !d.solved.length && !d.added.length && 'ZEC|Abstand Liquidation' in d.active;
+  }],
+  ['Risiko: wieder grün = Entwarnung', () => riskDiff({ 'ZEC|Abstand Liquidation': 'x' }, {}, {}).solved.length === 1],
+  ['Risiko: pendelt zurück ins Rote = kein zweiter Alarm', () => {
+    const d1 = riskDiff({ 'ZEC|L': 'x' }, {}, { 'ZEC|L': 'y' });
+    return riskDiff(d1.active, { 'ZEC|L': 'z' }, {}).added.length === 0;
+  }],
+  ['Risiko: gelb ohne vorherigen Alarm = keine Meldung', () => { const d = riskDiff({}, {}, { 'ETH|L': 'y' }); return !d.added.length && !('ETH|L' in d.active); }],
   ['Risiko: gleicher Stand = nichts melden', () => { const d = riskDiff({ a: 1 }, { a: 1 }); return !d.added.length && !d.solved.length; }],
   ['Risiko: nur rote Punkte zählen', () => {
     const b = badChecks({ positions: [{ coin: 'NEAR', evaluation: { checks: [{ rule: 'A', status: 'bad', text: 't' }, { rule: 'B', status: 'warn', text: 'w' }] } }], checks: [{ rule: 'Freies Kapital', status: 'bad', text: 'k' }] });

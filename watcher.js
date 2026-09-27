@@ -156,14 +156,15 @@ async function main() {
   }
 
   if (risk && CONFIG.alerts.risk) {
-    const bad = badChecks(risk);
+    const bad = badChecks(risk), warn = badChecks(risk, 'warn');
     if (state.bad) {
-      const { added, solved } = riskDiff(state.bad, bad);
+      const { added, solved, active } = riskDiff(state.bad, bad, warn);
       if (added.length || solved.length) { await send(riskText(added, solved, bad, state.bad)); log(`Risiko: ${added.length} neu, ${solved.length} behoben`); }
-    } else if (Object.keys(bad).length) {
-      await send(riskText(Object.keys(bad), [], bad, {})); // erster Lauf: aktuellen Stand einmal melden
+      state.bad = active;
+    } else {
+      if (Object.keys(bad).length) await send(riskText(Object.keys(bad), [], bad, {})); // erster Lauf: aktuellen Stand einmal melden
+      state.bad = bad;
     }
-    state.bad = bad;
   }
 
   await updateJournal(state, now);

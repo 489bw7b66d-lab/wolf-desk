@@ -35,20 +35,24 @@ export function signalAlert(r, price, sent, now = Date.now(), cfg = A(), extra =
 }
 
 // Regelverstöße vergleichen: neu aufgetreten und wieder behoben.
-// bad = { "NEAR|Abstand Liquidation": "Text" }, prev = gleiche Form vom letzten Lauf
-export function riskDiff(prev, bad) {
-  const added = Object.keys(bad).filter((k) => !(k in (prev || {})));
-  const solved = Object.keys(prev || {}).filter((k) => !(k in bad));
-  return { added, solved };
+// bad = { "NEAR|Abstand Liquidation": "Text" }, prev = aktive Alarme vom letzten Lauf.
+// hold = Punkte, die nur noch gelb sind: ein laufender Alarm bleibt dann bestehen (keine Entwarnung),
+// damit ein Wert, der um die Grenze pendelt, nicht ständig Alarm und Entwarnung auslöst.
+export function riskDiff(prev, bad, hold = {}) {
+  const p = prev || {};
+  const added = Object.keys(bad).filter((k) => !(k in p));
+  const solved = Object.keys(p).filter((k) => !(k in bad) && !(k in hold));
+  const active = { ...Object.fromEntries(Object.keys(p).filter((k) => k in hold).map((k) => [k, p[k]])), ...bad };
+  return { added, solved, active };
 }
 
-// Alle roten Punkte aus der Risiko-Auswertung (Positionen und Konto)
-export function badChecks(risk) {
+// Alle roten (oder mit status = 'warn' gelben) Punkte aus der Risiko-Auswertung (Positionen und Konto)
+export function badChecks(risk, status = 'bad') {
   const out = {};
   if (!risk) return out;
-  risk.positions.forEach((p) => p.evaluation.checks.filter((c) => c.status === 'bad')
+  risk.positions.forEach((p) => p.evaluation.checks.filter((c) => c.status === status)
     .forEach((c) => { out[p.coin + '|' + c.rule] = c.text; }));
-  risk.checks.filter((c) => c.status === 'bad').forEach((c) => { out['Konto|' + c.rule] = c.text; });
+  risk.checks.filter((c) => c.status === status).forEach((c) => { out['Konto|' + c.rule] = c.text; });
   return out;
 }
 
