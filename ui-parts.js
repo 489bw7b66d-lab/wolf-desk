@@ -50,7 +50,7 @@ export function topReasons(r, max = 3) {
 }
 
 // Stil-Auswahl: Scalp / Daytrade / Swing mit Bewertung, aktiver Stil hervorgehoben, bester mit ★
-export function styleRow(r, modes) {
+export function styleRow(r, modes, quiet = false) { // quiet: ohne Warnzeile (z. B. Trade-Karte aus einem Signal)
   if (!r.styles) return '';
   return `<div class="styles" role="group" aria-label="Trade-Stil">${['scalp', 'intraday', 'swing'].map((k) => {
     const s = r.styles[k];
@@ -58,7 +58,7 @@ export function styleRow(r, modes) {
     return `<button type="button" data-style="${k}" aria-pressed="${r.mode === k}" class="${s.ok ? 'ok' : 'no'}" title="${esc(s.ok ? 'Geeignet' : s.reason)}">
       <span>${r.best === k ? '★ ' : ''}${esc(modes[k].label)}</span><small>${txt}</small></button>`;
   }).join('')}</div>
-  ${r.styles[r.mode] && !r.styles[r.mode].ok ? `<p class="warnline" style="color:var(--warn);margin-top:6px">${esc(modes[r.mode].label)}: ${esc(r.styles[r.mode].reason)}</p>` : ''}`;
+  ${!quiet && r.styles[r.mode] && !r.styles[r.mode].ok ? `<p class="warnline" style="color:var(--warn);margin-top:6px">${esc(modes[r.mode].label)}: ${esc(r.styles[r.mode].reason)}</p>` : ''}`;
 }
 
 // Ausstiegsplan als Tabelle
@@ -121,7 +121,7 @@ export function levSlider(lev, rec, ctx) {
       <span class="lev-tag ${info.status}" data-lev-out="tag">${LEV_TXT[info.status]}</span>
     </div>`;
   return `<div class="lev-box">
-    ${ctx.note ? `<details class="tip-h"><summary>${head}</summary><p class="tip-text" style="margin-top:6px">${esc(ctx.note)}</p></details>` : head}
+    ${ctx.note ? `<details class="tip-h"${tipAttr('lev')}><summary>${head}</summary><p class="tip-text" style="margin-top:6px">${esc(ctx.note)}</p></details>` : head}
     <div class="lev-track-wrap">
       ${recPos != null ? `<span class="lev-rec" style="left:calc(${recPos.toFixed(2)}% )" aria-hidden="true">▼ ${rec}×</span>` : ''}
       <input type="range" class="lev-range" min="1" max="${max}" step="1" value="${lev}" aria-label="Hebel" aria-valuetext="${lev}-fach, ${LEV_TXT[info.status]}"
@@ -168,11 +168,26 @@ export function levPreviewHtml(lev, margin, ctx) {
   </div>`;
 }
 
+// Aufgeklappte Erklärungen merken: Viele Karten werden jede Sekunde neu gezeichnet (Live-Kurse),
+// ohne Gedächtnis klappte ein ⓘ sofort wieder zu. Schlüssel = Text ohne Zahlen (die ändern sich laufend) oder eigener Schlüssel.
+const openTips = new Set();
+export const tipKey = (t) => String(t ?? '').replace(/[0-9.,+−\-%$×]/g, '').replace(/\s+/g, ' ').trim().slice(0, 90);
+export const isTipOpen = (key) => openTips.has(key);
+export function rememberTip(key, open) { if (open) openTips.add(key); else openTips.delete(key); }
+if (typeof document !== 'undefined') {
+  // „toggle“ steigt nicht auf, daher in der Einfangphase lauschen
+  document.addEventListener('toggle', (e) => {
+    const d = e.target;
+    if (d?.matches?.('details[data-tip]')) rememberTip(d.dataset.tip, d.open);
+  }, true);
+}
+const tipAttr = (key) => ` data-tip="${esc(key)}"${openTips.has(key) ? ' open' : ''}`;
+
 // Erklärung zum Antippen statt dauerhafter Fußnote: ⓘ klappt den Text auf
-export function tipInline(text) {
-  return `<details class="tip-i"><summary aria-label="Erklärung">ⓘ</summary><span class="tip-text">${esc(text)}</span></details>`;
+export function tipInline(text, key = tipKey(text)) {
+  return `<details class="tip-i"${tipAttr(key)}><summary aria-label="Erklärung">ⓘ</summary><span class="tip-text">${esc(text)}</span></details>`;
 }
 // Überschrift, die beim Antippen ihre Erklärung zeigt
-export function tipHead(title, text, extra = '') {
-  return `<details class="tip-h"><summary><h3 class="sub-h">${title} <span class="tip-mark" aria-hidden="true">ⓘ</span>${extra}</h3></summary><p class="tip-text">${esc(text)}</p></details>`;
+export function tipHead(title, text, extra = '', key = 'h|' + tipKey(title)) {
+  return `<details class="tip-h"${tipAttr(key)}><summary><h3 class="sub-h">${title} <span class="tip-mark" aria-hidden="true">ⓘ</span>${extra}</h3></summary><p class="tip-text">${esc(text)}</p></details>`;
 }

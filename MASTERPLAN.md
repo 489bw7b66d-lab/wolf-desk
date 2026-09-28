@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 28.09.2026 · Etappe 4b · 400 Tests
+Stand: 28.09.2026 · Etappe 4b1 · 402 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -31,7 +31,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 - **Vor größeren Änderungen:** erst Bestand prüfen (aktuellen Code von GitHub laden, Versionsnummer prüfen!) und Plan zeigen, dann bauen.
 - **Ehrlichkeit:** keine Trefferquoten-Versprechen, Hinweise bei riskanten Werten, **Bremse bei Überpacen**.
 - **Messen vor Ändern:** Alles, was die **Signale** verändert, wartet bis zur Tagebuch-Analyse (siehe Abschnitt 11).
-- **Übersicht (seit 4b):** Neue Funktionen bringen **keine zusätzlichen Fußnoten** mit. Erklärungen stehen hinter einem **ⓘ** zum Antippen (`tipInline`, `tipHead` in `ui-parts.js`).
+- **Übersicht (seit 4b):** Neue Funktionen bringen **keine zusätzlichen Fußnoten** mit. Erklärungen stehen hinter einem **ⓘ** zum Antippen (`tipInline`, `tipHead` in `ui-parts.js`). Die App merkt sich aufgeklappte ⓘ, weil viele Karten jede Sekunde neu gezeichnet werden.
 
 ---
 
@@ -83,7 +83,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4b">` und eine Import-Map mit `?v=4b` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4b1">` und eine Import-Map mit `?v=4b1` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -243,6 +243,8 @@ Etappe 3za: Auswahlknöpfe eindeutig (ausgewählt gold mit ✓)
 Etappe 3zb: Automatischer Plan für jede Position nach den Regeln des Signalgebers (Kerzen zum Einstieg, Fibonacci sonst ATR, Stil wählbar), Trade-Weg mit ursprünglichem SL₀ und nachgezogenem SL (schraffiert = abgesichert), Wächter meldet Ziele auch für eigene Trades
 Etappe 4a: Risiko-Stufen 2/3/5 % in den Einstellungen (Warnung ab 3 %, rot ab 5 %), Positions-Begrenzer entfernt, Stop-Check gegen ATR auf Trade-Karte/Rechner/Positionen mit Vorschlag, Abkühlphase nach Verlustserie (Banner, halbiertes Risiko, Telegram), Geduld-Statistik im Konto und im Wochenbericht
 Etappe 4b: Tipp auf ein laufendes Signal öffnet die Trade-Karte mit dem Plan aus dem Signal (Hinweis, wenn die Analyse von jetzt anders aussieht) · Chart-Fehler behoben (eine gemeinsame Live-Kerze für alle Märkte ließ beim Öffnen fremde Kurse einfließen; jetzt je Markt getrennt plus Plausibilitäts-Sicherung) · Hebel-Vorschau unter dem Regler auf Trade-Karte und im Rechner (Liq wandert Richtung Stop, Puffer grün/gelb/rot, Margin-Anteil am Freien) · Fear & Greed mit „Stand“ und Warnung „Quelle hängt“, ohne Zwischenspeicher · Handelbare Märkte (Ledger) in den Einstellungen mit Suche, Heiße Coins und Wächter scannen nur diese · Backtest für alle Märkte (Suche, auch xyz) und „alle handelbaren“ · Trade-Weg „Risiko verringert“ statt „abgesichert“, solange der nachgezogene Stop unter dem Einstieg liegt · Watchlist geht jetzt mit an den Wächter · Fußnoten hinter ⓘ (Hebel, Gebühren, Ausstiegsplan, Statistik, Geduld, Kosten, Backtest, Trade-Weg)
+
+Etappe 4b1: ⓘ-Erklärungen blieben nicht offen (Karten werden jede Sekunde neu gezeichnet) → aufgeklappte ⓘ werden gemerkt · Trade-Karte aus Signal ohne doppelten Hinweis „Kein klares Signal“ · Heiße Coins im Probelauf geprüft (Top-Coins und eigene Liste)
 
 ---
 

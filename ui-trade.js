@@ -72,7 +72,7 @@ function render() {
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((tf) => `<button type="button" data-ctf="${tf}" aria-pressed="${tf === chartTf}">${TFL[tf]}</button>`).join('')}</div>
     <div id="sheet-chart" class="chart-box"></div>
-    ${styleRow(r, CONFIG.signals.modes)}
+    ${styleRow(r, CONFIG.signals.modes, !!r.fromSignal)}
     ${topReasons(r).length ? `<p class="reasons-line">${topReasons(r).map(esc).join(' · ')}</p>` : ''}
     ${p.liveEntry ? `<p class="plan-mode"><span class="chip">Einstieg = Live-Kurs ${f.price(p.entry)}</span></p>` : ''}
     ${ladder(p, size ? `<div class="lvl lvl-margin"><span class="dot" style="background:var(--gold)"></span><span class="lbl">Margin</span><span class="px" id="ladder-margin">${margin ? f.usd(margin) : 'Kapital reicht nicht'}</span><span class="pc muted" id="ladder-lev">${lev ? lev + '× · ' : ''}Position ${f.usd(size.notional)}</span></div>` : '')}

@@ -182,7 +182,7 @@ export function pathBar(path) {
     <div class="path-track"><span class="path-fill loss" style="left:0;width:${pct(red)}%"></span><span class="path-fill gain" style="left:${pct(e)}%;width:${pct(green)}%"></span>${moved && path.stop.at > path.origStop.at ? `<span class="path-secured" style="left:${pct(path.origStop.at)}%;width:${pct(path.stop.at - path.origStop.at)}%" title="${path.stop.inProfit ? 'durch nachgezogenen Stop abgesichert' : 'Risiko durch nachgezogenen Stop verringert'}"></span>` : ''}
       ${ticks.map((x) => `<i class="path-tick ${x.cls}" style="left:${pct(x.at)}%"></i>`).join('')}</div>
     <div class="path-labels${twoRows ? ' two' : ''}">${ticks.map((x) => `<span class="${x.cls}${edge(x)} r${x.row}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
-    <div class="path-info meta">${info.join(' · ')} ${tipInline('Ziele ' + path.source.label)}</div>
+    <div class="path-info meta">${info.join(' · ')} ${tipInline('Ziele ' + path.source.label, 'path|' + path.entry.price + '|' + path.source.label)}</div>
   </div>`;
 }
 

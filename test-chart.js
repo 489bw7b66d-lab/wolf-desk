@@ -1,4 +1,5 @@
 import { liveCandle } from './ui-chart.js';
+import { tipKey, tipInline, rememberTip } from './ui-parts.js';
 
 const C = (T, c) => ({ T, o: c, h: c, l: c, c });
 
@@ -21,4 +22,12 @@ export const tests = [
     return x.o === 11 && x.h === 11.1;
   }],
   ['Chart: unplausibler Live-Kurs (über 50 % daneben) wird ignoriert', () => liveCandle([C(3, 0.005)], '4h', 15, 'PUMP') === null],
+  ['ⓘ: Schlüssel ohne Zahlen (Betrag ändert sich, Erklärung bleibt dieselbe)', () => tipKey('Netto 96,22 $ nach Gebühren') === tipKey('Netto 101,50 $ nach Gebühren')],
+  ['ⓘ: gemerkte Erklärung bleibt nach dem Neuzeichnen offen', () => {
+    const closed = !/ open/.test(tipInline('Testtext A'));
+    rememberTip(tipKey('Testtext A'), true);
+    const open = / open/.test(tipInline('Testtext A 2'));
+    rememberTip(tipKey('Testtext A'), false);
+    return closed && open && !/ open/.test(tipInline('Testtext A'));
+  }],
 ];
