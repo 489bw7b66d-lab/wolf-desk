@@ -87,9 +87,9 @@
     85345.08271566611,
     86035.18197446543
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790558099999,
    "events": [
     "EMA 8/21 Kreuzung aufwärts",
     "Ausbruch aus Dreieck",
