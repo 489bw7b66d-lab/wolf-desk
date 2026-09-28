@@ -1,6 +1,34 @@
 {
  "signals": [
   {
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 80,
+   "seal": true,
+   "at": 1790615281666,
+   "px": 0.005308,
+   "zone": [
+    0.005156963248649577,
+    0.005384
+   ],
+   "stop": 0.004589371370273519,
+   "tps": [
+    0.005951591878376058,
+    0.006632702132427327,
+    0.007313812386478596,
+    0.007994922640529865
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Volumen-Spike",
+    "MACD-Kreuzung aufwärts",
+    "Ausbruch aus Dreieck"
+   ]
+  },
+  {
    "coin": "WLD",
    "dir": "long",
    "style": "swing",
