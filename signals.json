@@ -19,9 +19,9 @@
     0.6955105540183721,
     0.7447605540183722
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790607599999,
    "events": [
     "Starkes Momentum",
     "Ausbruch aus Seitwärtsphase",
