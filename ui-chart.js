@@ -3,22 +3,31 @@ import * as f from './core-format.js';
 import { TFL } from './ui-parts.js';
 
 const W = 360, H = 230, PAD_R = 58, PAD_T = 8, PAD_B = 16, SHOW = 70, GAP = 6; // GAP: leere Kerzenplätze vor der Preisachse
-let live = null; // laufende Kerze { tf, t, o, h, l, c }
+const lives = new Map(); // laufende Kerze je Markt und Zeitebene: "coin|tf" -> { t, o, h, l, c }
 
-// Laufende Kerze aus Live-Kursen fortschreiben (beginnt am Schluss der letzten fertigen Kerze)
-export function liveCandle(candles, tf, price) {
+// Laufende Kerze aus Live-Kursen fortschreiben (beginnt am Schluss der letzten fertigen Kerze).
+// Je Markt getrennt: Früher gab es nur eine gemeinsame Live-Kerze. 4H-Kerzen aller Märkte enden zur selben Zeit,
+// daher konnte beim Öffnen eines anderen Marktes die Live-Kerze des vorigen übernommen werden (z. B. LINK-Kurs im PUMP-Chart).
+export function liveCandle(candles, tf, price, coin = '') {
   const last = candles.at(-1);
   if (!last || !(price > 0)) return null;
-  if (!live || live.tf !== tf || live.t !== last.T) live = { tf, t: last.T, o: last.c, h: Math.max(last.c, price), l: Math.min(last.c, price), c: price };
+  // Sicherung: Ein Live-Kurs, der mehr als 50 % von der letzten Kerze abweicht, gehört nicht zu diesem Chart
+  if (last.c > 0 && Math.abs(price / last.c - 1) > 0.5) return null;
+  const key = coin + '|' + tf;
+  let live = lives.get(key);
+  if (!live || live.t !== last.T) {
+    live = { tf, t: last.T, o: last.c, h: Math.max(last.c, price), l: Math.min(last.c, price), c: price };
+    lives.set(key, live);
+  }
   live.h = Math.max(live.h, price); live.l = Math.min(live.l, price); live.c = price;
   return live;
 }
 
 // lines: zusätzliche Linien [{ price, col, label, dash }], z. B. Einstieg, Stop und Liquidation einer offenen Position
-export function chartSvg({ candles, tf, plan, price, events = [], confirms = [], lines = [] }) {
+export function chartSvg({ coin = '', candles, tf, plan, price, events = [], confirms = [], lines = [] }) {
   if (!candles?.length) return '<p class="empty">Keine Kursdaten für den Chart.</p>';
   const cs = candles.slice(-SHOW);
-  const lc = liveCandle(candles, tf, price);
+  const lc = liveCandle(candles, tf, price, coin);
   const all = lc ? [...cs, { ...lc, live: true }] : cs;
   const plotW = W - PAD_R, n = all.length, cw = plotW / (n + GAP);
 

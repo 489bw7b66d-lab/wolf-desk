@@ -23,6 +23,9 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-autoplan.js` – automatischer Plan (SL, TP1–TP4) für jede offene Position, berechnet mit den Kerzen zum Einstiegszeitpunkt
 - `core-guard.js` – Schutz: Stop-Check gegen ATR, Abkühlphase nach Verlustserie
 - `core-patience.js` – Geduld-Statistik: was frühes Aussteigen gekostet oder gespart hat
+- `core-feedplan.js` – Trade-Karte aus einem gemeldeten Signal (Plan aus dem Signal, Vergleich mit der Analyse von jetzt)
+- `core-levpreview.js` – Hebel-Vorschau: Liquidation, Puffer zum Stop, Margin-Anteil am freien Kapital
+- `core-tradeable.js` – handelbare Märkte (z. B. Ledger) und Marktsuche; `ui-tradeable.js` pflegt die Liste in den Einstellungen
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -56,3 +59,4 @@ Etappe 3z: Ziele je Position für manuelles Schließen (aus Signal, aus Analyse 
 Etappe 3za: Auswahlknöpfe eindeutig (ausgewählt gold mit ✓)
 Etappe 3zb: Automatischer Plan für jede Position nach den Regeln des Signalgebers (Kerzen zum Einstieg, Fibonacci sonst ATR, Stil wählbar), Trade-Weg mit ursprünglichem SL₀ und nachgezogenem SL (schraffiert = abgesichert), Wächter meldet Ziele auch für eigene Trades
 Etappe 4a: Risiko-Stufen 2/3/5 % in den Einstellungen (Warnung ab 3 %, rot ab 5 %), Positions-Begrenzer entfernt, Stop-Check gegen ATR auf Trade-Karte/Rechner/Positionen mit Vorschlag, Abkühlphase nach Verlustserie (Banner, halbiertes Risiko, Telegram), Geduld-Statistik im Konto und im Wochenbericht
+Etappe 4b: Signal antippen öffnet Trade-Karte mit Signal-Plan, Chart-Fehler (fremde Live-Kerze) behoben, Hebel-Vorschau, Fear & Greed mit Stand, handelbare Märkte (Ledger), Backtest für alle Märkte, „Risiko verringert“ im Trade-Weg, Watchlist an den Wächter, Erklärungen hinter ⓘ

@@ -1,5 +1,5 @@
 // Marktüberblick auf der Startseite: Markt-Bias als Tacho, Fear & Greed als Bogen, Marktkapitalisierung, BTC-Dominanz.
-import { market, onMarket, refreshMarket, fngLabel, ETF_URL } from './core-market.js';
+import { market, onMarket, refreshMarket, fngLabel, fngStand, ETF_URL } from './core-market.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -78,6 +78,7 @@ export function renderMarket() {
   const { fng, global: g, bias, errors } = market;
   const fl = fng ? fngLabel(fng.value) : null;
   const fngDiff = fng && Number.isFinite(fng.prev) ? fng.value - fng.prev : null;
+  const stand = fng ? fngStand(fng.ts) : null;
   box.innerHTML = `<div class="mkt-gauges">
       <div class="mkt-bias">
         ${biasGauge(bias)}
@@ -88,7 +89,8 @@ export function renderMarket() {
       <div class="mkt-fng">
         ${fngGauge(fng?.value ?? null)}
         <b class="mkt-label ${fl?.cls === 'bad' ? 'short' : fl?.cls === 'ok' ? 'long' : fl?.cls === 'warn' ? 'warn-t' : 'muted'}">${fl ? fl.text : errors.fng ? 'Nicht verfügbar' : 'Lädt …'}</b>
-        <span class="k">Fear & Greed${fngDiff != null ? ` · gestern ${fng.prev}` : ''}</span>
+        <span class="k">Fear & Greed${fng ? ` ${fng.value}` : ''}${fngDiff != null ? ` · gestern ${fng.prev}` : ''}</span>
+        ${stand ? `<span class="k${stand.stale ? ' fng-stale' : ''}">${stand.text}${stand.stale ? ', Quelle hängt' : ''}</span>` : ''}
       </div>
     </div>
     <div class="mkt-stats">

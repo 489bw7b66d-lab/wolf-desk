@@ -25,6 +25,10 @@ export const CONFIG = {
   // Standard-Watchlist. In der App bearbeitest du sie direkt, der Telegram-Wächter nutzt diese Liste.
   watchlist: ['BTC', 'ETH', 'SOL', 'LINK', 'NEAR', 'XRP', 'XLM', 'LTC', 'xyz:QNT', 'ZEC', 'SUI'],
 
+  // HANDELBARE MÄRKTE (z. B. was über Ledger handelbar ist). In der App unter ⚙️ gepflegt, über my-settings.js auch für den Wächter.
+  // Leer = Heiße Coins und Wächter scannen wie bisher die Top-Coins nach Market Cap. Mit Einträgen = nur diese Märkte (plus Watchlist).
+  tradeable: [],
+
   // DEINE MARKTEINSCHÄTZUNG je Markt (wird in der App gepflegt und über my-settings.js an den Wächter gegeben)
   views: {},
 

@@ -70,7 +70,7 @@ function renderLive() {
       ...tpOrders(s, p).map((x, i) => ({ price: x, col: 'var(--ok)', label: 'TP' + (i + 1), dash: '4 3', fit: i < 2 })),
       { price: p.liq, col: 'var(--bad)', label: 'Liq', dash: '1 3', fit: false },
     ] : [];
-    box.innerHTML = chartSvg({ candles: cs, tf, price: px, lines: [...lines, ...viewLines(viewFor(getViews(), coin))] });
+    box.innerHTML = chartSvg({ coin, candles: cs, tf, price: px, lines: [...lines, ...viewLines(viewFor(getViews(), coin))] });
   }
 }
 

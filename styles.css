@@ -516,3 +516,42 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .stop-check.bad { color: var(--bad); border-color: rgba(255,112,112,.65); background: rgba(255,112,112,.07); }
 .cool-banner { margin: 0 0 14px; padding: 14px 16px; border-radius: 18px; border: 1px solid rgba(120,190,255,.55); background: linear-gradient(135deg, rgba(120,190,255,.14), rgba(120,190,255,.04)); color: #bfe0ff; font-size: 13.5px; line-height: 1.45; }
 .cool-banner b { display: block; font-size: 16px; font-weight: 800; color: #d8ecff; margin-bottom: 4px; }
+
+/* 4b: Hebel-Vorschau unter dem Regler */
+.lp { margin: 2px 0 12px; }
+.lp-track { margin-top: 8px; }
+.lp-gap { position: absolute; top: 0; bottom: 0; border-radius: 3px; opacity: .85; }
+.lp-gap.ok { background: var(--ok); } .lp-gap.warn { background: var(--warn); } .lp-gap.bad { background: var(--bad); }
+.lp .path-tick.liq { background: #FF3B3B; width: 3px; margin-left: -1.5px; height: 18px; top: -4px; }
+.lp .path-tick.liq.pinned { opacity: .55; }
+.lp .path-tick.sl { background: var(--bad); }
+.lp .path-labels .liq { color: #FF5A5A; }
+.lp-margin { position: relative; overflow: visible; margin-top: 10px; height: 5px; }
+.lp-m { display: block; height: 100%; border-radius: 3px; }
+.lp-m.ok { background: var(--ok); } .lp-m.warn { background: var(--warn); } .lp-m.bad { background: var(--bad); }
+.lp-margin i { position: absolute; top: -3px; width: 2px; height: 11px; margin-left: -1px; background: var(--muted); border-radius: 1px; }
+.lp-info { margin: 6px 0 0; font-size: 12.5px; font-weight: 700; }
+.lp-info .ok { color: var(--ok); } .lp-info .warn { color: var(--warn); } .lp-info .bad { color: var(--bad); }
+
+/* 4b: Erklärungen zum Antippen statt Fußnoten */
+.tip-i { display: inline; }
+.tip-i > summary { display: inline-flex; align-items: center; justify-content: center; list-style: none; cursor: pointer; width: 22px; height: 22px; margin: -4px 0; border-radius: 50%; color: var(--muted); font-size: 14px; font-weight: 700; vertical-align: middle; }
+.tip-i > summary::-webkit-details-marker { display: none; }
+.tip-i[open] > summary { color: var(--gold); }
+.tip-i .tip-text { display: block; margin: 6px 0 2px; font-size: 12.5px; font-weight: 500; line-height: 1.45; color: var(--muted); }
+.tip-h > summary { list-style: none; cursor: pointer; }
+.tip-h > summary::-webkit-details-marker { display: none; }
+.tip-h .tip-mark { color: var(--muted); font-size: 14px; font-weight: 700; margin-left: 2px; }
+.tip-h[open] .tip-mark { color: var(--gold); }
+.tip-h .tip-text { margin: -2px 0 10px; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+
+/* 4b: Signal-Hinweis auf der Trade-Karte und Marktsuche */
+.sig-note { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--warn); }
+.mk-search { display: block; width: 100%; margin-top: 10px; }
+.mk-hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mk-hits button, .mk-chips button { height: 34px; padding: 0 12px; font-size: 13px; font-weight: 700; background: var(--line); color: var(--text); }
+.mk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mk-chips button::after { content: ' ×'; color: var(--muted); }
+.fng-stale { color: var(--warn); }
+.exit-note { margin-top: 4px; text-align: right; }
+.exit-note .tip-text { text-align: left; }

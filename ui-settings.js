@@ -2,7 +2,10 @@
 import { CONFIG, SETTINGS_KEY } from './config.js';
 import { getViews } from './core-views.js';
 import { getPlans } from './core-plans.js';
-import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile } from './core-settings.js';
+import { getWatchlist } from './core-watchlist.js';
+import { getTradeable } from './core-tradeable.js';
+import { tradeableBlock, bindTradeable } from './ui-tradeable.js';
+import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile, listsForExport } from './core-settings.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -62,6 +65,7 @@ export function renderSettings() {
         ${sum != null ? `<p class="set-sum ${sum === 100 ? 'long' : 'short'}">Summe: ${sum} %</p>` : ''}
       </details>`;
     }).join('')}
+    ${tradeableBlock(open.has('tradeable'))}
     ${errs.length ? `<div class="set-errors" role="alert">${errs.map((e) => `<p>${esc(e.text)}</p>`).join('')}</div>` : ''}
     <div class="set-actions">
       <button type="button" id="set-save" ${errs.length || !dirty ? 'disabled' : ''}>Speichern und anwenden</button>
@@ -87,6 +91,7 @@ async function exportFile() {
   if (Object.keys(views).length) diff.views = views;
   const plans = getPlans();
   if (Object.keys(plans).length) diff.plans = plans;
+  Object.assign(diff, listsForExport(getWatchlist(), getTradeable()));
   const text = settingsFile(diff);
   const file = new File([text], 'my-settings.js', { type: 'text/javascript' });
   try {
@@ -98,8 +103,9 @@ async function exportFile() {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
-export function initSettings() {
+export function initSettings(getState = () => ({})) {
   const box = $('settings');
+  bindTradeable(box, () => Object.values(getState().markets || {}).flat());
   // Zahl eingegeben: erst beim Verlassen des Feldes übernehmen (sonst springt der Cursor)
   box.addEventListener('change', (e) => {
     const el = e.target, path = el.dataset.path;

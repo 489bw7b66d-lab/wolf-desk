@@ -1,12 +1,15 @@
 // Backtest-Bereich: Markt und Stil wählen, Signalgeber auf der Vergangenheit testen, Ergebnis verständlich anzeigen.
 import { CONFIG } from './config.js';
 import { getWatchlist, onWatchlist } from './core-watchlist.js';
+import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
 import { BT, loadHistory, runBacktest, summarize } from './core-backtest.js';
-import { esc, dn } from './ui-parts.js';
+import { esc, dn, tipHead, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
-const ALL = '__alle__';
+const ALL = '__alle__', TRADE = '__handelbar__';
+let extra = null; // über die Suche gewählter Markt außerhalb der Watchlist
+let getNames = () => [];
 const STYLES = ['swing', 'intraday', 'scalp'];
 let style = 'swing', running = false, stopFlag = false, last = null;
 
@@ -16,11 +19,15 @@ const cls = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
 const date = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 const OUT = { stop: 'Stop', einstieg: 'Stop auf Einstieg', nachgezogen: 'Nachzieh-Stop', tp4: 'Alle Ziele', zeit: 'Zeitlimit', offen: 'Noch offen' };
 
-function renderControls() {
-  const wl = getWatchlist();
-  const sel = $('bt-coin'), cur = sel.value;
-  sel.innerHTML = `<option value="${ALL}">Ganze Watchlist (${wl.length})</option>` + wl.map((c) => `<option value="${esc(c)}">${esc(dn(c))}</option>`).join('');
-  sel.value = [ALL, ...wl].includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
+function renderControls(prefer = null) {
+  const wl = getWatchlist(), tr = getTradeable();
+  const sel = $('bt-coin'), cur = prefer || sel.value;
+  const single = extra && !wl.includes(extra) ? [extra, ...wl] : wl;
+  sel.innerHTML = `<option value="${ALL}">Ganze Watchlist (${wl.length})</option>`
+    + (tr.length ? `<option value="${TRADE}">Alle handelbaren Märkte (${tr.length})</option>` : '')
+    + single.map((c) => `<option value="${esc(c)}">${esc(dn(c))}${c === extra && !wl.includes(c) ? ' (Suche)' : ''}</option>`).join('');
+  const ok = [ALL, ...(tr.length ? [TRADE] : []), ...single];
+  sel.value = ok.includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
   $('bt-styles').innerHTML = STYLES.map((k) => `<button type="button" data-bts="${k}" aria-pressed="${k === style}">${CONFIG.signals.modes[k].label}<small>${BT.days[k]} Tage</small></button>`).join('');
 }
 
@@ -78,9 +85,9 @@ function renderResult() {
     ${curve(sm.curve)}
     <h3 class="sub-h">Taugt ein höherer Score mehr?</h3>
     ${table(['Score', 'Trades', 'Gewinn', 'Ø R'], sm.byScore.map((b) => `<div class="bt-row" role="row"><span><b>${b.label}</b></span><span>${b.n}</span><span>${P(b.winRate)}</span><span class="${cls(b.avgR)}">${R(b.avgR)}</span></div>`))}
-    <h3 class="sub-h">Welche Ereignisse helfen?</h3>
+    ${tipHead('Welche Ereignisse helfen?', 'Vorteil = Ø R mit diesem Ereignis minus Ø R ohne. Erst ab 3 Trades gelistet.')}
     ${sm.byEvent.length ? table(['Ereignis', 'Trades', 'Ø R', 'Vorteil'], sm.byEvent.map((e) => `<div class="bt-row" role="row"><span>${esc(e.name)}</span><span>${e.n}</span><span class="${cls(e.avgR)}">${R(e.avgR)}</span><span class="${cls(e.edge)}">${R(e.edge)}</span></div>`))
-      + '<p class="empty" style="font-size:12px;margin-top:6px">Vorteil = Ø R mit diesem Ereignis minus Ø R ohne. Erst ab 3 Trades gelistet.</p>'
+
       : '<p class="empty">Zu wenige Trades je Ereignis für eine Aussage.</p>'}
     <h3 class="sub-h">Retest-Siegel und Richtung</h3>
     ${table(['Gruppe', 'Trades', 'Gewinn', 'Ø R'], [
@@ -89,13 +96,13 @@ function renderResult() {
     ${perCoin.length ? `<h3 class="sub-h">Nach Markt</h3>${table(['Markt', 'Trades', 'Gewinn', 'Ø R'], perCoin.map((c) => `<div class="bt-row" role="row"><span><b>${esc(dn(c.coin))}</b></span><span>${c.err ? '–' : c.n}</span><span>${c.err ? '' : P(c.winRate)}</span><span class="${cls(c.avgR)}">${c.err ? 'Fehler' : R(c.avgR)}</span></div>`))}` : ''}
     <h3 class="sub-h">Letzte Trades</h3>
     ${table(['Datum', 'Markt', 'Ausgang', 'R'], trades.slice(-8).reverse().map((t) => `<div class="bt-row" role="row"><span>${date(t.time)}</span><span>${esc(dn(t.coin))} <small class="${t.dir}">${t.dir === 'long' ? 'L' : 'S'}</small></span><span class="muted">${OUT[t.outcome] || t.outcome}${t.hits ? ` · TP${t.hits}` : ''}</span><span class="${cls(t.r)}">${R(t.r)}</span></div>`))}
-    <p class="empty" style="font-size:12px;margin-top:12px">1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen (${f.pct(BT.feePct, 3)} je Seite), Slippage und Funding nicht. Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.</p>`;
+    <div class="empty" style="font-size:12.5px;margin-top:12px">So wurde gerechnet ${tipInline(`1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen (${f.pct(BT.feePct, 3)} je Seite), Slippage und Funding nicht. Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.`)}</div>`;
 }
 
 async function start() {
   if (running) { stopFlag = true; return; }
   const sel = $('bt-coin').value;
-  const coins = sel === ALL ? getWatchlist() : [sel];
+  const coins = sel === ALL ? getWatchlist() : sel === TRADE ? getTradeable() : [sel];
   running = true; stopFlag = false;
   $('bt-run').textContent = 'Abbrechen';
   const runs = [];
@@ -118,7 +125,7 @@ async function start() {
       runs.push({ coin, trades: [], missed: [], error: e.message });
     }
   }
-  const label = `${sel === ALL ? 'Watchlist' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage`;
+  const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage`;
   last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + r.missed.length, 0) };
   const errs = runs.filter((r) => r.error);
   status(stopFlag ? 'Abgebrochen, Teilergebnis:' : errs.length ? `Fertig. Nicht geladen: ${errs.map((r) => r.coin).join(', ')}` : 'Fertig.', null);
@@ -127,9 +134,29 @@ async function start() {
   renderResult();
 }
 
-export function initBacktest() {
+// Suche über alle Hyperliquid-Märkte (auch xyz: Rohstoffe, Aktien, Devisen)
+function renderHits() {
+  const q = $('bt-q').value, box = $('bt-hits');
+  if (!q.trim()) { box.innerHTML = ''; return; }
+  const hits = matchMarkets(q, getNames());
+  box.innerHTML = hits.length
+    ? hits.map((c) => `<button type="button" data-bt-pick="${esc(c)}">${esc(dn(c))}${c.includes(':') ? ` <small class="muted">${esc(c.split(':')[0])}</small>` : ''}</button>`).join('')
+    : `<p class="empty" style="font-size:13px">${getNames().length ? 'Kein Markt gefunden.' : 'Marktliste lädt noch …'}</p>`;
+}
+
+export function initBacktest(getState = () => ({})) {
+  getNames = () => Object.values(getState().markets || {}).flat();
   renderControls();
-  onWatchlist(renderControls);
+  onWatchlist(() => renderControls());
+  onTradeable(() => renderControls());
+  $('bt-q').addEventListener('input', renderHits);
+  $('bt-hits').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-bt-pick]');
+    if (!b || running) return;
+    extra = b.dataset.btPick;
+    renderControls(extra);
+    $('bt-q').value = ''; renderHits();
+  });
   $('bt-styles').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-bts]');
     if (!b || running) return;

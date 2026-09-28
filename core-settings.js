@@ -148,3 +148,12 @@ export function settingsFile(diff, date = new Date()) {
     + `// Hochladen zu GitHub, dann nutzt auch der Telegram-Wächter diese Werte.\n`
     + `export const MY_SETTINGS = ${body};\n`;
 }
+
+// Listen für den Wächter: Watchlist nur, wenn du sie in der App geändert hast; handelbare Märkte, wenn eingetragen.
+// (Ohne Eintrag gilt im Wächter die Empfehlung: Standard-Watchlist bzw. Top-Coins.)
+export function listsForExport(watchlist, tradeable, rec = RECOMMENDED) {
+  const out = {};
+  if (Array.isArray(watchlist) && watchlist.length && !same(watchlist, rec.watchlist)) out.watchlist = [...watchlist];
+  if (Array.isArray(tradeable) && tradeable.length) out.tradeable = [...tradeable];
+  return out;
+}

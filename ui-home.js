@@ -100,7 +100,7 @@ export function initHome(stateGetter, openTrade, openDetail, openCoin) {
   getState = stateGetter;
   onTrade = openTrade; onDetail = openDetail; onCoin = openCoin;
   $('home-pos').addEventListener('click', (e) => { const b = e.target.closest('button[data-coin]'); if (b) onCoin(b.dataset.coin); });
-  const markets = () => (getState().markets?.[''] || []);
+  const markets = () => Object.values(getState().markets || {}).flat(); // alle Märkte inkl. xyz (für deine handelbaren Märkte)
   $('hot-toggle').addEventListener('click', () => {
     if (hot.running) { stopHot(); try { localStorage.setItem(HOT_KEY, '0'); } catch { /* egal */ } }
     else { startHot(markets); try { localStorage.setItem(HOT_KEY, '1'); } catch { /* egal */ } }

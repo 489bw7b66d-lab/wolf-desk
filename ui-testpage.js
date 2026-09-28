@@ -11,6 +11,7 @@ import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getAutoPlan } from './core-autoplan.js';
 import { stopNoise, atrFor, setupTf } from './core-guard.js';
 import { getFeedSignals } from './ui-feed.js';
+import { tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -170,16 +171,18 @@ export function pathBar(path) {
   const twoRows = ticks.some((x) => x.row === 1);
   const info = [];
   if (path.left.kind === 'liq') info.push('kein Stop: Balken beginnt bei der Liquidation');
-  if (moved && path.stop.at > path.origStop.at) info.push('Stop nachgezogen, schraffiert = abgesichert');
+  // Nachgezogener Stop: „abgesichert“ erst, wenn er auf der Gewinnseite liegt, vorher nur „Risiko verringert“
+  const secured = moved && path.stop.at > path.origStop.at;
+  if (secured) info.push(path.stop.inProfit ? 'Stop nachgezogen, schraffiert = Gewinn abgesichert' : 'Stop nachgezogen, schraffiert = Risiko verringert');
   if (path.next) info.push(`nächstes Ziel TP${path.next.n}: ${path.next.pct >= 0 ? '+' : '−'}${f.pct(Math.abs(path.next.pct), 1)}`);
   else if (m?.beyond) info.push('🏁 Ziel erreicht');
   if (path.found < path.planned) info.push(`${path.planned - path.found} von ${path.planned} Zielen fehlen`);
   const edge = (x) => (x.at < 0.06 ? ' first' : x.at > 0.94 ? ' last' : '');
   return `<div class="path" role="img" aria-label="Trade-Weg: ${ticks.map((x) => x.label).join(', ')}">
-    <div class="path-track"><span class="path-fill loss" style="left:0;width:${pct(red)}%"></span><span class="path-fill gain" style="left:${pct(e)}%;width:${pct(green)}%"></span>${moved && path.stop.at > path.origStop.at ? `<span class="path-secured" style="left:${pct(path.origStop.at)}%;width:${pct(path.stop.at - path.origStop.at)}%" title="durch nachgezogenen Stop abgesichert"></span>` : ''}
+    <div class="path-track"><span class="path-fill loss" style="left:0;width:${pct(red)}%"></span><span class="path-fill gain" style="left:${pct(e)}%;width:${pct(green)}%"></span>${moved && path.stop.at > path.origStop.at ? `<span class="path-secured" style="left:${pct(path.origStop.at)}%;width:${pct(path.stop.at - path.origStop.at)}%" title="${path.stop.inProfit ? 'durch nachgezogenen Stop abgesichert' : 'Risiko durch nachgezogenen Stop verringert'}"></span>` : ''}
       ${ticks.map((x) => `<i class="path-tick ${x.cls}" style="left:${pct(x.at)}%"></i>`).join('')}</div>
     <div class="path-labels${twoRows ? ' two' : ''}">${ticks.map((x) => `<span class="${x.cls}${edge(x)} r${x.row}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
-    <p class="path-info meta">${info.join(' · ')}${info.length ? ' · ' : ''}<span class="path-src">Ziele ${path.source.label}</span></p>
+    <div class="path-info meta">${info.join(' · ')} ${tipInline('Ziele ' + path.source.label)}</div>
   </div>`;
 }
 

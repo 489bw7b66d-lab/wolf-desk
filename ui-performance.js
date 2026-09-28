@@ -8,7 +8,7 @@ import { evaluatePatience, patienceStats, PATIENCE_KEY, windowDays } from './cor
 import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getFeedSignals } from './ui-feed.js';
 import * as f from './core-format.js';
-import { dn } from './ui-parts.js';
+import { dn, tipHead, tipInline } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
 const PERIODS = { day: '24 Std', week: 'Woche', month: 'Monat', allTime: 'Gesamt' };
@@ -135,11 +135,10 @@ function renderStats(s) {
       <div><span class="k">Gewinn : Verlust</span><span class="v">${st.payoff == null ? '–' : st.payoff.toFixed(2).replace('.', ',') + ' : 1'}</span></div>
       <div><span class="k">Summe</span><span class="v ${cl(st.total)}">${f.signedUsd(st.total)}</span></div>
     </div>
-    <h3 class="sub-h">Wie du verkaufst</h3>
+    ${tipHead('Wie du verkaufst', `Bester Trade: ${dn(st.best.coin)} ${f.signedUsd(st.best.realized)}, schlechtester: ${dn(st.worst.coin)} ${f.signedUsd(st.worst.realized)}. Alle Beträge nach Gebühren, ohne Funding.`)}
     <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Gruppe</span><span>Trades</span><span>Treffer</span><span>Ø PnL</span></div>
       ${row('In Teilen verkauft', st.split)}${row('Alles auf einmal', st.single)}${row('Long', st.long)}${row('Short', st.short)}
     </div>
-    <p class="empty" style="font-size:12px;margin-top:8px">Bester Trade: ${dn(st.best.coin)} ${f.signedUsd(st.best.realized)} · schlechtester: ${dn(st.worst.coin)} ${f.signedUsd(st.worst.realized)}. Nach Gebühren, ohne Funding.</p>
     ${patienceBlock(s)}`;
 }
 
@@ -158,7 +157,7 @@ function loadPatience(s) {
 }
 function patienceBlock(s) {
   loadPatience(s);
-  const head = '<h3 class="sub-h">Geduld</h3>';
+  const head = tipHead('Geduld', `Vorzeitig = zwischen Stop und TP1 geschlossen. Maßstab ist der Plan des Trades (eigene Ziele, Telegram-Signal oder automatischer Plan), beobachtet ${windowDays()} Tage nach dem Ausstieg. Beträge bezogen auf die verkaufte Menge.`);
   if (!pat.data) return `${head}<p class="empty">Vorzeitige Ausstiege werden ausgewertet …</p>`;
   const g = patienceStats(pat.data);
   if (!g.n) return `${head}<p class="empty">Keine vorzeitig geschlossenen Trades in den letzten 60 Tagen. Stark!</p>`;
@@ -172,8 +171,7 @@ function patienceBlock(s) {
       <div class="bt-row" role="row"><span>Stop wäre zuerst gekommen</span><span>${g.stopFirst}</span><span></span><span class="long">${f.signedUsd(g.saved)}</span></div>
       <div class="bt-row" role="row"><span>weder noch</span><span>${g.none}</span><span></span><span class="muted">±0</span></div>
       ${g.pending ? `<div class="bt-row" role="row"><span>noch in Beobachtung</span><span>${g.pending}</span><span></span><span class="muted">…</span></div>` : ''}
-    </div>
-    <p class="empty" style="font-size:12px;margin-top:8px">Vorzeitig = zwischen Stop und TP1 geschlossen. Maßstab ist der Plan des Trades (eigene Ziele, Telegram-Signal oder automatischer Plan), beobachtet ${windowDays()} Tage nach dem Ausstieg. Beträge bezogen auf die verkaufte Menge.</p>`;
+    </div>`;
 }
 
 // Kosten: Gebühren und Funding in 7/30/90 Tagen, Anteil am Bruttogewinn, deine Gebührensätze
@@ -192,7 +190,6 @@ function renderCosts(s) {
     <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Zeitraum</span><span>Gebühren</span><span>Funding</span><span>Anteil</span></div>
       ${rows.map((x) => `<div class="bt-row" role="row"><span><b>${x.label}</b></span><span class="short">${f.signedUsd(-x.fees)}</span><span class="${cl(x.funding)}">${s.funding ? f.signedUsd(x.funding) : '…'}</span><span>${pc(x.share)}</span></div>`).join('')}
     </div>
-    <p class="empty" style="font-size:12px;margin-top:8px">Bruttogewinn 30 Tage ${f.signedUsd(m.gross)} · nach Gebühren und Funding ${f.signedUsd(m.net)}.
-      ${r ? `Dein Gebührensatz: Taker ${f.pct(r.taker * 100, 3)} · Maker ${f.pct(r.maker * 100, 3)}${r.known ? '' : ' (Standard, eigener Satz nicht abrufbar)'}.` : ''}
-      Funding negativ = von dir gezahlt, positiv = erhalten.${s.costsError ? ' Funding gerade nicht abrufbar.' : ''}</p>`;
+    <div class="empty" style="font-size:12.5px;margin-top:8px">30 Tage: brutto ${f.signedUsd(m.gross)} · netto ${f.signedUsd(m.net)}${s.costsError ? ' · Funding gerade nicht abrufbar' : ''}
+      ${tipInline(`Netto = nach Gebühren und Funding. ${r ? `Dein Gebührensatz: Taker ${f.pct(r.taker * 100, 3)}, Maker ${f.pct(r.maker * 100, 3)}${r.known ? '' : ' (Standard, eigener Satz nicht abrufbar)'}. ` : ''}Funding negativ = von dir gezahlt, positiv = erhalten.`)}</div>`;
 }

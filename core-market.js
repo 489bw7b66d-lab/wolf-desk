@@ -27,6 +27,16 @@ export function fngLabel(v) {
   return { text: 'Extreme Gier', cls: 'ok' };
 }
 
+// Stand des Fear-&-Greed-Werts. Die Quelle (alternative.me) rechnet einmal täglich neu (00:00 UTC),
+// älter als 36 Std. heißt: Die Quelle hängt.
+export function fngStand(ts, now = Date.now()) {
+  if (!(ts > 0)) return null;
+  const day = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  const diffDays = Math.round((new Date(new Date(now).toDateString()) - new Date(new Date(ts).toDateString())) / 864e5);
+  const text = diffDays <= 0 ? 'Stand heute' : diffDays === 1 ? 'Stand gestern' : `Stand ${day(ts)}`;
+  return { text, stale: now - ts > 36 * 3600e3 };
+}
+
 // Markt-Bias aus dem BTC-Trend: −100 (klarer Short-Markt) bis +100 (klarer Long-Markt).
 // Tageschart zählt 60 %, 4H 40 %, jeweils Long-Score minus Short-Score.
 export function biasFrom(score4h, score1d) {
@@ -43,7 +53,7 @@ async function getJson(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 8000);
   try {
-    const res = await fetch(url, { signal: ctrl.signal });
+    const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
     if (!res.ok) throw new Error(`Status ${res.status}`);
     return await res.json();
   } catch (e) {

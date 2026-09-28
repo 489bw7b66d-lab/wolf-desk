@@ -1,6 +1,7 @@
 // Gemeinsame Anzeige-Bausteine für mehrere Bereiche.
 import * as f from './core-format.js';
 import { levStatus } from './core-risk.js';
+import { levPreview } from './core-levpreview.js';
 
 // Anzeigename: Börsen-Präfix (z. B. „xyz:“) ausblenden, intern bleibt der volle Name
 // Markierung, ob ein Signal zu deiner Einschätzung passt (⭐) oder dagegen läuft (⚠︎)
@@ -70,7 +71,7 @@ export function exitTable(plan, runnerNote) {
       <span class="${x.profit == null ? 'muted' : x.profit >= 0 ? 'long' : 'short'}">${x.profit != null ? f.usdShort(x.profit) : 'Trailing'}</span></div>`).join('')}
     <div class="exit-row total" role="row"><span><b>Summe</b></span><span></span><span>${plan.pctFixed} %</span><span></span><span class="long"><b>${f.usdShort(plan.totalFixed)}</b></span></div>
   </div>
-  <p class="empty" style="font-size:12px;margin-top:6px">Summe, wenn TP1 bis TP4 erreicht werden, Runner zusätzlich. Runner: ${esc(runnerNote)}.</p>`;
+  <div class="exit-note">${tipInline(`Summe, wenn TP1 bis TP4 erreicht werden, Runner zusätzlich. Runner: ${runnerNote}.`)}</div>`;
 }
 
 // Vorschlag, wenn das Kapital für das Wunschrisiko nicht reicht
@@ -114,12 +115,13 @@ export function levSlider(lev, rec, ctx) {
   }
   const info = levInfo(lev, ctx);
   const recPos = rec ? ((rec - 1) / (max - 1)) * 100 : null;
-  return `<div class="lev-box">
-    <div class="lev-head">
-      <span class="k">Hebel</span>
+  const head = `<div class="lev-head">
+      <span class="k">Hebel${ctx.note ? ' <span class="tip-mark" aria-hidden="true">ⓘ</span>' : ''}</span>
       <b class="lev-now" data-lev-out="val">${lev}×</b>
       <span class="lev-tag ${info.status}" data-lev-out="tag">${LEV_TXT[info.status]}</span>
-    </div>
+    </div>`;
+  return `<div class="lev-box">
+    ${ctx.note ? `<details class="tip-h"><summary>${head}</summary><p class="tip-text" style="margin-top:6px">${esc(ctx.note)}</p></details>` : head}
     <div class="lev-track-wrap">
       ${recPos != null ? `<span class="lev-rec" style="left:calc(${recPos.toFixed(2)}% )" aria-hidden="true">▼ ${rec}×</span>` : ''}
       <input type="range" class="lev-range" min="1" max="${max}" step="1" value="${lev}" aria-label="Hebel" aria-valuetext="${lev}-fach, ${LEV_TXT[info.status]}"
@@ -127,6 +129,7 @@ export function levSlider(lev, rec, ctx) {
     </div>
     <div class="lev-scale"><span>1×</span><span>${max}×</span></div>
     <p class="lev-why ${info.status}" data-lev-out="why">${esc(info.why)}</p>
+    ${ctx.plan ? `<div data-lev-out="prev">${levPreviewHtml(lev, info.margin, ctx)}</div>` : ''}
     ${rec && rec !== lev ? `<button type="button" class="small-btn ghost" data-lev-rec="${rec}">Auf Empfehlung ${rec}× setzen</button>` : ''}
   </div>`;
 }
@@ -137,6 +140,39 @@ export function updateLevOut(root, lev, ctx, onMargin) {
   if (q('val')) q('val').textContent = lev + '×';
   if (q('tag')) { q('tag').textContent = LEV_TXT[info.status]; q('tag').className = 'lev-tag ' + info.status; }
   if (q('why')) { q('why').textContent = info.why; q('why').className = 'lev-why ' + info.status; }
+  if (q('prev') && ctx.plan) q('prev').innerHTML = levPreviewHtml(lev, info.margin, ctx);
   onMargin?.(info.margin, info.status);
   return info;
+}
+
+// Vorschau unter dem Hebel-Regler: Preis-Balken Liq · SL · Einstieg · Ziele und Margin-Anteil am freien Kapital.
+// Schiebst du den Hebel hoch, wandert der Liq-Strich Richtung Stop, der Puffer dazwischen färbt sich grün → gelb → rot.
+export function levPreviewHtml(lev, margin, ctx) {
+  const pv = levPreview(ctx.plan, lev, { bufferPct: ctx.bufferPct, margin, available: ctx.available, budgetPct: ctx.budgetPct });
+  if (!pv) return '';
+  const pct = (x) => (x * 100).toFixed(1);
+  const edge = (x) => (x.at < 0.06 ? ' first' : x.at > 0.94 ? ' last' : '');
+  // Liegen Liq und SL dicht beieinander, rutscht die Liq-Beschriftung in eine zweite Zeile
+  const close = Math.abs(pv.ticks[0].at - pv.ticks[1].at) < 0.1;
+  const gapCls = { ok: 'ok', warn: 'warn', bad: 'bad' }[pv.status];
+  const bufTxt = pv.buffer < 0 ? 'vor dem Stop' : `Puffer ${f.pct(pv.buffer, 1)}`;
+  const share = pv.share != null ? Math.min(100, pv.share) : null;
+  return `<div class="lp" role="img" aria-label="Vorschau bei ${lev}-fach: Liquidation bei ${f.price(pv.liqPrice)}, ${bufTxt}">
+    <div class="path-track lp-track">
+      <span class="lp-gap ${gapCls}" style="left:${pct(pv.gap.from)}%;width:${pct(Math.max(0.006, pv.gap.to - pv.gap.from))}%"></span>
+      ${pv.ticks.map((x) => `<i class="path-tick ${x.key}${x.pinned ? ' pinned' : ''}" style="left:${pct(x.at)}%"></i>`).join('')}
+    </div>
+    <div class="path-labels${close ? ' two' : ''}">${pv.ticks.map((x) => `<span class="${x.key}${edge(x)}${close && x.key === 'liq' ? ' r1' : ''}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
+    ${share != null ? `<div class="bar lp-margin" title="Margin-Anteil am freien Kapital"><span class="lp-m ${pv.marginStatus}" style="width:${share.toFixed(1)}%"></span><i style="left:${Math.min(100, pv.budgetPct)}%"></i></div>` : ''}
+    <p class="lp-info"><span class="${gapCls}">Liq ${f.price(pv.liqPrice)} · ${bufTxt}</span>${pv.share != null ? ` · <span class="${pv.marginStatus}">Margin ${f.pct(pv.share, 0)} vom Freien</span>` : ''}</p>
+  </div>`;
+}
+
+// Erklärung zum Antippen statt dauerhafter Fußnote: ⓘ klappt den Text auf
+export function tipInline(text) {
+  return `<details class="tip-i"><summary aria-label="Erklärung">ⓘ</summary><span class="tip-text">${esc(text)}</span></details>`;
+}
+// Überschrift, die beim Antippen ihre Erklärung zeigt
+export function tipHead(title, text, extra = '') {
+  return `<details class="tip-h"><summary><h3 class="sub-h">${title} <span class="tip-mark" aria-hidden="true">ⓘ</span>${extra}</h3></summary><p class="tip-text">${esc(text)}</p></details>`;
 }

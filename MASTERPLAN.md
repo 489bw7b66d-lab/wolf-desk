@@ -1,33 +1,37 @@
 # Wolf Desk – Masterplan
 
-Stand: 27.09.2026 · Etappe 3u · 293 Tests
+Stand: 28.09.2026 · Etappe 4b · 400 Tests
 
-Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch wenn Chats verloren gehen.
+Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
 
 ---
 
 ## 1. Worum es geht
 
-**Wolf Desk** ist eine Trading-App (PWA) für Hyperliquid, gebaut komplett vom iPhone aus.
-Nur lesender Zugriff: Die App kann nichts handeln, nur anzeigen, rechnen und warnen.
+**Wolf Desk** ist eine Trading-App (PWA) für Hyperliquid-Perpetuals, gebaut komplett vom iPhone aus. Gehandelt wird über **Ledger**.
+Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, warnen und erinnern. Geschlossen wird **manuell**.
 
-- **App:** Marktüberblick, Konto, Positionen, Risiko-Regeln, Signalgeber, Trade-Karten, Backtest, eigene Statistik
-- **Telegram-Wächter:** läuft alle 15 Minuten bei GitHub, meldet Signale (Kanal) und Regelverstöße (privat)
+- **App:** Marktüberblick, Konto, Positionen mit Trade-Weg, Risiko-Regeln, Signalgeber, Trade-Karten mit Hebel-Vorschau, Backtest, Statistik, Kosten, Geduld
+- **Telegram-Wächter:** läuft alle 15 Minuten bei GitHub, Signale in den Kanal, alles Persönliche privat
 - **Signal-Tagebuch:** misst jedes gemeldete Signal und vergleicht mit den echten Trades
+
+**Selbstanalyse des Nutzers (Grundlage für Etappe 4a):** Stärke = Einstiege. Schwächen = zu hoher Hebel im Verhältnis zum Stop, zu enge Stops, zu wenig Geduld beim Laufenlassen. Die Konto-Statistik bestätigt das (in Teilen verkauft 83 % Treffer, alles auf einmal 21 %, frühes Aussteigen hat Geld gekostet).
 
 ---
 
 ## 2. Zusammenarbeit (Regeln, die sich bewährt haben)
 
-- **Modular:** jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert.
-- **Etappen:** jedes Update ist ein eigenes Paket mit Nummer (3a, 3b, …) und muss einzeln stabil laufen.
-- **Tests:** jedes Paket muss auf `tests.html` alle Tests grün zeigen.
-- **Wächter:** vor jedem Paket wird der Wächter komplett durchgespielt (Testlauf, normaler Lauf), nicht nur die App-Tests.
-- **Nur geänderte Dateien** werden geliefert, als ZIP mit eigenem Ordner (z. B. `wolf-desk-3u`).
-- **Arbeit vom iPhone:** Brave-Browser, Dateien-App, GitHub im Browser. Keine Ordner hochladbar, deshalb flache Struktur.
-- **Ehrlichkeit:** keine Trefferquoten-Versprechen, Hinweise bei riskanten Werten, Bremse bei Überpacen.
-- **Messen vor Ändern:** Signal-Einstellungen erst ändern, wenn das Tagebuch genug Daten hat (2–3 Wochen).
+- Nutzer heißt Jensen, Anrede **„Buddy“**, keine Programmierkenntnisse, arbeitet nur am iPhone (Brave, Dateien-App, GitHub im Browser).
+- **Ton:** locker und herzlich wie ein Werkstatt-Kumpel (✅, 🐺, „Klasse, Buddy!“), dabei ehrlich. Nicht nüchtern-gutachterlich.
+- **Modular:** jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert (Neues kommt in eigene Dateien).
+- **Etappen:** jedes Update ist ein Paket mit Nummer (zuletzt 4b) und muss einzeln stabil laufen.
+- **Vor jedem Paket:** alle Tests grün, **zusätzlich mit vielen verstellten Einstellungen**, und der **Wächter komplett durchgespielt** (Testlauf, normaler Lauf, keine doppelten Meldungen).
+- **Nur geänderte Dateien** als ZIP mit eigenem Ordner; Schritt-für-Schritt-Anleitung dazu.
+- **Vor größeren Änderungen:** erst Bestand prüfen (aktuellen Code von GitHub laden, Versionsnummer prüfen!) und Plan zeigen, dann bauen.
+- **Ehrlichkeit:** keine Trefferquoten-Versprechen, Hinweise bei riskanten Werten, **Bremse bei Überpacen**.
+- **Messen vor Ändern:** Alles, was die **Signale** verändert, wartet bis zur Tagebuch-Analyse (siehe Abschnitt 11).
+- **Übersicht (seit 4b):** Neue Funktionen bringen **keine zusätzlichen Fußnoten** mit. Erklärungen stehen hinter einem **ⓘ** zum Antippen (`tipInline`, `tipHead` in `ui-parts.js`).
 
 ---
 
@@ -36,119 +40,93 @@ Nur lesender Zugriff: Die App kann nichts handeln, nur anzeigen, rechnen und war
 | Wofür | Adresse |
 |---|---|
 | App | `489bw7b66d-lab.github.io/wolf-desk` |
-| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` |
+| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` (bei altem Stand `?v=4b` anhängen) |
 | Repository | `github.com/489bw7b66d-lab/wolf-desk` |
+| Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `github.com/489bw7b66d-lab/wolf-desk/upload/main` |
 | Datei löschen | `github.com/489bw7b66d-lab/wolf-desk/delete/main/DATEINAME` |
 | Wächter starten / Läufe | `github.com/489bw7b66d-lab/wolf-desk/actions/workflows/wolf-watch.yml` |
 | Zeitplan bearbeiten | `github.com/489bw7b66d-lab/wolf-desk/edit/main/.github/workflows/wolf-watch.yml` |
 | Secrets | `github.com/489bw7b66d-lab/wolf-desk/settings/secrets/actions` |
-| Neues Secret | `github.com/489bw7b66d-lab/wolf-desk/settings/secrets/actions/new` |
 | Veröffentlichte Signale | `raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/signals/signals.json` |
-
-Altes Projekt (nicht anfassen): Repository `jensen-hyperliquid-connector`.
+| Einzelne Datei roh lesen | `raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/main/DATEINAME` |
 
 ---
 
 ## 4. Zugänge und Geheimnisse (nur die Namen!)
 
-Die Werte stehen als **GitHub Secrets** im Repository und sind dort nicht mehr lesbar, nur überschreibbar.
-
 | Secret | Inhalt | Wo man den Wert wiederbekommt |
 |---|---|---|
-| `TELEGRAM_TOKEN` | Token des Bots **@WolfDeskBuddyBot** | Telegram → **@BotFather** (blauer Haken!) → `/mybots` → Wolf Desk → API Token → Copy. **Nie „Revoke“ tippen.** |
-| `TELEGRAM_CHAT` | deine private Chat-ID mit dem Bot | Secret löschen, Bot „hallo“ schreiben, Test starten → Bot schickt die ID |
-| `TELEGRAM_CHANNEL` | ID deines Signal-Kanals (beginnt mit `-100`) | Secret löschen, etwas in den Kanal posten, Test starten → Bot schickt „Kanal gefunden“ |
-| `WALLET` | deine Hyperliquid-Adresse (öffentlich, nur lesend) | Hyperliquid / Ledger |
+| `TELEGRAM_TOKEN` | Token des Bots **@WolfDeskBuddyBot** | Telegram → **@BotFather** (blauer Haken!) → `/mybots` → Wolf Desk → API Token. **Nie „Revoke“ tippen.** |
+| `TELEGRAM_CHAT` | private Chat-ID mit dem Bot | Secret löschen, Bot „hallo“ schreiben, Test starten → Bot schickt die ID |
+| `TELEGRAM_CHANNEL` | ID des Signal-Kanals (beginnt mit `-100`) | Secret löschen, im Kanal posten, Test starten → Bot schickt „Kanal gefunden“ |
+| `WALLET` | Hyperliquid-Adresse (öffentlich, nur lesend) | Hyperliquid / Ledger |
 
-Im Kanal ist der Bot **Admin** mit dem Recht „Nachrichten posten“.
-Achtung vor falschen BotFathern (z. B. „Botfagher“): nur der mit blauem Haken ist echt.
+Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather mit blauem Haken ist echt.
 
 ---
 
-## 5. Aufbau der App (64 Dateien, alle im Hauptordner)
+## 5. Aufbau der App (86 Dateien, fast alle im Hauptordner)
 
-**Einstellungen**
-- `config.js` – alle **empfohlenen** Werte (Watchlist, Regeln, Signale, Indikatoren, Wächter)
-- `my-settings.js` – **deine Abweichungen** (von der App erzeugt, gilt auch für den Wächter)
+**Einstellungen:** `config.js` (Empfehlungen) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
 
 **Daten-Kern (`core-*.js`)**
-- `core-api.js`, `core-stream.js`, `core-store.js`, `core-health.js` – Hyperliquid-Schnittstelle, Live-Kurse, Datenqualität
-- `core-account.js`, `core-calc.js`, `core-positions.js`, `core-stops.js` – Konto, Positionen, Stops
-- `core-risk.js` – Risiko-Regeln, Ausstiegsplan, Hebel
-- `core-performance.js`, `core-trades.js` – Performance, Trade-Historie, eigene Statistik
-- `core-indicators.js`, `core-signals.js`, `core-scanner.js` – Indikatoren, Scores, Trade-Plan, Stilwahl
-- `core-fib.js`, `core-elliott.js`, `core-patterns.js`, `core-candlesticks.js`, `core-confirm.js` – Fibonacci, Elliott, Chartmuster, Kerzen, Retest-Siegel
-- `core-universe.js`, `core-hotscan.js` – Top-150-Liste, Heiße Coins
-- `core-market.js` – Marktüberblick, zusammengesetzter Markt-Bias
-- `core-backtest.js` – Backtest
-- `core-settings.js` – Einstellungen (Grenzen, Prüfungen, Export)
-- `core-views.js` – deine Markteinschätzung
-- `core-alerts.js` – Wächter-Logik, Tagebuch, Berichte
-- `core-watchlist.js`, `core-format.js` – Watchlist, Zahlenformat (inkl. Privatmodus)
+- Schnittstelle & Konto: `core-api`, `core-stream`, `core-store`, `core-health`, `core-account`, `core-calc`, `core-positions`, `core-stops`
+- Risiko: `core-risk` (Regeln, Ausstiegsplan, Hebel), `core-guard` (Stop-Check gegen ATR, Abkühlphase), **`core-levpreview`** (Hebel-Vorschau: Liquidation, Puffer, Margin-Anteil)
+- Handel & Auswertung: `core-trades`, `core-performance`, `core-fees` (Gebühren/Funding), `core-patience` (Geduld-Statistik)
+- Signale: `core-indicators`, `core-signals`, `core-scanner`, `core-fib`, `core-elliott`, `core-patterns`, `core-candlesticks`, `core-confirm` (🛡-Siegel), **`core-feedplan`** (Trade-Karte aus gemeldetem Signal)
+- Märkte: `core-universe` (Top-Coins bzw. deine Liste), `core-hotscan`, `core-market` (Markt-Bias, Fear & Greed mit Stand), `core-watchlist`, **`core-tradeable`** (handelbare Märkte, Marktsuche)
+- Positionen: `core-path` (Trade-Weg), `core-plans` (Ziele je Position), `core-autoplan` (automatischer Plan)
+- Sonstiges: `core-backtest`, `core-settings`, `core-views` (Einschätzung), `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-format`
 
-**Anzeige (`ui-*.js`)**
-- `ui-home.js` (Start), `ui-market.js` (Tacho), `ui-feed.js` (Letzte Signale), `ui-views.js` (Meine Einschätzung)
-- `ui-signals.js` (Signalgeber), `ui-trade.js` (Trade-Karte), `ui-coin.js` (Markt-Blatt), `ui-chart.js` (Chart)
-- `ui-performance.js`, `ui-testpage.js` (Konto), `ui-risk.js` (Risiko), `ui-backtest.js`, `ui-settings.js`, `ui-parts.js`
+**Anzeige (`ui-*.js`):** `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
 
-**Rahmen**
-- `index.html`, `main.js`, `styles.css`, `manifest.json`, `icon-*.png`
-- `tests.html` + `test-*.js` – alle Tests
-- `watcher.js` – der Telegram-Wächter (läuft bei GitHub)
-- `.github/workflows/wolf-watch.yml` – Zeitplan des Wächters (siehe Abschnitt 8)
+**Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` enthält `<meta name="app-version" content="3u">` und eine Import-Map mit `?v=3u` für jede Datei.
-Bei jedem Update wird die Nummer erhöht; die App erkennt neue Versionen dann selbst und lädt sich neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4b">` und eine Import-Map mit `?v=4b` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
-## 6. Empfohlene Werte (Stand 3u)
+## 6. Empfohlene Werte (Stand 4b)
 
-- Kontomodus **unified**, Startkapital **1.500 $**, Börsenbereiche Standard + **xyz** (Gold, Silber, EUR, …)
-- **Risiko:** gelb ab 10 %, rot ab 15 % pro Trade · Tagesverlust max. 15 % · Hebel max. 20× · max. 5 Positionen · Liquidation mind. 1 % hinter Stop · Margin je Trade max. 50 % des Freien · freies Kapital gelb unter 10 %, rot unter 2 %
-- **Ausstiegsplan:** TP1 20 % · TP2 25 % · TP3 25 % · TP4 15 % · Runner 15 % (Stop auf Einstieg ab TP2)
-- **Stil-Hebel:** Scalp 20× · Daytrade 10× · Swing 5×
-- **Score:** Trend max. 70 + Ereignisse max. 30; Retest-Siegel 🛡 zählt nicht in den Score
-- **Markt-Bias:** BTC 40 % · ETH 20 % · Marktbreite (Top 50 über EMA 50) 25 % · ETH/BTC 15 %
-- **Wächter:** Signale ab Score 75 · nur Swing und Daytrade · Mindestumsatz 20 Mio. $ · gleiches Signal frühestens nach 12 Std. · kein Richtungswechsel binnen 24 Std. · max. 3 Meldungen pro Lauf · Bericht alle 7 Tage
-- **Indikatoren:** EMA 8/21/55/200 · RSI 14 (70/30) · ATR 14 · MACD 12/26/9
-
-Alle Werte sind in der App über ⚙️ änderbar; „empfohlen“ zeigt den Wert aus `config.js`.
+- **Risiko pro Trade:** Stufen **2 / 3 / 5 %** (Knöpfe), gelb ab **3 %**, rot ab **5 %** · Tagesverlust max. 15 % · Hebel max. 20× · Liquidation mind. 1 % hinter Stop · Margin je Trade max. 50 % des Freien · freies Kapital gelb unter 10 %, rot unter 2 %
+- **Kein Limit** für die Anzahl offener Positionen (Bremse ist die Abkühlphase)
+- **Stop-Check:** rot unter **1,0× ATR** („im Rauschen“), gelb unter **1,5× ATR**, Vorschlag **1,5× ATR** (Setup-Zeitebene: Swing 4H, Daytrade 1H)
+- **Abkühlphase:** nach **2** Verlust-Trades in Folge für **4 Std.**: Banner, Risiko-Vorschlag halbiert, Telegram
+- **Ausstiegsplan (Empfehlung):** TP1 20 · TP2 25 · TP3 25 · TP4 15 · Runner 15 % (Nutzer hat eigenen Plan, TP4 = 0 %)
+- **Automatischer Plan für eigene Trades:** Swing
+- **Markt-Bias:** BTC 40 · ETH 20 · Marktbreite 25 · ETH/BTC 15 %
+- **Wächter (Empfehlung):** ab Score 75 · Swing + Daytrade · Mindestumsatz 20 Mio. $ (Nutzer: Score 80, 15 Mio. $)
+- **Handelbare Märkte:** leer = Top 150 nach Market Cap; mit Einträgen scannen Heiße Coins und Wächter nur diese (plus Watchlist)
+- **Hebel-Vorschau:** Liquidation ≈ 90 % / Hebel vom Einstieg (wie im Risiko-Kern); Achse links bis 2× Stop-Abstand, weiter weg steht „← Liq“ am Rand
+- **Indikatoren:** EMA 8/21/55/200 · RSI 14 · ATR 14 · MACD 12/26/9
 
 ---
 
-## 7. Update-Routine (Schritt für Schritt)
+## 7. Update-Routine
 
-1. ZIP in der Dateien-App speichern und antippen → Ordner `wolf-desk-XX` entsteht.
-2. Bei GitHub **angemeldet** sein (oben rechts Profilbild, nicht „Sign in“).
+1. ZIP in der Dateien-App speichern, antippen → Ordner `wolf-desk-XX`.
+2. Bei GitHub **angemeldet** sein.
 3. `…/upload/main` → „choose your files“ → Durchsuchen → Ordner → „Auswählen“ → „Alle auswählen“ → Öffnen → **Commit changes**.
-4. ~10 Minuten warten; App öffnen (aktualisiert sich selbst). `tests.html` prüfen.
-5. Betrifft das Update den Wächter: Test starten (`…/actions/workflows/wolf-watch.yml` → Run workflow).
+4. ~10 Min. warten, App komplett schließen und neu öffnen (aktualisiert sich selbst), `tests.html?v=XX` prüfen.
+5. Betrifft es den Wächter: Test starten (Run workflow).
 
-**Einzelne Datei ersetzen:** vorher die alte Datei in der Dateien-App **löschen**, sonst heißt die neue „name 2.js“.
-**Zeitplan ändern:** kein Upload, sondern Text im Browser ersetzen (`…/edit/main/.github/workflows/wolf-watch.yml`).
-**Einstellungen / Einschätzungen an den Wächter:** ⚙️ → „Für den Wächter übernehmen“ → `my-settings.js` sichern → hochladen.
+**Einstellungen/Einschätzungen/Ziele/Watchlist/handelbare Märkte an den Wächter:** ⚙️ → „Für den Wächter übernehmen“ → „In Dateien sichern“ → Ordner Claude → **Sichern** → `my-settings.js` hochladen. Vorher alte Datei im Ordner löschen.
 
-**Bekannte Stolperfallen**
-- „Uploads are disabled“ = nicht angemeldet.
-- iPhone benennt `.mjs` in `.js` um und hängt „2“ an doppelte Namen.
-- Brave behandelt lange Adressen mit Doppelpunkt manchmal als Suche (Token nie in die Suchleiste!).
-- Alte Dateien im Zwischenspeicher: App komplett schließen; seit 3q prüft die App selbst auf Updates.
-- Platzhalter in Anleitungen (z. B. „dein Token“) nie wörtlich übernehmen.
+**Stolperfallen:** „Uploads are disabled“ = nicht angemeldet · iPhone hängt „2“ an doppelte Namen · Brave behandelt lange Adressen manchmal als Suche (immer mit `https://` eintippen) · Platzhalter nie wörtlich übernehmen · Dateien-Suche findet auch Texte, die den Namen enthalten · Nach dem Upload zeigt Brave evtl. noch die alte Testseite (`?v=XX` anhängen) · Paket gebaut heißt nicht hochgeladen: nach jedem Paket prüfen, ob die Versionsnummer bei GitHub stimmt.
 
-**Notfall:** Läuft nach einem Update etwas nicht, bei GitHub die betroffene Datei öffnen → Uhr-Symbol (History) → ältere Version ansehen und deren Inhalt zurückspielen. Der Wächter zeigt Fehler unter Actions → Lauf → „watch“ → roter Schritt.
+**Code als ZIP holen (z. B. für einen neuen Chat):** Adresse `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` in Brave öffnen → Herunterladen → landet unter Downloads.
+
+**Notfall:** Datei bei GitHub öffnen → Uhr-Symbol (History) → ältere Version zurückspielen. Wächter-Fehler: Actions → Lauf → „watch“ → roter Schritt.
 
 ---
 
 ## 8. Telegram-Wächter
 
-- Läuft alle 15 Minuten (GitHub startet teils 5–15 Min. später) und kostenlos, solange das Repository öffentlich ist.
-- **Ablauf je Lauf:** Konto prüfen (Regelverstöße, Entwarnung erst bei grün) → Tagebuch auswerten und mit echten Trades verknüpfen → Top 150 + Watchlist scannen → Signale melden → deine Marken prüfen → Wochenbericht → `signals.json` veröffentlichen.
-- **Gedächtnis:** Datei `.watch-state.json` im GitHub-Zwischenspeicher (Tagebuch, gemeldete Signale, aktive Alarme).
-- **Veröffentlichung:** `signals.json` im eigenen Zweig `signals` (nur öffentliche Signaldaten, nichts über echte Trades).
-- **Kanal:** Signale. **Privat:** Regelverstöße, Marken, Tagebuch-Berichte.
-- GitHub pausiert Zeitpläne nach 60 Tagen ohne Änderung am Repository; ein kleines Update weckt ihn.
+- Alle 15 Min. (GitHub teils später), kostenlos bei öffentlichem Repository.
+- **Je Lauf:** Konto prüfen (Alarm/Entwarnung mit Beruhigung) → Tagebuch auswerten und mit echten Trades verknüpfen → Trades 60 Tage laden → **Abkühlphase** melden → **handelbare Märkte bzw. Top 150** + Watchlist scannen → Signale melden (⭐ bei passender Einschätzung) → **Ziele offener Positionen** melden (🎯/🏁, eigener Plan → Signal → automatischer Plan) → Marken deiner Einschätzungen → Wochenbericht (mit Umsetzung, Einschätzung, **Geduld**) → `signals.json` veröffentlichen.
+- **Watchlist:** Seit 4b nutzt der Wächter die in der App bearbeitete Watchlist (über `my-settings.js`). Vorher lief er mit der Standardliste aus `config.js`.
+- **Gedächtnis:** `.watch-state.json` im GitHub-Zwischenspeicher. **Veröffentlichung:** Zweig `signals`.
 
 **Aktueller Zeitplan** (`.github/workflows/wolf-watch.yml`):
 
@@ -228,6 +206,8 @@ jobs:
           git push -q origin signals
 ```
 
+**Probelauf ohne Internet (für Claude):** Hyperliquid, CoinGecko und Telegram in Node nachbilden (`globalThis.fetch` ersetzen), Kurse als stetige Funktion der Zeit erzeugen (sonst passen Kerzen und Marktpreis nicht zusammen und es gibt keine Signale), dann `watcher.js` mit `TEST_RUN=true`, danach zweimal normal laufen lassen. Erwartung: Testnachrichten, Signale in den Kanal, zweiter Lauf ohne Meldungen.
+
 ---
 
 ## 9. Etappen bisher
@@ -255,23 +235,61 @@ Etappe 3r: Markt-Bias aus BTC (40 %), ETH (20 %), Marktbreite Top 50 über EMA 5
 Etappe 3s: Signale-Tab zeigt die letzten 5 Telegram-Signale mit Live-Kurs, Abstand und Status statt der Watchlist-Liste; Wächter veröffentlicht signals.json im Zweig „signals“
 Etappe 3t: Meine Einschätzung (Richtung, ungültig/bestätigt, Ziele, Notiz, Gültigkeit), Linien im Chart, ⭐ passt / ⚠︎ dagegen bei Signalen, Wächter meldet Marken und Ziele, Tagebuch wertet ⭐-Signale getrennt aus
 Etappe 3u: Aufräumen: alte watcher.mjs entfernt, GitHub-Bausteine auf Version 5 (Node 24)
+Etappe 3v: Menüleiste Start · Konto · Signale · Backtest · Risiko
+Etappe 3w: Kosten-Karte im Konto (Gebühren und Funding 7/30/90 Tage, Anteil am Bruttogewinn), Funding und Netto je Trade, geschätzte Gebühren auf der Trade-Karte mit deinem echten Satz, Backtest rechnet mit deinem Satz
+Etappe 3y: Trade-Weg in den Positionskarten: Fortschrittsbalken vom Stop bis zum Kurs mit beschrifteten Strichen für SL, Einstieg und TP1–TP4 (Anzahl nach Ausstiegsplan), erreichte Ziele mit ✓, nächstes Ziel in %
+Etappe 3z: Ziele je Position für manuelles Schließen (aus Signal, aus Analyse oder selbst eingetragen, im Markt-Blatt), Trade-Weg nutzt diese Ziele, rot bis Einstieg und grün ab Einstieg, 🏁 am letzten Ziel, Beschriftungen ohne Überlappung, Wächter meldet erreichte Ziele privat mit Verkaufsanteil laut Plan
+Etappe 3za: Auswahlknöpfe eindeutig (ausgewählt gold mit ✓)
+Etappe 3zb: Automatischer Plan für jede Position nach den Regeln des Signalgebers (Kerzen zum Einstieg, Fibonacci sonst ATR, Stil wählbar), Trade-Weg mit ursprünglichem SL₀ und nachgezogenem SL (schraffiert = abgesichert), Wächter meldet Ziele auch für eigene Trades
+Etappe 4a: Risiko-Stufen 2/3/5 % in den Einstellungen (Warnung ab 3 %, rot ab 5 %), Positions-Begrenzer entfernt, Stop-Check gegen ATR auf Trade-Karte/Rechner/Positionen mit Vorschlag, Abkühlphase nach Verlustserie (Banner, halbiertes Risiko, Telegram), Geduld-Statistik im Konto und im Wochenbericht
+Etappe 4b: Tipp auf ein laufendes Signal öffnet die Trade-Karte mit dem Plan aus dem Signal (Hinweis, wenn die Analyse von jetzt anders aussieht) · Chart-Fehler behoben (eine gemeinsame Live-Kerze für alle Märkte ließ beim Öffnen fremde Kurse einfließen; jetzt je Markt getrennt plus Plausibilitäts-Sicherung) · Hebel-Vorschau unter dem Regler auf Trade-Karte und im Rechner (Liq wandert Richtung Stop, Puffer grün/gelb/rot, Margin-Anteil am Freien) · Fear & Greed mit „Stand“ und Warnung „Quelle hängt“, ohne Zwischenspeicher · Handelbare Märkte (Ledger) in den Einstellungen mit Suche, Heiße Coins und Wächter scannen nur diese · Backtest für alle Märkte (Suche, auch xyz) und „alle handelbaren“ · Trade-Weg „Risiko verringert“ statt „abgesichert“, solange der nachgezogene Stop unter dem Einstieg liegt · Watchlist geht jetzt mit an den Wächter · Fußnoten hinter ⓘ (Hebel, Gebühren, Ausstiegsplan, Statistik, Geduld, Kosten, Backtest, Trade-Weg)
 
 ---
 
-## 10. Fahrplan
+## 10. Offene Aufgaben (nächste Pakete)
 
-- **Jetzt:** Einschätzungen pflegen, Daten sammeln. Einstellungen, die Signale beeinflussen, 2–3 Wochen nicht ändern.
-- **Paket 2 – Filter (datenbasiert, nach Tagebuch-Auswertung):** Regime-Filter mit dem Markt-Bias, Seitwärts-Filter, Überdehnungs-Filter (Momentum/Volumen nicht mehr belohnen, wenn Kurs > ~2 ATR über EMA 21), Stop-Mindestabstand ~1 ATR.
-- **Paket 3 – Bestätigte Signale:** Telegram meldet erst nach Reaktion in der Zone; App trennt „im Aufbau“ und „bestätigt“.
-- **Optional:** Cloudflare (Konto vorhanden) für minütlichen Risiko-Wächter und ETF-Zuflüsse in der App.
-- **Feinschliff:** Design, Texte, kleine Wünsche jederzeit.
+**Paket 4c (größer):** **Interaktive Charts** mit TradingViews freier Bibliothek „Lightweight Charts“: verschieben, zoomen, Fadenkreuz, **horizontale Linie** zum Antippen und Verschieben mit Preisanzeige. Dabei die Live-Kerze je Markt (4b) beibehalten.
+
+**Kleinigkeiten für später:**
+- Hebel-Vorschau auch als Was-wäre-wenn am Trade-Weg einer offenen Position (bewusst nicht in 4b, der Nutzer wollte die Trade-Karte)
+- Empfehlungs-Markierung „▼ 1×“ am Hebel-Regler ragt bei 1× über den linken Rand
+- Weitere Fußnoten nach und nach hinter ⓘ, wenn sie auffallen
 
 ---
 
-## 11. Neustart mit einem neuen Claude-Chat
+## 11. Auf Halde bis zur ersten Tagebuch-Analyse (Paket 3, ändert Signale)
 
-Diesen Text als erste Nachricht schicken und diese Datei anhängen:
+- **Signal-Vorlauf verkürzen** (Signale kommen zu früh; Abstand um zwei Drittel verkürzen), mit Versionsschnitt im Tagebuch
+- **Konfluenz-Score** je Signal, **Stufen A/B/C** (A = Telegram ⭐, B = nur App, C = gar nicht), Zielgröße ca. 3–8 A-Signale pro Woche, Schwellen per Backtest und Tagebuch
+- **Golden Pocket:** Fib-Zone 0,618–0,65 statt 0,5–0,618, Auslöser erst bei **Reaktion**, Ziele 1,0 und 1,618
+- **Engine-Mindest-Stop** anheben (heute 0,5 ATR möglich)
+- **Nadaraya-Watson Envelope (LuxAlgo, ohne Repainting)** als Überdehnungs-Filter, Einstiegs-Bestätigung, Ausstiegs-Hinweis; nie allein, nie gegen die Struktur
+- **SMC-Bausteine:** Order Blocks, FVG, Premium/Discount, Weak/Strong High/Low (höhere Zeitebene hat Vorrang), Vortages-/Wochen-/Monatshochs, gleiche Hochs/Tiefs
+- **MACD-Divergenz** als Faktor, **Richtung der höheren Zeitebene** als Faktor
+- **Auswertung pro Markt** (schlechte Trefferquote → Warnhinweis bzw. nicht mehr melden)
+- **Bestätigte Signale:** Telegram erst nach Reaktion in der Zone
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang ist der Masterplan mit Aufbau, Regeln, Adressen und Fahrplan. Bitte lies ihn und arbeite genau so weiter: modular, Etappen mit Tests, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Den aktuellen Code findest du im Repository; wenn du Dateien brauchst, lade ich sie hoch.
+---
 
-Hilfreich: zusätzlich die aktuellen Dateien als ZIP mitschicken (Repository → Code → Download ZIP, am iPhone über „Desktop-Website“).
+## 12. Setup-Katalog (Trading-Handschrift des Nutzers)
+
+Vorgehen beim Chart: Struktur zuerst → Konfluenz (Key Level, RSI Tag/Woche, MACD bzw. Divergenz, Fib, SMC-Zonen, Nadaraya-Band) → Bestätigung aus der höheren Zeitebene → Ziele an SMC-Zonen, die auf Fib-Levels liegen. **Mehrheit der Faktoren** statt „alles oder nichts“.
+
+1. **VIRTUAL, 26.09., ✅ Ausbruch + Retest (mit Trend):** horizontaler Widerstand mehrfach von unten getestet, Ausbruch mit Momentum, zwei Retests von oben, Einstieg am Retest, Stop unter dem Retest-Tief.
+2. **ZEC, 1D, Konfluenz-Short (Kontra):** Fib-Extension 2,618 (~1.647) + RSI Tag/Woche überkauft (84/87) + MACD Tag dreht + SMC Weak High + Key Level + NW ▼. Gegenargument: MACD Woche steigt noch. Ziele SMC-Zonen auf Fib (1.089 / 744). Stop über dem Weak High mit Puffer.
+3. **Konfluenz-Long (Spiegel zu 2):** Golden Pocket bzw. Fib-Unterstützung + RSI überverkauft + MACD dreht + SMC Discount/OB/FVG/Strong Low + Key Level + NW ▲.
+4. **SUI, 1D/4H, Short mit übergeordnetem Trend:** altes HH / Strong High (1D) + RSI überkauft + **MACD-Divergenz (4H)** + NW ▼ auf **1D und 4H** + Weak High (4H); Ziel SMC-Zone ~−20 %. Fib diesmal ohne Rolle.
+5. **ICP, 4H, ❌ Negativbeispiel:** sieben NW-▼ im Aufwärtstrend nach bullischem BOS, RSI nur 60–70 → Fehlsignale. Lehre: NW nur mit der Struktur, Kontra nur mit RSI über 80, Serie von ▼ bei neuen Hochs = Trendstärke.
+6. **NIL, 4H, Golden-Pocket-Reaktion:** Rücksetzer nach starkem Impuls ins Golden Pocket (0,0812–0,0777), RSI ~26; Auslöser erst bei Reaktion. Ziele 1,0 und 1,618. Ungültig unter 0,702/0,786.
+
+Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; die Engine nutzt nur Signale auf abgeschlossenen Kerzen.
+
+---
+
+## 13. Neustart mit einem neuen Claude-Chat
+
+1. Diesen Masterplan anhängen.
+2. Den aktuellen Code als ZIP anhängen: `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` in Brave öffnen (mit `https://`), herunterladen, im Chat anhängen. Ohne ZIP kann Claude einzelne Dateien über `raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/main/DATEINAME` lesen, wenn du die Adresse in den Chat schreibst.
+3. Diesen Text als erste Nachricht:
+
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter: modular, Etappen mit Tests (auch mit verstellten Einstellungen), Wächter vor jedem Paket komplett durchspielen, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Sprich locker mit mir wie ein Kumpel. Prüf zuerst, ob die Versionsnummer im Code zum Masterplan passt. Als Nächstes steht Paket 4c an (Abschnitt 10).

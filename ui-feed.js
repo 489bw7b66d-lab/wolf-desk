@@ -1,7 +1,9 @@
 // "Letzte Signale": liest die vom Wächter veröffentlichte Liste (signals.json) und zeigt die neuesten Signale.
-// Live-Kurs und Abstand zum Einstieg laufen mit, Tipp öffnet die Trade-Karte mit aktueller Analyse.
+// Live-Kurs und Abstand zum Einstieg laufen mit. Tipp auf ein laufendes Signal öffnet die Trade-Karte mit dem Plan
+// aus dem Signal (frische Analyse nur für Chart, ATR und Stile), bei abgeschlossenen Signalen die aktuelle Analyse.
 import { CONFIG } from './config.js';
-import { analyzeAllModes } from './core-scanner.js';
+import { analyzeAllModes, switchStyle } from './core-scanner.js';
+import { signalResult } from './core-feedplan.js';
 import { change24h, entryDistance } from './core-trades.js';
 import { badge, esc, dn, viewMark } from './ui-parts.js';
 import { getViews, viewFor, alignment } from './core-views.js';
@@ -83,14 +85,13 @@ async function open(i) {
   const x = feed?.[i];
   if (!x || busy != null) return;
   busy = i; render();
-  try {
-    const r = await analyzeAllModes(x.coin);
-    busy = null; render();
-    if (r?.plan || r?.best) onTrade(r); else onCoin(x.coin);
-  } catch {
-    busy = null; render();
-    onCoin(x.coin);
-  }
+  let fresh = null;
+  try { fresh = await analyzeAllModes(x.coin); } catch { /* Plan aus dem Signal reicht */ }
+  busy = null; render();
+  const fromSignal = x.status === 'offen' ? signalResult(x, fresh, switchStyle) : null;
+  if (fromSignal) onTrade(fromSignal);
+  else if (fresh?.plan || fresh?.best) onTrade(fresh);
+  else onCoin(x.coin);
 }
 
 export function initFeed(stateGetter, openTrade, openCoin) {

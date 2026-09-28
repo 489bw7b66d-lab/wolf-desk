@@ -1,5 +1,5 @@
 // Wolf Desk Wächter: läuft bei GitHub Actions alle 15 Minuten (siehe wolf-watch.yml).
-// 1. Scannt Top 150 + Watchlist mit derselben Signal-Logik wie die App und meldet starke Signale.
+// 1. Scannt Top 150 (oder deine handelbaren Märkte) + Watchlist mit derselben Signal-Logik wie die App und meldet starke Signale.
 // 2. Prüft deine Positionen mit denselben Risiko-Regeln und meldet neue Regelverstöße (und Entwarnungen).
 // Merkt sich zwischen den Läufen, was schon gemeldet wurde (Datei .watch-state.json, von GitHub zwischengespeichert).
 // Geheim bleiben: TELEGRAM_TOKEN, TELEGRAM_CHAT, WALLET (als GitHub Secrets hinterlegt).
@@ -8,7 +8,7 @@ import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { getCandles, getMarketCtx, analyzeAllModes, heat } from './core-scanner.js';
 import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.js';
-import { getUniverse } from './core-universe.js';
+import { scanUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
 import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText, patienceText, cooldownText } from './core-alerts.js';
@@ -61,7 +61,7 @@ async function checkAccount() {
 async function scan() {
   const names = await marketNames();
   const ctx = await getMarketCtx();
-  const uni = await getUniverse(names.filter((n) => !n.includes(':')), ctx.ctx);
+  const uni = await scanUniverse(names, ctx.ctx, CONFIG.tradeable);
   const coins = uni.coins.filter((c) => !(ctx.map[c] < CONFIG.signals.minDayVolumeUsd));
   log(`Stufe 1: ${coins.length} Märkte (${uni.source})`);
   const prelim = [];

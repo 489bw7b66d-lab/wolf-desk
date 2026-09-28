@@ -51,3 +51,13 @@ export async function getUniverse(hlNames, ctx) {
     return { source: 'Hyperliquid, Top ' + n + ' nach Open Interest (CoinGecko nicht erreichbar)', coins };
   }
 }
+
+// Was Heiße Coins und Wächter scannen: deine handelbaren Märkte, falls eingetragen, sonst die Top-Coins wie bisher.
+// allNames: alle Marktnamen inkl. xyz. Die Top-Liste kommt weiterhin nur aus der Hauptbörse.
+export function ownUniverse(allNames, tradeable = []) {
+  const own = (tradeable || []).filter((c) => allNames.includes(c));
+  return own.length ? { source: `Deine handelbaren Märkte (${own.length})`, coins: own, own: true } : null;
+}
+export async function scanUniverse(allNames, ctx, tradeable = []) {
+  return ownUniverse(allNames, tradeable) || getUniverse(allNames.filter((n) => !n.includes(':')), ctx);
+}

@@ -8,12 +8,14 @@ import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.
 import { estimateFees, DEFAULT_RATES } from './core-fees.js';
 import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText } from './core-guard.js';
 import { tradeHistory } from './core-trades.js';
-import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
+import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut, tipInline } from './ui-parts.js';
+import { ago } from './ui-feed.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
 let getState = () => ({});
 let current = null, riskPct = null, lastFocus = null, liveTimer = null, basePlan = null;
+let signalBase = null; // Trade-Karte aus einem gemeldeten Signal: zum Zurückschalten auf dessen Stil
 let manualLev = null, chartTf = null; // manueller Hebel (null = Empfehlung), gewählter Chart-Timeframe
 const RISKS = () => CONFIG.rules.riskSteps; // Risiko-Stufen aus den Einstellungen
 const extraCandles = new Map(); // "coin|tf" -> Kerzen für Zeitebenen außerhalb des Stils (werden bei Bedarf geladen)
@@ -32,7 +34,9 @@ function calc() {
   const margin = size && lev ? size.notional / lev : null;
   const issues = manualLev ? leverageIssues(manualLev, { liqMax, exchangeMax, styleMax, margin, available: sum?.available }) : [];
   const exits = size ? exitPlan(p.dir, p.entry, p.tps, size.size, CONFIG.exitPlan) : null;
-  const levCtx = size ? { notional: size.notional, available: sum.available, liqMax, exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct } : null;
+  const note = `Der Hebel ändert nur die Margin, Positionsgröße und Risiko bleiben gleich. Grenzen: ${CONFIG.signals.modes[current.mode]?.label || ''} ${styleMax}×${exchangeMax ? `, Hyperliquid ${exchangeMax}×` : ''}, Liquidation hinter dem Stop bis ca. ${f.lev(maxLev)}. Der Balken zeigt, wo die Liquidation bei diesem Hebel ungefähr liegt.`;
+  const levCtx = size ? { notional: size.notional, available: sum.available, liqMax, exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct,
+    plan: { dir: p.dir, entry: p.entry, stop: p.stop, tps: p.tps }, bufferPct: CONFIG.rules.liqBufferPct, note } : null;
   return { sum, size, maxLev, rec, cap, exits, lev, margin, issues, exchangeMax, styleMax, levCtx };
 }
 
@@ -56,12 +60,13 @@ function render() {
   $('sheet-body').innerHTML = `
     <div class="sheet-head">
       <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${esc(dn(r.coin))}</h2>
-      <span class="meta">${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]} · ${esc(p.entryMode)}</span></div>
+      <span class="meta">${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]} · ${r.fromSignal ? `Signal ${ago(r.fromSignal.at)}` : esc(p.entryMode)}</span></div>
       ${badge(p.dir)}
     </div>
     ${sum && sum.equity > 0 && (sum.available / sum.equity) * 100 < (CONFIG.rules.freeCapitalMinPct ?? 2)
       ? `<p class="cap-note bad">Kein Kapital frei (${f.pct(Math.max(0, (sum.available / sum.equity) * 100), 1)}). Dieser Plan ist nur zur Beobachtung, erst eine Position schließen oder verkleinern.</p>` : ''}
     ${coolBox()}
+    ${r.fromSignal && ['gedreht', 'weg'].includes(r.fromSignal.check.state) ? `<p class="sig-note">${esc(r.fromSignal.check.text)}</p>` : ''}
     ${seal(r)}
     ${viewBox(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
@@ -88,7 +93,6 @@ function render() {
     ${levCtx ? levSlider(lev || Math.min(maxLev || 1, levCtx.exchangeMax || 50), rec?.lev || null, levCtx) : ''}
     <h3 class="sub-h">Ausstiegsplan</h3>
     ${exitTable(exits, CONFIG.runnerNote)}
-    <p class="empty" style="margin-top:8px">Der Hebel ändert nur die Margin, Positionsgröße und Risiko bleiben gleich. Grenzen: ${CONFIG.signals.modes[r.mode]?.label || ''} ${styleMax}×${exchangeMax ? `, Hyperliquid ${exchangeMax}×` : ''}, Liquidation hinter dem Stop bis ca. ${f.lev(maxLev)}.</p>
     ${rec && !rec.lev && !manualLev ? `<p class="warnline">Für ${riskPct} % Risiko wären mind. ${rec.need}× nötig, möglich sind nur ca. ${maxLev}×.</p>${fitHint(maxFit(p.entry, p.stop, sum.available, maxLev, CONFIG.rules.marginBudgetPct), sum.equity, CONFIG.rules.marginBudgetPct)}` : ''}`}
     ${p.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}${w.price ? ` (${f.price(w.price)})` : ''}</p>`).join('')}
     <div class="sheet-actions">
@@ -114,7 +118,7 @@ function renderLive() {
   const ch = $('sheet-chart');
   if (ch) {
     const cs = current.candles?.[chartTf] || extraCandles.get(current.coin + '|' + chartTf);
-    if (cs) ch.innerHTML = chartSvg({ candles: cs, tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current), lines: viewLines(viewFor(getViews(), current.coin)) });
+    if (cs) ch.innerHTML = chartSvg({ coin: current.coin, candles: cs, tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current), lines: viewLines(viewFor(getViews(), current.coin)) });
     else if (!ch.dataset.loading) {
       ch.dataset.loading = '1';
       ch.innerHTML = `<p class="empty">Lade ${TFL[chartTf]}-Kerzen …</p>`;
@@ -143,6 +147,7 @@ export function openTrade(result) {
   if (!result?.plan) return;
   current = result;
   basePlan = result.plan;
+  signalBase = result.fromSignal ? result : null;
   manualLev = null;
   chartTf = result.tfs?.[1] || null;
   const cd = cooldown(tradeHistory(getState().fills));
@@ -207,7 +212,8 @@ export function initTrade(stateGetter, onFull, onCalc) {
     if (e.target.id === 'live-reset') { current = { ...current, plan: basePlan }; render(); renderLive(); return; }
     const sb = e.target.closest('button[data-style]');
     if (sb) {
-      const next = switchStyle(current, sb.dataset.style);
+      // Zurück auf den Stil des gemeldeten Signals = wieder dessen Plan
+      const next = signalBase && sb.dataset.style === signalBase.mode ? signalBase : switchStyle(current, sb.dataset.style);
       if (next?.plan) { current = next; basePlan = next.plan; chartTf = next.tfs[1]; render(); renderLive(); }
       else if (next) { sb.classList.add('shake'); setTimeout(() => sb.classList.remove('shake'), 400); }
       return;
@@ -240,7 +246,7 @@ function feeRow(size) {
   if (!est) return '';
   const pct = (r) => f.pct(r * 100, 3);
   return `<div class="span2"><span class="k">Gebühren Ein- und Ausstieg (geschätzt)</span>
-    <span class="v">${f.usd(est.taker)} <small class="muted" style="font-size:12px;font-weight:600">· mit Limit-Orders ${f.usd(est.maker)} · ${rates.known ? 'dein Satz' : 'Standardsatz'} ${pct(rates.taker)} / ${pct(rates.maker)}</small></span></div>`;
+    <span class="v">${f.usd(est.taker)} <small class="muted" style="font-size:12px;font-weight:600">· mit Limit-Orders ${f.usd(est.maker)}</small> ${tipInline(`Market-Order und Stop zahlen den Taker-Satz, Limit-Orders den Maker-Satz. ${rates.known ? 'Dein Satz' : 'Standardsatz'}: Taker ${pct(rates.taker)}, Maker ${pct(rates.maker)}.`)}</span></div>`;
 }
 
 // Abkühlphase nach Verlustserie: Hinweis ganz oben

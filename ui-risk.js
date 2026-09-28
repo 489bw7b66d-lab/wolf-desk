@@ -77,7 +77,9 @@ function renderCalc() {
   const noise = stopNoise(entry, stop, atrV);
   const imp = noise?.suggest ? suggestImpact(equity, riskPct, entry, stop, noise.suggest.stop) : null;
   const cd = cooldown(tradeHistory(s.fills));
-  calcCtx = { notional: res.notional, available: r.summary.available, liqMax: maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, 200), exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct };
+  calcCtx = { notional: res.notional, available: r.summary.available, liqMax: maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, 200), exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct,
+    plan: { dir, entry, stop, tps }, bufferPct: CONFIG.rules.liqBufferPct,
+    note: `Der Hebel ändert nur die Margin, nicht Positionsgröße und Risiko. Empfehlung: so niedrig wie möglich, Margin höchstens ${CONFIG.rules.marginBudgetPct} % vom verfügbaren Kapital (${f.usd(r.summary.available)}). Höchsthebel: Liquidation mind. ${String(CONFIG.rules.liqBufferPct).replace('.', ',')} % hinter dem Stop${mode ? `, ${mode.label} max. ${mode.maxLeverage}×` : ''}${exchangeMax ? `, Hyperliquid max. ${exchangeMax}×` : ''}. Der Balken zeigt, wo die Liquidation bei diesem Hebel ungefähr liegt.` };
 
   out.innerHTML = `${cd.active ? `<p class="cap-note bad" style="margin:0 0 12px">🧊 Abkühlphase: ${cd.streak} Verlust-Trades in Folge, noch ${leftText(cd.until)}, Vorschlag: höchstens ${String(cooledRisk(CONFIG.rules.riskSteps[0], true)).replace('.', ',')} % Risiko.</p>` : ''}
   ${noise ? (noise.status === 'ok' ? `<p class="stop-check ok">✓ ${noise.text} (${tf.toUpperCase()})</p>`
@@ -95,8 +97,7 @@ function renderCalc() {
   ${rec && !rec.lev && !levIn ? `<p class="warnline">Für diese Größe wären mind. ${rec.need}× nötig, möglich sind ca. ${maxLev}×.</p>${fitHint(maxFit(entry, stop, r.summary.available, maxLev, CONFIG.rules.marginBudgetPct), equity, CONFIG.rules.marginBudgetPct)}` : ''}
   ${st !== 'ok' ? `<p class="warnline" style="color:${st === 'bad' ? 'var(--bad)' : 'var(--warn)'}">${riskPct} % Risiko liegt ${st === 'bad' ? 'über deinem Maximum' : 'im Warnbereich'}.</p>` : ''}
   <h3 class="sub-h">Ausstiegsplan <small class="muted" style="font-weight:600">${fromPlan ? `aus Signal (${esc(mode.label)})` : 'Ziele als 1R bis 4R'}</small></h3>
-  ${exitTable(exits, CONFIG.runnerNote)}
-  <p class="empty" style="margin-top:10px">Der Hebel ändert nur die Margin. Empfehlung: so niedrig wie möglich, Margin höchstens ${CONFIG.rules.marginBudgetPct} % vom verfügbaren Kapital (${f.usd(r.summary.available)}). Höchsthebel: Liquidation mind. ${String(CONFIG.rules.liqBufferPct).replace('.', ',')} % hinter dem Stop${mode ? `, ${esc(mode.label)} max. ${mode.maxLeverage}×` : ''}${exchangeMax ? `, Hyperliquid max. ${exchangeMax}×` : ''}. Der Hebel ändert nur die Margin, nicht die Positionsgröße.</p>`;
+  ${exitTable(exits, CONFIG.runnerNote)}`;
 }
 
 export function initRisk(stateGetter) {
