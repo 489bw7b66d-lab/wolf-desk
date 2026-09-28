@@ -270,3 +270,19 @@ export function targetText(coin, hits, total, exitPlan = CONFIG.exitPlan) {
   return `🎯 ${name}: <b>TP${top.n}</b> erreicht (${f.price(top.price)})${also}.` + (step?.pct ? ` Laut Plan jetzt ${step.pct} % verkaufen.` : '')
     + (top.n === 2 ? ' Stop auf Einstieg nachziehen.' : '');
 }
+
+// ===== Geduld im Wochenbericht =====
+export function patienceText(g) {
+  if (!g?.n) return '';
+  const usd = (v) => (v >= 0 ? '+' : '−') + new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(Math.abs(v)) + ' $';
+  const lines = ['', '', '<b>Geduld</b>', `${g.n} Trades vor TP1 geschlossen (${g.pending} noch in Beobachtung)`];
+  if (g.done) lines.push(`Später TP1/TP2 erreicht: ${g.later} · verpasst ${usd(-g.missed)}`, `Stop wäre zuerst gekommen: ${g.stopFirst} · gespart ${usd(g.saved)}`,
+    `Unterm Strich: <b>${usd(g.net)}</b>${g.net < 0 ? ' 👉 mehr Geduld lohnt sich' : ''}`);
+  return lines.join('\n');
+}
+
+// ===== Abkühlphase =====
+export function cooldownText(cd, hours) {
+  const t = new Date(cd.until).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
+  return `🧊 <b>Abkühlphase</b> bis ${t} Uhr\n${cd.streak} Verlust-Trades in Folge (${cd.coins.map((c) => esc(dn(c))).join(', ')}). Für die nächsten ${hours} Std. Risiko halbieren und nur saubere Setups nehmen. Keine Rache-Trades.`;
+}

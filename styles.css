@@ -506,3 +506,13 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .path-secured { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, rgba(0,0,0,.55) 0 3px, rgba(0,0,0,0) 3px 7px); border-radius: 5px 0 0 5px; }
 .path-tick.sl0 { background: var(--muted); height: 12px; top: -1px; }
 .path-labels .sl0 { color: var(--muted); }
+
+/* ===== Etappe 4a: Schutz ===== */
+.stop-check { margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: 13px; line-height: 1.45; }
+.stop-check b { display: block; font-weight: 800; }
+.stop-check span { display: block; margin-top: 4px; color: var(--text); }
+.stop-check.ok { color: var(--ok); border-color: rgba(74,222,155,.35); padding: 8px 12px; font-weight: 700; }
+.stop-check.warn { color: var(--warn); border-color: rgba(242,181,68,.55); background: rgba(242,181,68,.06); }
+.stop-check.bad { color: var(--bad); border-color: rgba(255,112,112,.65); background: rgba(255,112,112,.07); }
+.cool-banner { margin: 0 0 14px; padding: 14px 16px; border-radius: 18px; border: 1px solid rgba(120,190,255,.55); background: linear-gradient(135deg, rgba(120,190,255,.14), rgba(120,190,255,.04)); color: #bfe0ff; font-size: 13.5px; line-height: 1.45; }
+.cool-banner b { display: block; font-size: 16px; font-weight: 800; color: #d8ecff; margin-bottom: 4px; }

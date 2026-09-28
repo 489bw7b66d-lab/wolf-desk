@@ -149,11 +149,6 @@ export function checkAccount({ equity, positionsCount, realizedToday, openRiskTo
       value: dayLossPct,
     },
     {
-      rule: 'Offene Positionen',
-      status: level(positionsCount > rules.maxOpenPositions, positionsCount === rules.maxOpenPositions),
-      text: `${positionsCount} von max. ${rules.maxOpenPositions}`,
-    },
-    {
       rule: 'Gesamtrisiko bis Stops',
       status: level(false, openRiskTotal == null),
       text: openRiskTotal == null ? 'Nicht berechenbar, mindestens ein Stop-Loss fehlt'

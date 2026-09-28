@@ -31,6 +31,15 @@ export const CONFIG = {
   // DEINE ZIELE je offener Position (für manuelles Schließen; über my-settings.js auch für den Wächter)
   plans: {},
 
+  // SCHUTZ VOR TYPISCHEN FEHLERN
+  guard: {
+    stopNoiseAtr: 1.0,         // Stop näher als so viele ATR = rot: liegt im normalen Rauschen
+    stopTightAtr: 1.5,         // bis hierhin gelb: knapp
+    suggestAtr: 1.5,           // Vorschlag für einen sinnvolleren Stop-Abstand
+    lossStreak: 2,             // so viele Verlust-Trades in Folge starten die Abkühlphase
+    cooldownHours: 4,          // so lange dauert die Abkühlphase
+  },
+
   // AUTOMATISCHER PLAN für offene Positionen ohne eigene Ziele und ohne Signal
   positions: {
     autoStyle: 'swing',      // nach welchem Stil SL und Ziele berechnet werden: 'swing' oder 'intraday'
@@ -72,13 +81,13 @@ export const CONFIG = {
 
   // DEINE RISIKO-REGELN (Prozentwerte beziehen sich auf den Kontowert)
   rules: {
-    riskPerTradeWarnPct: 10,  // ab hier gelbe Warnung (Verlust bis Stop-Loss)
-    riskPerTradeMaxPct: 15,   // ab hier roter Regelverstoß
+    riskSteps: [2, 3, 5],     // Knöpfe „Risiko pro Trade“ auf Trade-Karte und im Rechner (Prozent vom Konto)
+    riskPerTradeWarnPct: 3,   // ab hier gelbe Warnung (Verlust bis Stop-Loss)
+    riskPerTradeMaxPct: 5,    // ab hier roter Regelverstoß
     dailyLossLimitPct: 15,    // realisierter Tagesverlust, ab dem Schluss ist
     maxLeverage: 20,          // maximaler Hebel pro Position
     liqBufferPct: 1,          // Liquidation muss mind. so viel % (vom Kurs) HINTER dem Stop liegen
     liqNoStopMinShare: 0.5,   // ohne Stop: Warnung, wenn mehr als die Hälfte des Anfangsabstands verbraucht ist
-    maxOpenPositions: 5,      // maximal gleichzeitig offene Positionen
     marginBudgetPct: 50,      // Hebel-Empfehlung: pro Trade höchstens so viel % des verfügbaren Kapitals als Margin
     freeCapitalWarnPct: 10,   // gelb, wenn weniger als so viel % vom Konto frei sind
     freeCapitalMinPct: 2,     // rot darunter: keine neuen Trades möglich, kein Puffer

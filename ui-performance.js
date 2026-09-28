@@ -4,6 +4,9 @@ import { accountSummary } from './core-calc.js';
 import { parsePortfolio, equityCurve, maxDrawdown } from './core-performance.js';
 import { perfSplit, tradeHistory, closedTrades, tradeStats } from './core-trades.js';
 import { costSummary, fundingForTrade } from './core-fees.js';
+import { evaluatePatience, patienceStats, PATIENCE_KEY, windowDays } from './core-patience.js';
+import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
+import { getFeedSignals } from './ui-feed.js';
 import * as f from './core-format.js';
 import { dn } from './ui-parts.js';
 
@@ -136,7 +139,41 @@ function renderStats(s) {
     <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Gruppe</span><span>Trades</span><span>Treffer</span><span>Ø PnL</span></div>
       ${row('In Teilen verkauft', st.split)}${row('Alles auf einmal', st.single)}${row('Long', st.long)}${row('Short', st.short)}
     </div>
-    <p class="empty" style="font-size:12px;margin-top:8px">Bester Trade: ${dn(st.best.coin)} ${f.signedUsd(st.best.realized)} · schlechtester: ${dn(st.worst.coin)} ${f.signedUsd(st.worst.realized)}. Nach Gebühren, ohne Funding.</p>`;
+    <p class="empty" style="font-size:12px;margin-top:8px">Bester Trade: ${dn(st.best.coin)} ${f.signedUsd(st.best.realized)} · schlechtester: ${dn(st.worst.coin)} ${f.signedUsd(st.worst.realized)}. Nach Gebühren, ohne Funding.</p>
+    ${patienceBlock(s)}`;
+}
+
+// ===== Geduld: vorzeitig geschlossene Trades nachträglich auswerten =====
+let pat = { data: null, loading: false, at: 0 };
+function loadPatience(s) {
+  if (pat.loading || !s.fills || Date.now() - pat.at < 30 * 60e3) return;
+  pat.loading = true;
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem(PATIENCE_KEY) || '{}'); } catch { /* egal */ }
+  const getTargets = (t) => targetsFor({ plan: planFor(getPlans(), t.coin, t.side, t.openedAt), signal: signalFor(getFeedSignals(), t.coin, t.side, t.openedAt) });
+  evaluatePatience(tradeHistory(s.fills), { getTargets, cache }).then((list) => {
+    pat.data = list;
+    try { localStorage.setItem(PATIENCE_KEY, JSON.stringify(cache)); } catch { /* egal */ }
+  }).catch(() => {}).finally(() => { pat.loading = false; pat.at = Date.now(); });
+}
+function patienceBlock(s) {
+  loadPatience(s);
+  const head = '<h3 class="sub-h">Geduld</h3>';
+  if (!pat.data) return `${head}<p class="empty">Vorzeitige Ausstiege werden ausgewertet …</p>`;
+  const g = patienceStats(pat.data);
+  if (!g.n) return `${head}<p class="empty">Keine vorzeitig geschlossenen Trades in den letzten 60 Tagen. Stark!</p>`;
+  const cls = g.net >= 0 ? 'ok' : g.net > -Math.abs(g.missed) * 0.3 ? 'warn' : 'bad';
+  const verdict = !g.done ? 'Die Trades laufen noch in der Beobachtung.'
+    : g.net < 0 ? `Frühes Aussteigen hat dich unterm Strich <b>${f.signedUsd(g.net)}</b> gekostet. In ${g.later} von ${g.done} Fällen kam das Ziel später doch noch.`
+    : `Frühes Aussteigen hat dir unterm Strich <b>${f.signedUsd(g.net)}</b> gespart. In ${g.stopFirst} von ${g.done} Fällen wäre zuerst der Stop gekommen.`;
+  return `${head}<p class="bt-verdict ${cls}">${verdict}</p>
+    <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Vorzeitig geschlossen</span><span>Trades</span><span></span><span>Betrag</span></div>
+      <div class="bt-row" role="row"><span>später TP1 oder TP2 erreicht</span><span>${g.later}</span><span class="muted">${g.later2 ? g.later2 + '× TP2' : ''}</span><span class="short">${f.signedUsd(-g.missed)}</span></div>
+      <div class="bt-row" role="row"><span>Stop wäre zuerst gekommen</span><span>${g.stopFirst}</span><span></span><span class="long">${f.signedUsd(g.saved)}</span></div>
+      <div class="bt-row" role="row"><span>weder noch</span><span>${g.none}</span><span></span><span class="muted">±0</span></div>
+      ${g.pending ? `<div class="bt-row" role="row"><span>noch in Beobachtung</span><span>${g.pending}</span><span></span><span class="muted">…</span></div>` : ''}
+    </div>
+    <p class="empty" style="font-size:12px;margin-top:8px">Vorzeitig = zwischen Stop und TP1 geschlossen. Maßstab ist der Plan des Trades (eigene Ziele, Telegram-Signal oder automatischer Plan), beobachtet ${windowDays()} Tage nach dem Ausstieg. Beträge bezogen auf die verkaufte Menge.</p>`;
 }
 
 // Kosten: Gebühren und Funding in 7/30/90 Tagen, Anteil am Bruttogewinn, deine Gebührensätze

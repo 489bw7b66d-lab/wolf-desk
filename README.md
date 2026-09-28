@@ -21,6 +21,8 @@ Trading-Dashboard für Hyperliquid (Krypto, Rohstoffe, Forex). Nur lesender Zugr
 - `core-path.js` – Trade-Weg einer Position (Stop → Einstieg → Ziele aus echten Orders und Teilverkäufen)
 - `core-plans.js` – Ziele je offener Position (eigener Plan, passendes Signal), Meldungen beim Erreichen
 - `core-autoplan.js` – automatischer Plan (SL, TP1–TP4) für jede offene Position, berechnet mit den Kerzen zum Einstiegszeitpunkt
+- `core-guard.js` – Schutz: Stop-Check gegen ATR, Abkühlphase nach Verlustserie
+- `core-patience.js` – Geduld-Statistik: was frühes Aussteigen gekostet oder gespart hat
 - `test-*.js` – Tests für alle Rechenfunktionen, aufrufbar über `tests.html`
 
 ## Stand
@@ -53,3 +55,4 @@ Etappe 3y: Trade-Weg in den Positionskarten: Fortschrittsbalken vom Stop bis zum
 Etappe 3z: Ziele je Position für manuelles Schließen (aus Signal, aus Analyse oder selbst eingetragen, im Markt-Blatt), Trade-Weg nutzt diese Ziele, rot bis Einstieg und grün ab Einstieg, 🏁 am letzten Ziel, Beschriftungen ohne Überlappung, Wächter meldet erreichte Ziele privat mit Verkaufsanteil laut Plan
 Etappe 3za: Auswahlknöpfe eindeutig (ausgewählt gold mit ✓)
 Etappe 3zb: Automatischer Plan für jede Position nach den Regeln des Signalgebers (Kerzen zum Einstieg, Fibonacci sonst ATR, Stil wählbar), Trade-Weg mit ursprünglichem SL₀ und nachgezogenem SL (schraffiert = abgesichert), Wächter meldet Ziele auch für eigene Trades
+Etappe 4a: Risiko-Stufen 2/3/5 % in den Einstellungen (Warnung ab 3 %, rot ab 5 %), Positions-Begrenzer entfernt, Stop-Check gegen ATR auf Trade-Karte/Rechner/Positionen mit Vorschlag, Abkühlphase nach Verlustserie (Banner, halbiertes Risiko, Telegram), Geduld-Statistik im Konto und im Wochenbericht

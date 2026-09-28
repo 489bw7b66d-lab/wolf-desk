@@ -2,7 +2,8 @@
 import { CONFIG } from './config.js';
 import { accountRisk } from './core-positions.js';
 import { parsePortfolio } from './core-performance.js';
-import { perfSplit, change24h } from './core-trades.js';
+import { perfSplit, change24h, tradeHistory } from './core-trades.js';
+import { cooldown, leftText, cooledRisk } from './core-guard.js';
 import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
 import { badge, esc, dn, topReasons, seal, viewMark } from './ui-parts.js';
 import { getViews, viewFor, alignment } from './core-views.js';
@@ -20,6 +21,7 @@ export function renderHome(s) {
     $('home-alerts').innerHTML = ''; $('home-pos').innerHTML = '';
     return;
   }
+  renderCool(s);
   const upnl = s.account.positions.reduce((n, p) => n + (p.upnl || 0), 0);
   const split = perfSplit(r.summary.equity, CONFIG.startCapital, upnl);
   const rt = r.realizedToday;
@@ -118,5 +120,17 @@ export function initHome(stateGetter, openTrade, openDetail, openCoin) {
   try { off = localStorage.getItem(HOT_KEY) === '0'; } catch { /* egal */ }
   if (!off) {
     const wait = setInterval(() => { if (markets().length) { clearInterval(wait); startHot(markets); } }, 1000);
+  }
+}
+
+// Banner der Abkühlphase ganz oben auf der Startseite
+function renderCool(s) {
+  const el = document.getElementById('cool-banner');
+  if (!el) return;
+  const cd = s.fills ? cooldown(tradeHistory(s.fills)) : { active: false };
+  el.hidden = !cd.active;
+  if (cd.active) {
+    el.innerHTML = `<b>🧊 Abkühlphase · noch ${leftText(cd.until)}</b>
+      <span>${cd.streak} Verlust-Trades in Folge (${cd.coins.map((c) => c.replace(/^[a-z]+:/, '')).join(', ')}). Risiko-Vorschlag halbiert auf ${String(cooledRisk(CONFIG.rules.riskSteps[0], true)).replace('.', ',')} %. Keine Rache-Trades, lieber das nächste saubere Setup abwarten.</span>`;
   }
 }

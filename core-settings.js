@@ -18,11 +18,18 @@ const n = (group, path, label, min, max, step, unit = '', extra = {}) => ({ grou
 export const FIELDS = [
   n('konto', 'startCapital', 'Startkapital', 1, 100000000, 1, '$', { hint: 'Grundlage für die Performance' }),
 
+  n('risiko', 'rules.riskSteps.0', 'Risiko-Stufe 1 (Knopf)', 0.25, 20, 0.25, '%'),
+  n('risiko', 'rules.riskSteps.1', 'Risiko-Stufe 2 (Knopf)', 0.25, 20, 0.25, '%'),
+  n('risiko', 'rules.riskSteps.2', 'Risiko-Stufe 3 (Knopf)', 0.25, 20, 0.25, '%'),
   n('risiko', 'rules.riskPerTradeWarnPct', 'Risiko pro Trade: gelb ab', 0.5, 50, 0.5, '%'),
   n('risiko', 'rules.riskPerTradeMaxPct', 'Risiko pro Trade: rot ab', 0.5, 50, 0.5, '%'),
   n('risiko', 'rules.dailyLossLimitPct', 'Tagesverlust: Schluss ab', 1, 50, 0.5, '%'),
   n('risiko', 'rules.maxLeverage', 'Maximaler Hebel', 1, 50, 1, '×'),
-  n('risiko', 'rules.maxOpenPositions', 'Max. offene Positionen', 1, 20, 1),
+  n('risiko', 'guard.stopNoiseAtr', 'Stop im Rauschen: rot unter', 0.25, 5, 0.25, '× ATR', { hint: 'Stop-Abstand im Vergleich zur normalen Schwankung' }),
+  n('risiko', 'guard.stopTightAtr', 'Stop knapp: gelb unter', 0.25, 5, 0.25, '× ATR'),
+  n('risiko', 'guard.suggestAtr', 'Vorschlag Stop-Abstand', 0.5, 5, 0.25, '× ATR'),
+  n('risiko', 'guard.lossStreak', 'Abkühlphase nach Verlusten in Folge', 1, 10, 1),
+  n('risiko', 'guard.cooldownHours', 'Dauer der Abkühlphase', 1, 72, 1, 'Std.'),
   n('risiko', 'rules.liqBufferPct', 'Liquidation mind. hinter Stop', 0, 10, 0.5, '%'),
   n('risiko', 'rules.liqNoStopMinShare', 'Ohne Stop: rot, wenn vom Liq-Abstand weniger übrig als', 10, 90, 5, '%', { scale: 0.01, hint: 'Anteil des Anfangsabstands zur Liquidation' }),
   n('risiko', 'rules.marginBudgetPct', 'Margin je Trade höchstens', 5, 100, 5, '% vom Freien'),
@@ -120,6 +127,9 @@ export function validate(v) {
   const sum = [0, 1, 2, 3, 4].reduce((s, i) => s + (Number(v[`exitPlan.${i}.pct`]) || 0), 0);
   if (Math.round(sum) !== 100) e('exitPlan.0.pct', `Ausstiegsplan ergibt ${sum} %, es müssen genau 100 % sein`);
   if (v['rules.riskPerTradeWarnPct'] > v['rules.riskPerTradeMaxPct']) e('rules.riskPerTradeWarnPct', 'Risiko: „gelb ab“ muss kleiner oder gleich „rot ab“ sein');
+  const st = [0, 1, 2].map((i) => v[`rules.riskSteps.${i}`]);
+  if (!(st[0] < st[1] && st[1] < st[2])) e('rules.riskSteps.0', 'Risiko-Stufen müssen aufsteigen: Stufe 1 < Stufe 2 < Stufe 3');
+  if (v['guard.stopNoiseAtr'] > v['guard.stopTightAtr']) e('guard.stopNoiseAtr', 'Stop-Check: „rot unter“ muss kleiner oder gleich „gelb unter“ sein');
   if (v['rules.freeCapitalMinPct'] > v['rules.freeCapitalWarnPct']) e('rules.freeCapitalMinPct', 'Freies Kapital: „rot unter“ muss kleiner oder gleich „gelb unter“ sein');
   const I = (k) => v[`indicators.${k}`];
   if (!(I('emaFast') < I('emaMid') && I('emaMid') < I('emaSlow') && I('emaSlow') < I('emaTrend'))) e('indicators.emaFast', 'EMA-Längen müssen aufsteigen: schnell < mittel < langsam < Trend');

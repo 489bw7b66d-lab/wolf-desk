@@ -6,6 +6,8 @@ import { chartSvg } from './ui-chart.js';
 import { switchStyle, getCandles } from './core-scanner.js';
 import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.js';
 import { estimateFees, DEFAULT_RATES } from './core-fees.js';
+import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText } from './core-guard.js';
+import { tradeHistory } from './core-trades.js';
 import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -13,7 +15,7 @@ const $ = (id) => document.getElementById(id);
 let getState = () => ({});
 let current = null, riskPct = null, lastFocus = null, liveTimer = null, basePlan = null;
 let manualLev = null, chartTf = null; // manueller Hebel (null = Empfehlung), gewählter Chart-Timeframe
-const RISKS = [5, 10, 15];
+const RISKS = () => CONFIG.rules.riskSteps; // Risiko-Stufen aus den Einstellungen
 const extraCandles = new Map(); // "coin|tf" -> Kerzen für Zeitebenen außerhalb des Stils (werden bei Bedarf geladen)
 
 function calc() {
@@ -59,6 +61,7 @@ function render() {
     </div>
     ${sum && sum.equity > 0 && (sum.available / sum.equity) * 100 < (CONFIG.rules.freeCapitalMinPct ?? 2)
       ? `<p class="cap-note bad">Kein Kapital frei (${f.pct(Math.max(0, (sum.available / sum.equity) * 100), 1)}). Dieser Plan ist nur zur Beobachtung, erst eine Position schließen oder verkleinern.</p>` : ''}
+    ${coolBox()}
     ${seal(r)}
     ${viewBox(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
@@ -68,11 +71,12 @@ function render() {
     ${topReasons(r).length ? `<p class="reasons-line">${topReasons(r).map(esc).join(' · ')}</p>` : ''}
     ${p.liveEntry ? `<p class="plan-mode"><span class="chip">Einstieg = Live-Kurs ${f.price(p.entry)}</span></p>` : ''}
     ${ladder(p, size ? `<div class="lvl lvl-margin"><span class="dot" style="background:var(--gold)"></span><span class="lbl">Margin</span><span class="px" id="ladder-margin">${margin ? f.usd(margin) : 'Kapital reicht nicht'}</span><span class="pc muted" id="ladder-lev">${lev ? lev + '× · ' : ''}Position ${f.usd(size.notional)}</span></div>` : '')}
+    ${stopBox(r, p, sum, size)}
     <h3 class="sub-h">Risiko pro Trade</h3>
     <div class="tabs risk-chips" role="group" aria-label="Risiko pro Trade">
-      ${RISKS.map((x) => `<button type="button" data-risk="${x}" aria-pressed="${x === riskPct}">${x} %</button>`).join('')}
+      ${RISKS().map((x) => `<button type="button" data-risk="${x}" aria-pressed="${x === riskPct}">${x} %</button>`).join('')}
     </div>
-    ${RISKS.includes(riskPct) ? '' : `<p class="empty" style="margin:-6px 0 12px">Gewählt: ${String(riskPct).replace('.', ',')} % Risiko (angepasst an dein Kapital)</p>`}
+    ${RISKS().includes(riskPct) ? '' : `<p class="empty" style="margin:-6px 0 12px">Gewählt: ${String(riskPct).replace('.', ',')} % Risiko (angepasst an dein Kapital)</p>`}
     ${!sum ? '<p class="empty">Kontodaten fehlen, Größe nicht berechenbar.</p>' : `
     <div class="kv">
       <div class="span2"><span class="k">Positionsgröße</span><span class="v big" style="color:var(--gold)">${size ? f.size(size.size) : '–'}</span></div>
@@ -141,7 +145,9 @@ export function openTrade(result) {
   basePlan = result.plan;
   manualLev = null;
   chartTf = result.tfs?.[1] || null;
-  if (!RISKS.includes(riskPct)) riskPct = CONFIG.rules.riskPerTradeWarnPct;
+  const cd = cooldown(tradeHistory(getState().fills));
+  if (cd.active) riskPct = cooledRisk(RISKS()[0], true);
+  else if (!RISKS().includes(riskPct)) riskPct = RISKS()[0];
   render();
   lastFocus = document.activeElement;
   $('sheet').hidden = false;
@@ -235,4 +241,22 @@ function feeRow(size) {
   const pct = (r) => f.pct(r * 100, 3);
   return `<div class="span2"><span class="k">Gebühren Ein- und Ausstieg (geschätzt)</span>
     <span class="v">${f.usd(est.taker)} <small class="muted" style="font-size:12px;font-weight:600">· mit Limit-Orders ${f.usd(est.maker)} · ${rates.known ? 'dein Satz' : 'Standardsatz'} ${pct(rates.taker)} / ${pct(rates.maker)}</small></span></div>`;
+}
+
+// Abkühlphase nach Verlustserie: Hinweis ganz oben
+export function coolBox() {
+  const cd = cooldown(tradeHistory(getState().fills));
+  if (!cd.active) return '';
+  return `<p class="cap-note bad">🧊 Abkühlphase: ${cd.streak} Verlust-Trades in Folge. Noch ${leftText(cd.until)}. Risiko-Vorschlag halbiert, lieber abwarten als nachlegen.</p>`;
+}
+
+// Stop-Check gegen die normale Schwankung (ATR der Setup-Zeitebene)
+export function stopBox(r, p, sum, size) {
+  const a = r.analyses?.[1]?.atr;
+  const n = stopNoise(p.entry, p.stop, a);
+  if (!n) return '';
+  if (n.status === 'ok') return `<p class="stop-check ok">✓ ${esc(n.text)}</p>`;
+  const imp = n.suggest && sum ? suggestImpact(sum.equity, riskPct, p.entry, p.stop, n.suggest.stop) : null;
+  return `<div class="stop-check ${n.status}"><b>${n.status === 'bad' ? '⚠️ ' : ''}${esc(n.text)}</b>
+    ${n.suggest ? `<span>Sinnvoller: Stop bei <b>${f.price(n.suggest.stop)}</b> (${String(n.suggest.atrMult).replace('.', ',')}× ATR, ${f.pct(n.suggest.distPct, 1)} Abstand)${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, du brauchst also weniger Hebel.` : ''}</span>` : ''}</div>`;
 }

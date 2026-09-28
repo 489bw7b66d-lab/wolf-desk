@@ -1,0 +1,78 @@
+// Schutz vor typischen Fehlern:
+// 1. Stop-Check: Liegt der Stop innerhalb der normalen Schwankung (ATR)? Dann wird er wahrscheinlich ausgelöst.
+// 2. Abkühlphase: Nach mehreren Verlust-Trades in Folge eine Weile vorsichtiger handeln.
+// Reine Funktionen haben Tests in test-guard.js.
+import { CONFIG } from './config.js';
+import { atr } from './core-indicators.js';
+import { positionSize } from './core-risk.js';
+import { getCandles } from './core-scanner.js';
+
+const G = () => CONFIG.guard;
+
+// Stop-Abstand im Verhältnis zum ATR. Ergebnis: { ratio, status, text, suggest } oder null
+export function stopNoise(entry, stop, atrValue, cfg = G()) {
+  if (!(entry > 0) || !(stop > 0) || !(atrValue > 0) || entry === stop) return null;
+  const dist = Math.abs(entry - stop), ratio = dist / atrValue;
+  const long = stop < entry, s = long ? 1 : -1;
+  const status = ratio < cfg.stopNoiseAtr ? 'bad' : ratio < cfg.stopTightAtr ? 'warn' : 'ok';
+  const suggestStop = entry - s * cfg.suggestAtr * atrValue;
+  const r = (x) => x.toFixed(1).replace('.', ',');
+  return {
+    ratio, status, atr: atrValue,
+    text: status === 'bad' ? `Stop liegt im normalen Rauschen (${r(ratio)}× ATR), wird wahrscheinlich ausgelöst`
+      : status === 'warn' ? `Stop ist knapp (${r(ratio)}× ATR), normale Schwankungen können ihn erreichen`
+      : `Stop mit genug Luft (${r(ratio)}× ATR)`,
+    suggest: status === 'ok' ? null : { stop: suggestStop, atrMult: cfg.suggestAtr, distPct: (cfg.suggestAtr * atrValue / entry) * 100 },
+  };
+}
+
+// Was bedeutet der vorgeschlagene Stop bei gleichem Risiko? Kleinere Position, weniger Hebel nötig
+export function suggestImpact(equity, riskPct, entry, stopNow, stopNew) {
+  const a = positionSize(equity, riskPct, entry, stopNow), b = positionSize(equity, riskPct, entry, stopNew);
+  if (!a || !b) return null;
+  return { sizeNow: a.size, sizeNew: b.size, notionalNow: a.notional, notionalNew: b.notional, factor: b.notional / a.notional };
+}
+
+// Verlust-Trades in Folge (neueste zuerst). trades: aus tradeHistory, nur abgeschlossene zählen.
+// Ein Trade zählt als Verlust, wenn er nach Gebühren im Minus geschlossen wurde.
+export function lossStreak(trades) {
+  const closed = (trades || []).filter((t) => t.closedAt != null && !t.partial).sort((a, b) => b.closedAt - a.closedAt);
+  let n = 0;
+  for (const t of closed) { if (t.realized < 0) n++; else break; }
+  return { streak: n, lastAt: n ? closed[0].closedAt : null, coins: closed.slice(0, n).map((t) => t.coin) };
+}
+
+// Abkühlphase: aktiv, wenn die Serie lang genug ist und der letzte Verlust weniger als Y Stunden her ist
+export function cooldown(trades, now = Date.now(), cfg = G()) {
+  const s = lossStreak(trades);
+  if (s.streak < cfg.lossStreak || !s.lastAt) return { active: false, ...s };
+  const until = s.lastAt + cfg.cooldownHours * 36e5;
+  return { active: now < until, until, ...s };
+}
+
+// Risiko-Vorschlag in der Abkühlphase: halbiert
+export const cooledRisk = (riskPct, active) => (active ? Math.round(riskPct * 50) / 100 : riskPct);
+
+// Restzeit lesbar
+export function leftText(until, now = Date.now()) {
+  const m = Math.max(0, Math.round((until - now) / 60e3));
+  return m >= 60 ? `${Math.floor(m / 60)} Std. ${m % 60} Min.` : `${m} Min.`;
+}
+
+// ATR eines Marktes auf einer Zeitebene (App, mit Zwischenspeicher)
+const atrCache = new Map();
+export function atrFor(coin, tf) {
+  const key = coin + '|' + tf, hit = atrCache.get(key);
+  if (hit && Date.now() - hit.at < 30 * 60e3) return hit.value;
+  if (!hit?.loading) {
+    atrCache.set(key, { ...(hit || {}), loading: true });
+    getCandles(coin, tf, true).then((c) => {
+      const v = c.length > 20 ? atr(c, CONFIG.indicators.atrPeriod).at(-1) : null;
+      atrCache.set(key, { value: v, at: Date.now() });
+    }).catch(() => atrCache.set(key, { value: null, at: Date.now() }));
+  }
+  return hit?.value ?? null;
+}
+
+// Setup-Zeitebene des gewählten Stils (Swing 4H, Daytrade 1H)
+export const setupTf = (style = CONFIG.positions?.autoStyle || 'swing') => (CONFIG.signals.modes[style] || CONFIG.signals.modes.swing).tfs[1];

@@ -5,6 +5,8 @@ import { accountRisk } from './core-positions.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, leverageIssues } from './core-risk.js';
 import { exitTable, fitHint, levSlider, updateLevOut } from './ui-parts.js';
 import { setManualStop, getManualStop } from './core-stops.js';
+import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText, atrFor, setupTf } from './core-guard.js';
+import { tradeHistory } from './core-trades.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -37,10 +39,14 @@ function fillSelect(el, coins, key, keyRef) {
 // Plan aus dem Signalgeber (Ziele + Stil), gilt nur, solange Einstieg und Stop unverändert sind
 let calcPlan = null;
 let calcLev = null; // manueller Hebel im Rechner (null = Empfehlung)
-let calcCtx = null;
+let calcCtx = null, riskTouched = false;
 
 function renderCalc() {
   const s = getState();
+  // Vorschlag im Risiko-Feld, solange du es nicht selbst geändert hast (Abkühlphase: halbiert)
+  const cdNow = s.fills ? cooldown(tradeHistory(s.fills)) : { active: false };
+  const want = cdNow.active ? cooledRisk(CONFIG.rules.riskSteps[0], true) : CONFIG.rules.riskSteps[0];
+  if (!riskTouched && parse($('calc-risk').value) !== want) $('calc-risk').value = String(want);
   const r = accountRisk(s);
   const out = $('calc-out');
   const equity = r?.summary.equity;
@@ -64,9 +70,20 @@ function renderCalc() {
   const tps = fromPlan ? calcPlan.tps : [1, 2, 3, 4].map((m) => entry + sg * m * R);
   const exits = exitPlan(dir, entry, tps, res.size, CONFIG.exitPlan);
   const st = riskPct >= CONFIG.rules.riskPerTradeMaxPct ? 'bad' : riskPct >= CONFIG.rules.riskPerTradeWarnPct ? 'warn' : 'ok';
+  // Stop-Check gegen ATR (Setup-Zeitebene des Plans bzw. deines Stils) und Abkühlphase
+  const tf = fromPlan ? CONFIG.signals.modes[calcPlan.mode].tfs[1] : setupTf();
+  const atrV = atrFor($('calc-coin').value, tf);
+  if (atrV == null) setTimeout(() => { if (atrFor($('calc-coin').value, tf) != null) renderCalc(); }, 2500);
+  const noise = stopNoise(entry, stop, atrV);
+  const imp = noise?.suggest ? suggestImpact(equity, riskPct, entry, stop, noise.suggest.stop) : null;
+  const cd = cooldown(tradeHistory(s.fills));
   calcCtx = { notional: res.notional, available: r.summary.available, liqMax: maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, 200), exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct };
 
-  out.innerHTML = `<div class="kv">
+  out.innerHTML = `${cd.active ? `<p class="cap-note bad" style="margin:0 0 12px">🧊 Abkühlphase: ${cd.streak} Verlust-Trades in Folge, noch ${leftText(cd.until)}, Vorschlag: höchstens ${String(cooledRisk(CONFIG.rules.riskSteps[0], true)).replace('.', ',')} % Risiko.</p>` : ''}
+  ${noise ? (noise.status === 'ok' ? `<p class="stop-check ok">✓ ${noise.text} (${tf.toUpperCase()})</p>`
+    : `<div class="stop-check ${noise.status}"><b>${noise.status === 'bad' ? '⚠️ ' : ''}${noise.text}</b><span>Sinnvoller: Stop bei <b>${f.price(noise.suggest.stop)}</b> (${String(noise.suggest.atrMult).replace('.', ',')}× ATR auf ${tf.toUpperCase()}, ${f.pct(noise.suggest.distPct, 1)} Abstand)${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, also weniger Hebel nötig.` : ''}</span></div>`)
+    : atrV == null ? '<p class="empty" style="font-size:12px;margin:0 0 8px">Stop-Check: Schwankung (ATR) wird geladen …</p>' : ''}
+  <div class="kv">
     <div class="span2"><span class="k">Positionsgröße (${dir === 'long' ? 'Long' : 'Short'})</span><span class="v big" style="color:var(--gold)">${f.size(res.size)}</span></div>
     <div class="span2"><span class="k">Margin (dein Einsatz)</span><span class="v big" id="calc-margin" style="color:var(--gold)">${margin ? f.usd(margin) : '–'}</span></div>
     <div><span class="k">Risiko</span><span class="v">${f.usd(res.riskAmt)}</span></div>
@@ -84,7 +101,8 @@ function renderCalc() {
 
 export function initRisk(stateGetter) {
   getState = stateGetter;
-  $('calc-risk').value = String(CONFIG.rules.riskPerTradeWarnPct);
+  $('calc-risk').value = String(cooldown(tradeHistory(getState().fills)).active ? cooledRisk(CONFIG.rules.riskSteps[0], true) : CONFIG.rules.riskSteps[0]);
+  $('calc-risk').addEventListener('input', () => { riskTouched = true; });
   ['calc-risk', 'calc-entry', 'calc-stop'].forEach((id) => $(id).addEventListener('input', renderCalc));
   $('calc-out').addEventListener('input', (e) => {
     if (!e.target.classList.contains('lev-range')) return;

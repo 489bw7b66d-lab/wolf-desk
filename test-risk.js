@@ -2,7 +2,7 @@
 import { levStatus, leverageIssues, priceVsPlan, withEntry, maxFit, exitPlan, recommendLeverage, liqCheck, maxLeverageForStop, approxLiqDistPct, positionRisk, findStopLoss, lossToStop, liqBeforeStop, realizedPnl, positionSize, checkPosition, checkAccount } from './core-risk.js';
 
 const near = (a, b, eps = 1e-6) => a != null && Math.abs(a - b) < eps;
-const R = { riskPerTradeWarnPct: 10, riskPerTradeMaxPct: 15, dailyLossLimitPct: 15, maxLeverage: 20, liqBufferPct: 1, liqNoStopMinShare: 0.5, maxOpenPositions: 5 };
+const R = { riskPerTradeWarnPct: 10, riskPerTradeMaxPct: 15, dailyLossLimitPct: 15, maxLeverage: 20, liqBufferPct: 1, liqNoStopMinShare: 0.5 };
 const longEth = { coin: 'ETH', side: 'long', size: 2.2609, entry: 2679, liq: 2556.7, leverage: 15 };
 
 export const tests = [
@@ -36,7 +36,7 @@ export const tests = [
   ['Konto: 0,02 $ frei = Verstoß Freies Kapital', () => checkAccount({ equity: 2299, positionsCount: 5, realizedToday: 0, openRiskTotal: 0, available: 0.02 }, R).find((c) => c.rule === 'Freies Kapital').status === 'bad'],
   ['Konto: 5 % frei = Warnung', () => checkAccount({ equity: 1000, positionsCount: 1, realizedToday: 0, openRiskTotal: 0, available: 50 }, R).find((c) => c.rule === 'Freies Kapital').status === 'warn'],
   ['Konto: 40 % frei = ok', () => checkAccount({ equity: 1000, positionsCount: 1, realizedToday: 0, openRiskTotal: 0, available: 400 }, R).find((c) => c.rule === 'Freies Kapital').status === 'ok'],
-  ['Konto: 6 Positionen = Verstoß', () => checkAccount({ equity: 1000, positionsCount: 6, realizedToday: 0, openRiskTotal: 0 }, R)[1].status === 'bad'],
+  ['Konto: keine Begrenzung der Anzahl Positionen mehr', () => !checkAccount({ equity: 1000, positionsCount: 12, realizedToday: 0, openRiskTotal: 0 }, R).some((c) => /Positionen/.test(c.rule))],
   // Hebel-angepasste Liquidationsregeln
   ['Buddys SOL 8×: Liq 3,5 % hinter Stop = ok', () => liqCheck({ side: 'long', liq: 102.85, leverage: 8 }, 122.13, 106.45, 15.8, R, false).status === 'ok'],
   ['Liq nur 0,5 % hinter Stop = Warnung', () => liqCheck({ side: 'long', liq: 99.5, leverage: 10 }, 100, 100, 0.5, R, false).status === 'warn'],

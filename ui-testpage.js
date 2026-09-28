@@ -9,6 +9,7 @@ import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { tradePath } from './core-path.js';
 import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getAutoPlan } from './core-autoplan.js';
+import { stopNoise, atrFor, setupTf } from './core-guard.js';
 import { getFeedSignals } from './ui-feed.js';
 import * as f from './core-format.js';
 
@@ -95,6 +96,7 @@ function renderPositions(s, now) {
       </details>
       ${pathBar(tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan, targetsFor({ plan: planFor(getPlans(), p.coin, p.side, t?.openedAt), signal: signalFor(getFeedSignals(), p.coin, p.side, t?.openedAt), auto: t?.partial ? null : getAutoPlan(p.coin, p.side, p.entry, t?.openedAt) })))}
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
+      ${posNoise(p)}
       <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
   }).join('');
@@ -179,4 +181,12 @@ export function pathBar(path) {
     <div class="path-labels${twoRows ? ' two' : ''}">${ticks.map((x) => `<span class="${x.cls}${edge(x)} r${x.row}" style="left:${pct(x.at)}%">${x.label}</span>`).join('')}</div>
     <p class="path-info meta">${info.join(' · ')}${info.length ? ' · ' : ''}<span class="path-src">Ziele ${path.source.label}</span></p>
   </div>`;
+}
+
+// Stop-Check einer offenen Position gegen die normale Schwankung (nur wenn der Stop noch auf der Verlustseite liegt)
+function posNoise(p) {
+  if (p.stop == null || (p.side === 'long' ? p.stop >= p.entry : p.stop <= p.entry)) return '';
+  const tf = setupTf(), n = stopNoise(p.mark || p.entry, p.stop, atrFor(p.coin, tf));
+  if (!n || n.status === 'ok') return '';
+  return `<p class="warnline" style="margin:0;color:${n.status === 'bad' ? 'var(--bad)' : 'var(--warn)'}">Stop-Check (${tf.toUpperCase()}): ${n.text}. Sinnvoller: ${f.price(n.suggest.stop)}</p>`;
 }

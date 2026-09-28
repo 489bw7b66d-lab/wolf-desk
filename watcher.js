@@ -11,7 +11,9 @@ import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.
 import { getUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText, patienceText, cooldownText } from './core-alerts.js';
+import { cooldown } from './core-guard.js';
+import { evaluatePatience, patienceStats } from './core-patience.js';
 import { viewFor, alignment, viewEvents } from './core-views.js';
 import { planFor, signalFor, targetsFor, targetHits } from './core-plans.js';
 import { computeAutoPlan } from './core-autoplan.js';
@@ -35,7 +37,7 @@ async function send(text, chat = CHAT) {
 async function loadState() {
   let st = {};
   try { st = JSON.parse(await readFile(STATE_FILE, 'utf8')); } catch { /* erster Lauf */ }
-  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, tpHits: {}, autoPlans: {}, ...st };
+  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, tpHits: {}, autoPlans: {}, cooldown: null, patience: {}, ...st };
 }
 
 async function marketNames() {
@@ -134,6 +136,9 @@ async function publish(state) {
   await writeFile('signals.json', JSON.stringify({ signals: publicSignals(state.journal) }, null, 1));
 }
 
+// Ziele eines abgeschlossenen Trades für die Geduld-Auswertung: eigener Plan oder zugehöriges Signal
+const patTargets = (state) => (t) => targetsFor({ plan: planFor(CONFIG.plans, t.coin, t.side, t.openedAt), signal: signalFor(state.journal, t.coin, t.side, t.openedAt) });
+
 async function main() {
   if (!TOKEN) throw new Error('TELEGRAM_TOKEN fehlt (GitHub Secrets prüfen)');
   if (!CHAT) {
@@ -208,10 +213,24 @@ async function main() {
     state.journal.push(journalEntry(r, a, now, al));
     log('Signal gemeldet:', a.key, a.score);
   }
+  // Deine Trades der letzten 60 Tage (für Abkühlphase, Ziele und Geduld)
+  let myTrades = [];
+  if (WALLET) { try { myTrades = tradeHistory(await hl.fillsSince(WALLET, now - 60 * 864e5)); } catch (err) { log('Trades laden:', err.message); } }
+
+  // Abkühlphase nach Verlustserie → privat an dich (Beginn und Ende je einmal)
+  const cd = cooldown(myTrades, now);
+  if (cd.active && state.cooldown?.until !== cd.until) {
+    await send(cooldownText(cd, CONFIG.guard.cooldownHours));
+    state.cooldown = { until: cd.until, ended: false };
+  } else if (!cd.active && state.cooldown && !state.cooldown.ended && now >= state.cooldown.until) {
+    await send('✅ <b>Abkühlphase vorbei.</b> Wieder normales Risiko, weiterhin nur saubere Setups.');
+    state.cooldown.ended = true;
+  }
+
   // Ziele deiner offenen Positionen (eigener Plan oder zugehöriges Signal) → privat an dich
   if (risk?.positions?.length) {
     try {
-      const trades = tradeHistory(await hl.fillsSince(WALLET, now - 30 * 864e5));
+      const trades = myTrades;
       const n = CONFIG.exitPlan.filter((x) => /^TP\d/.test(x.label) && x.pct > 0).length;
       for (const p of risk.positions) {
         const t = openTradeFor(trades, p.coin);
@@ -254,7 +273,8 @@ async function main() {
   else if (now - state.lastReport >= every) {
     const period = state.journal.filter((e) => e.status === 'offen' || (e.doneAt || e.at) >= state.lastReport);
     const ownPeriod = (state.own || []).filter((t) => t.closedAt >= state.lastReport);
-    await send(reportText(period, `letzte ${CONFIG.alerts.reportDays || 7} Tage`) + executionText(executionStats(period, ownPeriod)));
+    const pat = await evaluatePatience(myTrades, { cache: state.patience, getTargets: patTargets(state), now }).catch(() => []);
+    await send(reportText(period, `letzte ${CONFIG.alerts.reportDays || 7} Tage`) + executionText(executionStats(period, ownPeriod)) + patienceText(patienceStats(pat)));
     state.lastReport = now;
   }
   Object.keys(state.lastDir).forEach((k) => { if (now - state.lastDir[k].at > 3 * 864e5) delete state.lastDir[k]; });
