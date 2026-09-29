@@ -45,6 +45,7 @@ jobs:
           TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
           WALLET: ${{ secrets.WALLET }}
+          PRIVATE_SETTINGS: ${{ secrets.PRIVATE_SETTINGS }}
           TEST_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}
 
       - uses: actions/cache/save@v5
