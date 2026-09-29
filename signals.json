@@ -1,6 +1,62 @@
 {
  "signals": [
   {
+   "coin": "CRV",
+   "dir": "long",
+   "style": "swing",
+   "score": 85,
+   "seal": true,
+   "at": 1790683820436,
+   "px": 0.39111,
+   "zone": [
+    0.3773212536045999,
+    0.39338
+   ],
+   "stop": 0.3371743876160995,
+   "tps": [
+    0.4335268659885003,
+    0.4817031051747007,
+    0.5298793443609011,
+    0.5780555835471015
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "MACD-Kreuzung aufwärts",
+    "Ausbruch aus Dreieck",
+    "EMA 21/55 Kreuzung aufwärts"
+   ]
+  },
+  {
+   "coin": "ETH",
+   "dir": "long",
+   "style": "intraday",
+   "score": 87,
+   "seal": true,
+   "at": 1790683820436,
+   "px": 2731.3,
+   "zone": [
+    2713.7747037984254,
+    2733.7
+   ],
+   "stop": 2663.96146329449,
+   "tps": [
+    2783.5132405039353,
+    2843.289129108658,
+    2903.0650177133807,
+    2962.8409063181034
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "EMA 8/21 Kreuzung aufwärts",
+    "MACD-Kreuzung aufwärts",
+    "Bruch Abwärts-Trendlinie"
+   ]
+  },
+  {
    "coin": "XLM",
    "dir": "long",
    "style": "swing",
