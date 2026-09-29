@@ -1,5 +1,6 @@
 // Holt Kerzen, analysiert alle Timeframes und baut das Signal zusammen.
 // Hintergrund-Abrufe (Live-Überwachung) laufen gedrosselt, damit das Hyperliquid-Limit nicht reißt.
+import { trendGate, gatePasses, gateText } from './core-trendgate.js';
 import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { INTERVAL_MS, closedCandles, analyzeTimeframe, scoreTimeframe, combineScores, decide, tradePlan, keyLevels } from './core-signals.js';
@@ -75,7 +76,7 @@ export function modeTfs(modeKey) {
 }
 
 // Signal aus fertigen Kerzenreihen (Reihenfolge wie modeTfs). Ohne Netzwerk, daher auch für den Backtest nutzbar.
-export function signalFromSeries(coin, modeKey, series, volume) {
+export function signalFromSeries(coin, modeKey, series, volume, opts = {}) {
   const mode = CONFIG.signals.modes[modeKey];
   const tfs = modeTfs(modeKey);
   mode.tfs.forEach((tf, i) => {
@@ -91,7 +92,12 @@ export function signalFromSeries(coin, modeKey, series, volume) {
   ['long', 'short'].forEach((d) => {
     if (dailyStrong.some((e) => e.dir === d)) total = { ...total, [d]: Math.min(100, total[d] + 10) };
   });
-  const dir = decide(total, CONFIG.signals);
+  let dir = decide(total, CONFIG.signals);
+  // Short-Filter nach Tagestrend (core-trendgate). opts.ignoreGate: Backtest rechnet alle Stufen selbst.
+  const gate = dir === 'short' ? trendGate(series[tfs.indexOf('1d')], daily) : null;
+  const level = opts.ignoreGate ? 'aus' : CONFIG.signals.shortFilter;
+  const blocked = dir === 'short' && !gatePasses(gate, level) ? { level, text: gateText(gate, level) } : null;
+  if (blocked) dir = 'neutral';
   const setup = analyses[1];
   const levels = keyLevels(analyses.slice(0, 2), setup.close);
   const plan = tradePlan(dir, setup, levels);
@@ -107,7 +113,7 @@ export function signalFromSeries(coin, modeKey, series, volume) {
   const candles = {};
   mode.tfs.forEach((tf, i) => { candles[tf] = series[i].slice(-120); });
   return {
-    coin, mode: modeKey, tfs: mode.tfs, analyses, daily, scores, total, dir, levels, events, waves, volume, candles, confirms,
+    coin, mode: modeKey, tfs: mode.tfs, analyses, daily, scores, total, dir, levels, events, waves, volume, candles, confirms, gate, blocked,
     plan: plan && { ...plan, warnings: [...plan.warnings, ...warnings] },
     warnings: plan ? [] : warnings, at: Date.now(), lastClose: Math.max(...series.slice(0, 3).map((c) => c.at(-1).T)),
   };
@@ -126,6 +132,7 @@ export function heat(r) {
 // Lohnt sich dieser Stil? Klare Richtung, übergeordneter Trend widerspricht nicht, TP1 deckt die Gebühren.
 export function styleCheck(r, modeCfg) {
   if (!r || r.error) return { ok: false, reason: r?.error || 'Keine Daten' };
+  if (r.blocked) return { ok: false, dir: 'neutral', reason: r.blocked.text };
   if (r.dir === 'neutral' || !r.plan) return { ok: false, dir: 'neutral', reason: 'Kein klares Signal' };
   const tp1Pct = (Math.abs(r.plan.tps[0] - r.plan.entry) / r.plan.entry) * 100;
   if (tp1Pct < modeCfg.minTp1Pct) {

@@ -112,6 +112,7 @@ export const CONFIG = {
     minScore: 65,              // Mindest-Score für ein Signal
     minGap: 20,                // Mindestabstand Long- zu Short-Score
     minDayVolumeUsd: 1000000,  // darunter: Warnung "geringe Liquidität"
+    shortFilter: 'aus',        // Shorts nur mit bärischem Tagestrend: 'aus' | 'mild' | 'mittel' | 'streng' (core-trendgate.js, Backtest vergleicht alle)
     // Live-Überwachung der Top-Coins nach Market Cap
     hot: {
       topN: 150,               // Top 150 nach Market Cap (CoinGecko)

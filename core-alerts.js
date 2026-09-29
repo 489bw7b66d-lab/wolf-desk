@@ -104,6 +104,7 @@ export function journalEntry(r, alert, now = Date.now(), view = null) {
     events: [...new Set((r.events || []).filter((e) => e.dir === r.dir).map((e) => eventName(e.name)))],
     seal: (r.confirms || []).some((c) => c.dir === r.dir),
     view, // 'mit' | 'gegen' | 'neutral' | null: passte das Signal zu deiner Einschätzung?
+    sf: CONFIG.signals.shortFilter || 'aus', // Versionsschnitt: mit welcher Short-Filter-Stufe gemeldet
   };
 }
 

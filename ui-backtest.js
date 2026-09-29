@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { getWatchlist, onWatchlist } from './core-watchlist.js';
 import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
 import { BT, loadHistory, runBacktest, summarize, compareTrail } from './core-backtest.js';
+import { compareGate, GATE_LABEL } from './core-trendgate.js';
 import { esc, dn, tipHead, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -60,6 +61,21 @@ function table(head, rows) {
   return `<div class="bt-table" role="table"><div class="bt-row head" role="row">${head.map((h) => `<span>${h}</span>`).join('')}</div>${rows.join('')}</div>`;
 }
 
+// Short-Filter: dieselben Signale, Shorts je Stufe nur mit bärischem Tagestrend
+function gateBlock(rows) {
+  const base = rows[0];
+  if (!base.shorts) return '';
+  const active = CONFIG.signals.shortFilter || 'aus';
+  // Empfehlung: beste Summe, aber mindestens ein Drittel der Shorts muss übrig bleiben
+  const fair = rows.filter((r) => r.key !== 'aus' && r.shorts >= base.shorts / 3 && r.total > base.total + 0.05);
+  const best = fair.sort((a, b) => b.total - a.total)[0];
+  return `${tipHead('Shorts nur mit bärischem Tagestrend?', 'Gleiche Signale, nur Shorts werden je Stufe weggelassen, wenn der Tagestrend nicht passt. Mild: Tageskurs unter EMA 200. Mittel: dazu Tageschart bärisch (tiefere Hochs/Tiefs oder EMA 8 < 21 < 55). Streng: dazu Retest der EMA 200 in den letzten 10 Tagen. Vereinfacht: freiwerdende Zeit für andere Trades ist nicht eingerechnet. Longs bleiben gleich.')}
+    ${table(['Stufe', 'Shorts', 'Ø Short', 'Summe'], rows.map((r) => `<div class="bt-row" role="row"><span><b>${r.key === 'aus' ? 'Ohne Filter' : r.key[0].toUpperCase() + r.key.slice(1)}</b>${r.key === active ? ' ✓' : ''}</span><span>${r.shorts}</span><span class="${cls(r.shortAvg)}">${r.shortAvg == null ? '–' : R(r.shortAvg)}</span><span class="${cls(r.total)}">${R(r.total, 1)}</span></div>`))}
+    <p class="bt-verdict ${best ? 'ok' : 'warn'}">${best
+      ? `Hier am besten: <b>${GATE_LABEL[best.key]}</b> (${R(best.total - base.total, 1)} gegenüber ohne Filter, ${best.shorts} von ${base.shorts} Shorts bleiben).`
+      : 'Keine Stufe verbessert das Ergebnis und lässt genug Shorts übrig.'} Einstellen unter ⚙️ → Signalgeber.</p>`;
+}
+
 // Dieselben Einstiege, zwei Ausstiegsregeln: Stufen laut Plan gegen Nachziehen nach Struktur
 function trailBlock(c) {
   if (!c) return '';
@@ -95,6 +111,7 @@ function renderResult() {
     </div>
     <h3 class="sub-h">Verlauf in R</h3>
     ${curve(sm.curve)}
+    ${gateBlock(compareGate(trades))}
     ${trailBlock(compareTrail(trades))}
     <h3 class="sub-h">Taugt ein höherer Score mehr?</h3>
     ${table(['Score', 'Trades', 'Gewinn', 'Ø R'], sm.byScore.map((b) => `<div class="bt-row" role="row"><span><b>${b.label}</b></span><span>${b.n}</span><span>${P(b.winRate)}</span><span class="${cls(b.avgR)}">${R(b.avgR)}</span></div>`))}

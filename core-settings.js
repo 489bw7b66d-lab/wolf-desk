@@ -56,6 +56,7 @@ export const FIELDS = [
   n('markt', 'market.breadthTop', 'Marktbreite: Top … Coins', 10, 150, 10),
   n('markt', 'market.breadthEma', 'Marktbreite: über EMA', 10, 200, 5),
 
+  { group: 'signal', path: 'signals.shortFilter', label: 'Shorts nur mit bärischem Tagestrend', type: 'choice', options: [['aus', 'Aus'], ['mild', 'Mild'], ['mittel', 'Mittel'], ['streng', 'Streng']], hint: 'Mild: unter EMA 200 · Mittel: + Abwärtsstruktur · Streng: + Retest. Welche Stufe passt, zeigt der Backtest.' },
   { group: 'signal', path: 'positions.autoStyle', label: 'Automatischer Plan für eigene Trades', type: 'choice', options: [['swing', 'Swing'], ['intraday', 'Daytrade']], hint: 'SL und Ziele für Positionen ohne Signal' },
 
   n('telegram', 'alerts.minScore', 'Signal melden ab Score', 50, 100, 1),

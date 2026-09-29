@@ -150,7 +150,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       return list.slice(Math.max(0, ptr[k] + 1 - BT.lookback), ptr[k] + 1);
     });
     let r;
-    try { r = signalFromSeries(coin, modeKey, slices); } catch { continue; }
+    try { r = signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
     const p = r.plan;
     if (!p) continue;
     const close = r.analyses[1].close;
@@ -167,6 +167,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       time: t, dir: p.dir, score: r.total[p.dir], method: p.method,
       events: [...new Set(r.events.filter((e) => e.dir === p.dir).map((e) => eventName(e.name)))],
       seal: (r.confirms || []).some((c) => c.dir === p.dir),
+      gate: r.gate ? { known: r.gate.known, mild: r.gate.mild, mittel: r.gate.mittel, streng: r.gate.streng } : null,
     };
     if (sim.filled) {
       // Dieselben Einstiege noch einmal mit „Nachziehen nach Struktur“ (Vergleich der Ausstiegsregel, 4d)
