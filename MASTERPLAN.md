@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 30.09.2026 · Etappe 5d · 456 Tests
+Stand: 30.09.2026 · Etappe 5e · 456 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -78,7 +78,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 ---
 
-## 5. Aufbau der App (94 Dateien, fast alle im Hauptordner)
+## 5. Aufbau der App (95 Dateien, fast alle im Hauptordner)
 
 **Einstellungen:** `config.js` (Empfehlungen) · `ledger-markets.js` (deine Ledger-Märkte, Standard für „Handelbare Märkte“) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
 
@@ -91,11 +91,11 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - Positionen: `core-path` (Trade-Weg), `core-plans` (Ziele je Position), `core-autoplan` (automatischer Plan)
 - Sonstiges: `core-backtest`, `core-settings`, `core-views` (Einschätzung), `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-format`
 
-**Anzeige (`ui-*.js`):** `ui-chart` (Zeichnung) + **`ui-chartview`** (Bedienung: wischen, zoomen, Fadenkreuz, eigene Linien), `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, **`ui-export`** (Datei „Daten für Claude“), `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
+**Anzeige (`ui-*.js`):** `ui-chart` (Zeichnung) + **`ui-chartview`** (Bedienung: wischen, zoomen, Fadenkreuz, eigene Linien), `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, **`ui-export`** (Datei „Daten für Claude“), **`ui-watchlist-edit`** (Watchlist in ⚙️), `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5d">` und eine Import-Map mit `?v=5d` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5e">` und eine Import-Map mit `?v=5e` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -280,6 +280,8 @@ Etappe 5b (Sicherheits-Korrektur): Liquidations-Näherung rechnet den Höchstheb
 Etappe 5c (Sicherheit & Handling, keine Änderung an der Signal-Berechnung): Stop-Check schlägt nie einen Stop hinter der Liquidation vor (sagt stattdessen: Hebel passt nicht, verkleinern/schließen) · Nachziehen nie hinter die Liquidation · kein Signal für Coins mit offener Position oder solange das letzte Signal des Coins noch läuft (App: Heiße Coins/Signalgeber, Wächter) · Regelverstöße auf der Startseite als kompakter Hinweis, Antippen öffnet die Liste, ohne Verstöße nichts · Backtest lässt dem iPhone alle 40 ms Luft (kein Einfrieren) · Export „📤 Daten für Claude“ (Einstellungen und Backtest): Markdown-Datei mit Einstellungen, Konto, Positionen samt Regel-Prüfung, eigenen Trades, Signalen und den letzten Backtests je Stil
 
 Etappe 5d (Datenschutz): Einschätzungen und Ziele je Position aus dem öffentlichen `my-settings.js` in das GitHub-Secret `PRIVATE_SETTINGS` verschoben (Knopf „🔒 Private Daten“, Wächter liest das Secret, Hinweis in ⚙️, falls die alte Datei noch private Daten enthält) · Datenschutz-Regeln im Masterplan
+
+Etappe 5e (Bedienung Signalgeber, Wunsch des Nutzers: „klobig“): im Signale-Tab nur noch ein Suchfeld (Coin eingeben, Enter), Analyse öffnet als Blatt von unten mit Kurzzeile (Score, empfohlener Hebel), Chart, Stil-Zeile und Trade-Karte-Knopf; alles Weitere unter „Details ▾“ eingeklappt · Stil-Knöpfe und Watchlist-Chips entfernt, immer „Auto“ · Watchlist wird unter ⚙️ gepflegt
 
 ---
 

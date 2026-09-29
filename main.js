@@ -175,13 +175,13 @@ const renderAll = (s) => {
   if (touching) return; 
   render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderWatchLive(s); renderFeedLive(s); renderMiniHealth(s);
 };
-const openFull = (r) => { location.hash = 'signale'; setTimeout(() => showDetail(r), 50); };
+const openFull = (r) => showDetail(r); // öffnet die Analyse als Blatt (5e)
 const openCalc = (r) => {
   setCalc(r.coin, r.plan.entry, r.plan.stop, r.plan.tps, r.mode);
   location.hash = 'risiko';
   setTimeout(() => document.getElementById('calc').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
 };
-const openAnalyze = (coin) => { location.hash = 'signale'; setTimeout(() => analyze(coin), 50); };
+const openAnalyze = (coin) => analyze(coin);
 initTrade(getState, openFull, openCalc);
 initCoin(getState, openAnalyze);
 initSignals(getState, openTrade, openCoin);

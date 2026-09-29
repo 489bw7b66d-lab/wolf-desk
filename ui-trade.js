@@ -194,6 +194,7 @@ export function initTrade(stateGetter, onFull, onCalc) {
   $('sheet').addEventListener('click', (e) => { if (e.target.classList.contains('sheet-backdrop')) closeTrade(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('sheet').hidden) closeTrade(); });
   $('sheet-body').addEventListener('click', async (e) => {
+    if ($('sig-view')) return; // Signalgeber-Blatt hat eigene Knöpfe (u. a. Stil-Zeile)
     const rb = e.target.closest('button[data-risk]');
     if (rb) { riskPct = Number(rb.dataset.risk); render(); return; }
     const rb2 = e.target.closest('button[data-lev-rec]');

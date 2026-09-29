@@ -592,3 +592,12 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .dlg p { margin: 8px 0; font-size: 14.5px; line-height: 1.4; }
 .dlg .bad { color: var(--bad); } .dlg .warn { color: var(--warn); } .dlg .ok { color: var(--ok); }
 .dlg-link { display: block; margin-top: 12px; color: var(--gold); font-weight: 700; text-decoration: none; }
+
+/* 5e: Signalgeber als Blatt */
+.sig-quick { margin: 4px 0 12px; font-size: 16px; font-weight: 600; color: var(--muted); }
+.sig-quick b { color: var(--text); } .sig-quick .gold { color: var(--gold); }
+.sig-more { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.sig-more > summary { list-style: none; cursor: pointer; font-size: 16px; font-weight: 800; color: var(--gold); padding: 6px 0; }
+.sig-more > summary::-webkit-details-marker { display: none; }
+.sig-more[open] > summary span { display: inline-block; transform: rotate(180deg); }
+.suggest .ci { margin-right: .45em; }

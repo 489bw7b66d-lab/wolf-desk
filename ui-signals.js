@@ -62,15 +62,26 @@ function wavesBlock(r) {
     <p class="empty" style="margin-top:6px">Mögliche Zählung nach den harten Elliott-Regeln, keine Gewissheit.</p>`;
 }
 
+// Analyse als Blatt von unten (5e), wie Trade-Karte und Markt-Blatt
+function openSheet(html) {
+  const body = $('sheet-body');
+  body.innerHTML = `<div id="sig-view">${html}</div>`;
+  $('sheet').hidden = false;
+  body.closest('.sheet-panel').scrollTop = 0;
+  return $('sig-view');
+}
+
 export function showDetail(r) {
   const hasPos = (getState?.()?.account?.positions || []).some((x) => x.coin === r.coin);
   shown = r;
   const lv = r.levels, p = r.plan;
-  $('sig-detail').innerHTML = `<div class="sig-head">
-      <div><div class="coin" style="font-size:22px">${coinIcon(r.coin, 26)}${esc(dn(r.coin))}</div>
+  const lev = p ? levHint(r) : '';
+  const view = openSheet(`<div class="sheet-head">
+      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${coinIcon(r.coin, 28)}${esc(dn(r.coin))}</h2>
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · letzte Kerze ${new Date(r.lastClose).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span></div>
       ${badge(r.dir)}
     </div>
+    ${p ? `<p class="sig-quick">Score <b>${r.total[r.dir]}</b>${lev ? ` · <b class="gold">${esc(lev)}</b>` : ''}</p>` : ''}
     ${seal(r)}
     ${r.candles ? `<div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${r.tfs.filter((t) => r.candles[t]).map((t) => `<button type="button" data-stf="${t}" aria-pressed="${t === sigTfFor(r)}">${TFL[t]}</button>`).join('')}</div>
     <div id="sig-chart" class="chart-box"></div>
@@ -78,6 +89,7 @@ export function showDetail(r) {
     ${styleRow(r, CONFIG.signals.modes)}
     ${hasPos ? `<p class="sig-note">Position in ${esc(dn(r.coin))} ist schon offen. Kein neues Signal (Ledger: eine Position pro Coin).</p>`
       : p ? `<button type="button" class="wide" id="sig-trade" style="margin:6px 0 16px">Trade-Karte öffnen</button>` : ''}
+    <details class="sig-more"><summary>Details <span aria-hidden="true">▾</span></summary>
     ${scoreBars(r.total)}
     ${mtfTable(r)}
     ${eventsBlock(r)}
@@ -92,23 +104,19 @@ export function showDetail(r) {
       <div><span class="k">Widerstände</span>${lv.resistance.map((x) => `<span class="v small">${f.price(x)}</span>`).join('') || '–'}</div>
       <div><span class="k">Unterstützungen</span>${lv.support.map((x) => `<span class="v small">${f.price(x)}</span>`).join('') || '–'}</div>
     </div>
-    <p class="empty" style="margin-top:14px">Regelbasierte Auswertung abgeschlossener Kerzen, keine Anlageberatung.</p>`;
+    <p class="empty" style="margin-top:14px">Regelbasierte Auswertung abgeschlossener Kerzen, keine Anlageberatung.</p>
+    </details>`);
   drawSigChart(r);
-  $('sig-detail').querySelectorAll('button[data-stf]').forEach((b) => b.addEventListener('click', () => {
+  view.querySelectorAll('button[data-stf]').forEach((b) => b.addEventListener('click', () => {
     sigTf = b.dataset.stf;
-    $('sig-detail').querySelectorAll('button[data-stf]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.stf === sigTf)));
+    view.querySelectorAll('button[data-stf]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.stf === sigTf)));
     drawSigChart(r);
   }));
   $('sig-trade')?.addEventListener('click', () => onTrade(r));
-  $('sig-detail').querySelectorAll('button[data-style]').forEach((b) => b.addEventListener('click', () => {
+  view.querySelectorAll('button[data-style]').forEach((b) => b.addEventListener('click', () => {
     const next = switchStyle(r, b.dataset.style);
     if (next) showDetail(next);
   }));
-  // Bei Einzel-Stil-Ergebnissen die Modus-Auswahl anpassen (Auto bleibt Auto)
-  if (!r.styles) {
-    mode = r.mode;
-    $('sig-modes').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.m === mode)));
-  }
   $('sig-search').value = r.coin;
 }
 
@@ -133,14 +141,15 @@ export async function analyze(coin) {
   if (!coin) return;
   $('sig-suggest').innerHTML = '';
   $('sig-search').value = coin;
-  $('sig-detail').innerHTML = `<p class="empty">Analysiere ${esc(dn(coin))} ${mode === 'auto' ? 'in allen drei Stilen' : '(' + CONFIG.signals.modes[mode].tfs.map((t) => TFL[t]).join(', ') + ')'} …</p>`;
+  $('sig-search').blur(); // Tastatur zu
+  openSheet(`<div class="sheet-head"><div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${coinIcon(coin, 28)}${esc(dn(coin))}</h2><span class="meta">Analysiere alle drei Stile …</span></div></div><p class="empty">Einen Moment, die Kerzen werden geladen.</p>`);
   try {
     const r = await run(coin);
     results.set(mode + '|' + coin, r);
-    showDetail(r);
+    if ($('sig-view')) showDetail(r); // Blatt inzwischen geschlossen? Dann nicht wieder öffnen
     renderList();
   } catch (e) {
-    $('sig-detail').innerHTML = `<p class="empty" style="color:var(--bad)">Analyse fehlgeschlagen: ${esc(e.message)}</p>`;
+    if ($('sig-view')) $('sig-view').innerHTML += `<p class="empty" style="color:var(--bad)">Analyse fehlgeschlagen: ${esc(e.message)}</p>`;
   }
 }
 
@@ -151,15 +160,14 @@ function renderSuggest() {
   if (!q) { $('sig-suggest').innerHTML = ''; return; }
   const hits = allMarkets().filter((n) => n.toUpperCase().includes(q))
     .sort((a, b) => (a.toUpperCase().replace(/^XYZ:/, '').startsWith(q) ? 0 : 1) - (b.toUpperCase().replace(/^XYZ:/, '').startsWith(q) ? 0 : 1)).slice(0, 8);
-  const wl = getWatchlist();
   $('sig-suggest').innerHTML = hits.length
-    ? hits.map((n) => `<div class="suggest-row"><button type="button" class="suggest" data-coin="${esc(n)}">${esc(n)}</button>
-        ${wl.includes(n) ? '<span class="meta">auf Watchlist</span>' : `<button type="button" class="add-btn" data-add="${esc(n)}" aria-label="${esc(n)} zur Watchlist">＋</button>`}</div>`).join('')
+    ? hits.map((n) => `<div class="suggest-row"><button type="button" class="suggest" data-coin="${esc(n)}">${coinIcon(n)}${esc(dn(n))}${n.includes(':') ? ` <small class="muted">${esc(n.split(':')[0])}</small>` : ''}</button></div>`).join('')
     : '<p class="empty">Kein Markt gefunden.</p>';
 }
 
 let editing = false;
 function renderQuick() {
+  if (!$('sig-quick')) return; // seit 5e ohne Schnellwahl (Watchlist wird unter ⚙️ gepflegt)
   const wl = getWatchlist();
   $('sig-quick').innerHTML = wl.map((c) => `<button type="button" class="chip-btn${editing ? ' edit' : ''}" data-coin="${esc(c)}" ${editing ? `aria-label="${esc(c)} entfernen"` : ''}>${esc(c.replace(/^xyz:/, ''))}${editing ? ' ✕' : ''}</button>`).join('')
     + `<button type="button" class="chip-btn ghost-chip" id="wl-edit">${editing ? 'Fertig' : 'Bearbeiten'}</button>`;
@@ -229,37 +237,25 @@ export function autoScan() {
 export function initSignals(stateGetter, openTrade, openCoin) {
   getState = stateGetter;
   onTrade = openTrade; onCoin = openCoin;
-  const modes = CONFIG.signals.modes;
-  $('sig-modes').innerHTML = `<button type="button" data-m="auto" aria-pressed="${mode === 'auto'}">Auto<small>bester Stil</small></button>`
-    + Object.entries(modes).map(([k, m]) => `<button type="button" data-m="${k}" aria-pressed="${k === mode}">${m.label}<small>${m.tfs.map((t) => TFL[t]).join(' · ')}</small></button>`).join('');
-  $('sig-modes').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-m]');
-    if (!b) return;
-    mode = b.dataset.m;
-    $('sig-modes').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.m === mode)));
-    renderList();
-    const coin = shown?.coin;
-    if (coin) { const r = results.get(mode + '|' + coin); if (r) showDetail(r); else analyze(coin); }
-  });
+  // 5e: immer „Auto“ (bester Stil); umschalten geht in der Analyse über die Stil-Zeile
   $('sig-search').addEventListener('input', renderSuggest);
   $('sig-search').addEventListener('focus', () => { $('sig-search').select(); });
   $('sig-search').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); const first = $('sig-suggest').querySelector('button[data-coin]'); if (first) analyze(first.dataset.coin); }
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    // Enter: genauer Treffer zuerst, sonst der erste Vorschlag
+    const q = $('sig-search').value.trim().toUpperCase();
+    const exact = allMarkets().find((n) => n.toUpperCase() === q || n.toUpperCase().replace(/^[A-Z]+:/, '') === q || n.toUpperCase().replace(/^K(?=[A-Z])/, '') === q);
+    const first = $('sig-suggest').querySelector('button[data-coin]');
+    if (exact) analyze(exact); else if (first) analyze(first.dataset.coin);
   });
   $('sig-suggest').addEventListener('click', (e) => {
-    const add = e.target.closest('button[data-add]');
-    if (add) {
-      const err = addToWatchlist(add.dataset.add);
-      $('wl-hint').textContent = err || `${add.dataset.add} zur Watchlist hinzugefügt.`;
-      renderSuggest();
-      return;
-    }
     const b = e.target.closest('button[data-coin]');
     if (b) analyze(b.dataset.coin);
   });
   renderQuick();
   onWatchlist(() => { renderQuick(); renderList(); });
-  $('sig-quick').addEventListener('click', (e) => {
+  $('sig-quick')?.addEventListener('click', (e) => {
     if (e.target.closest('#wl-edit')) { editing = !editing; renderQuick(); renderSuggest(); return; }
     const b = e.target.closest('button[data-coin]');
     if (!b) return;

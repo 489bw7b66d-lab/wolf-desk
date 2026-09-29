@@ -5,6 +5,7 @@ import { getPlans } from './core-plans.js';
 import { getWatchlist } from './core-watchlist.js';
 import { getTradeable } from './core-tradeable.js';
 import { tradeableBlock, bindTradeable } from './ui-tradeable.js';
+import { watchlistBlock, bindWatchlist } from './ui-watchlist-edit.js';
 import { shareReport } from './ui-export.js';
 import { MY_SETTINGS } from './config.js';
 import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile, listsForExport, privatePart, publicLeak } from './core-settings.js';
@@ -67,6 +68,7 @@ export function renderSettings() {
         ${sum != null ? `<p class="set-sum ${sum === 100 ? 'long' : 'short'}">Summe: ${sum} %</p>` : ''}
       </details>`;
     }).join('')}
+    ${watchlistBlock(open.has('watchlist'))}
     ${tradeableBlock(open.has('tradeable'))}
     ${errs.length ? `<div class="set-errors" role="alert">${errs.map((e) => `<p>${esc(e.text)}</p>`).join('')}</div>` : ''}
     <div class="set-actions">
@@ -123,6 +125,7 @@ async function exportFile() {
 export function initSettings(getState = () => ({})) {
   const box = $('settings');
   bindTradeable(box, () => Object.values(getState().markets || {}).flat());
+  bindWatchlist(box, () => Object.values(getState().markets || {}).flat());
   box.addEventListener('click', (e) => { if (e.target.id === 'set-claude') shareReport(getState); });
   box.addEventListener('click', (e) => { if (e.target.id === 'set-private') copyPrivate(); });
   // Zahl eingegeben: erst beim Verlassen des Feldes übernehmen (sonst springt der Cursor)
