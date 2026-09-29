@@ -103,9 +103,9 @@
     0.4978460878204103,
     0.5397660878204104
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "tp1",
+   "r": 0.7704978562708064,
+   "doneAt": 1790704799999,
    "events": [
     "MACD-Kreuzung aufwärts",
     "Ausbruch aus Dreieck",
