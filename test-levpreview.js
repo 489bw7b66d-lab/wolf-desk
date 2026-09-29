@@ -1,3 +1,4 @@
+import { approxLiqDistPct, maxLeverageForStop } from './core-risk.js';
 import { recommendedFor, levTagText } from './core-levpreview.js';
 import { levPreview } from './core-levpreview.js';
 
@@ -46,4 +47,15 @@ export const tests = [
   }],
   ['Empfohlener Hebel: ohne Konto nur Höchsthebel', () => { const r = recommendedFor({ entry: 100, stop: 90 }, { riskPct: 2, cap: 20, bufferPct: 1 }); return r.lev === null && r.maxLev === 8 && levTagText(r).includes('max. 8×'); }],
   ['Empfohlener Hebel: Kapital zu knapp wird gesagt', () => { const r = recommendedFor({ entry: 100, stop: 99.5 }, { equity: 10000, available: 50, riskPct: 5, cap: 3, bufferPct: 1 }); return r.lev === null && r.need > 3 && levTagText(r).includes('reicht nicht'); }],
+  ['Liquidation: Höchsthebel des Marktes zählt (ALGO max. 5×)', () => {
+    // Wartungs-Margin = halbe Anfangs-Margin beim Höchsthebel: 5× bei max. 5× → ~10 % statt ~18 %
+    return Math.abs(approxLiqDistPct(5, 5) - 10) < 1e-9 && Math.abs(approxLiqDistPct(5, 50) - 18) < 1e-9 && approxLiqDistPct(5) === 18;
+  }],
+  ['Höchsthebel für Stop: ALGO-Fall (Stop 13,2 %) wäre nur bis 4× sicher, nicht 6×', () => maxLeverageForStop(13.16, 1, 20, 5) === 4 && maxLeverageForStop(13.16, 1, 20) === 6],
+  ['Hebel-Vorschau: bei niedrigem Höchsthebel rückt die Liq vor den Stop', () => {
+    const P = { dir: 'long', entry: 0.13439, stop: 0.11671, tps: [0.14, 0.15] };
+    const a = levPreview(P, 5, { bufferPct: 1, exchangeMax: 5 }), b = levPreview(P, 5, { bufferPct: 1 });
+    return a.status === 'bad' && a.buffer < 0 && b.status === 'ok';
+  }],
+  ['Empfohlener Hebel beachtet den Höchsthebel des Marktes', () => recommendedFor({ entry: 100, stop: 87 }, { riskPct: 2, cap: 20, bufferPct: 1, exchangeMax: 5 }).maxLev === 4],
 ];

@@ -148,7 +148,7 @@ export function updateLevOut(root, lev, ctx, onMargin) {
 // Vorschau unter dem Hebel-Regler: Preis-Balken Liq · SL · Einstieg · Ziele und Margin-Anteil am freien Kapital.
 // Schiebst du den Hebel hoch, wandert der Liq-Strich Richtung Stop, der Puffer dazwischen färbt sich grün → gelb → rot.
 export function levPreviewHtml(lev, margin, ctx) {
-  const pv = levPreview(ctx.plan, lev, { bufferPct: ctx.bufferPct, margin, available: ctx.available, budgetPct: ctx.budgetPct });
+  const pv = levPreview(ctx.plan, lev, { bufferPct: ctx.bufferPct, margin, available: ctx.available, budgetPct: ctx.budgetPct, exchangeMax: ctx.exchangeMax });
   if (!pv) return '';
   const pct = (x) => (x * 100).toFixed(1);
   const edge = (x) => (x.at < 0.06 ? ' first' : x.at > 0.94 ? ' last' : '');

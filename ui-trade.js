@@ -27,8 +27,8 @@ function calc() {
   const styleMax = CONFIG.signals.modes[current.mode]?.maxLeverage ?? CONFIG.rules.maxLeverage;
   const exchangeMax = s.maxLev?.[current.coin] || null;
   const cap = Math.min(CONFIG.rules.maxLeverage, styleMax, exchangeMax || Infinity);
-  const maxLev = maxLeverageForStop(p.stopDistPct, CONFIG.rules.liqBufferPct, cap);
-  const liqMax = maxLeverageForStop(p.stopDistPct, CONFIG.rules.liqBufferPct, 200);
+  const maxLev = maxLeverageForStop(p.stopDistPct, CONFIG.rules.liqBufferPct, cap, exchangeMax);
+  const liqMax = maxLeverageForStop(p.stopDistPct, CONFIG.rules.liqBufferPct, 200, exchangeMax);
   const rec = size ? recommendLeverage(size.notional, sum.available, maxLev, CONFIG.rules.marginBudgetPct) : null;
   const lev = manualLev ?? rec?.lev ?? null;
   const margin = size && lev ? size.notional / lev : null;

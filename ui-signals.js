@@ -118,7 +118,7 @@ function levHint(r) {
   const sum = s.account ? accountSummary(s.account, CONFIG.accountMode) : null;
   const styleMax = CONFIG.signals.modes[r.mode]?.maxLeverage ?? CONFIG.rules.maxLeverage;
   const cap = Math.min(CONFIG.rules.maxLeverage, styleMax, s.maxLev?.[r.coin] || Infinity);
-  return levTagText(recommendedFor(r.plan, { equity: sum?.equity, available: sum?.available, riskPct: CONFIG.rules.riskSteps?.[0] ?? 2, cap, bufferPct: CONFIG.rules.liqBufferPct, budgetPct: CONFIG.rules.marginBudgetPct }));
+  return levTagText(recommendedFor(r.plan, { equity: sum?.equity, available: sum?.available, riskPct: CONFIG.rules.riskSteps?.[0] ?? 2, cap, bufferPct: CONFIG.rules.liqBufferPct, budgetPct: CONFIG.rules.marginBudgetPct, exchangeMax: s.maxLev?.[r.coin] || null }));
 }
 function drawSigChart(r) {
   const box = $('sig-chart'), tf = sigTfFor(r);

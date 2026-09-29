@@ -61,7 +61,7 @@ function renderCalc() {
   const exchangeMax = s.maxLev?.[$('calc-coin').value] || null;
   const styleMax = mode?.maxLeverage ?? null;
   const cap = Math.min(CONFIG.rules.maxLeverage, styleMax ?? Infinity, exchangeMax ?? Infinity);
-  const maxLev = maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, cap);
+  const maxLev = maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, cap, exchangeMax);
   const rec = recommendLeverage(res.notional, r.summary.available, maxLev, CONFIG.rules.marginBudgetPct);
   const levIn = calcLev;
   const lev = levIn || rec?.lev || null;
@@ -77,7 +77,7 @@ function renderCalc() {
   const noise = stopNoise(entry, stop, atrV);
   const imp = noise?.suggest ? suggestImpact(equity, riskPct, entry, stop, noise.suggest.stop) : null;
   const cd = cooldown(tradeHistory(s.fills));
-  calcCtx = { notional: res.notional, available: r.summary.available, liqMax: maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, 200), exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct,
+  calcCtx = { notional: res.notional, available: r.summary.available, liqMax: maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, 200, exchangeMax), exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct,
     plan: { dir, entry, stop, tps }, bufferPct: CONFIG.rules.liqBufferPct,
     note: `Der Hebel ändert nur die Margin, nicht Positionsgröße und Risiko. Empfehlung: so niedrig wie möglich, Margin höchstens ${CONFIG.rules.marginBudgetPct} % vom verfügbaren Kapital (${f.usd(r.summary.available)}). Höchsthebel: Liquidation mind. ${String(CONFIG.rules.liqBufferPct).replace('.', ',')} % hinter dem Stop${mode ? `, ${mode.label} max. ${mode.maxLeverage}×` : ''}${exchangeMax ? `, Hyperliquid max. ${exchangeMax}×` : ''}. Der Balken zeigt, wo die Liquidation bei diesem Hebel ungefähr liegt.` };
 

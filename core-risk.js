@@ -71,13 +71,23 @@ export function positionRisk(p, mark, stop) {
 const fmt1 = (v) => v.toFixed(1).replace('.', ',');
 
 // Ungefährer Abstand Einstieg → Liquidation bei isoliertem Hebel (in %).
-// 90 statt 100, weil die Wartungs-Margin die Liquidation etwas näher rückt.
-export const approxLiqDistPct = (leverage) => (leverage > 0 ? 90 / leverage : null);
+// Hyperliquid verlangt als Wartungs-Margin die Hälfte der Anfangs-Margin beim Höchsthebel des Marktes:
+//   Abstand ≈ 100 / Hebel − 50 / Höchsthebel   (ALGO max. 5×: bei 5× nur ~10 % statt ~18 %)
+// Ohne bekannten Höchsthebel wie bisher 90 / Hebel. Es gilt immer der vorsichtigere (kleinere) Wert. (Korrektur 5b)
+export function approxLiqDistPct(leverage, exchangeMax = null) {
+  if (!(leverage > 0)) return null;
+  const base = 90 / leverage;
+  if (!(exchangeMax > 0)) return base;
+  return Math.max(0.1, Math.min(base, 100 / leverage - 50 / exchangeMax));
+}
 
-// Höchster Hebel, bei dem die Liquidation noch hinter dem Stop plus Puffer liegt.
-export function maxLeverageForStop(stopDistPct, bufferPct, maxLeverage) { // maxLeverage = Regel- bzw. Stil-Obergrenze
+// Höchster Hebel, bei dem die Liquidation noch hinter dem Stop plus Puffer liegt (mit Höchsthebel des Marktes, s. oben).
+export function maxLeverageForStop(stopDistPct, bufferPct, maxLeverage, exchangeMax = null) { // maxLeverage = Regel- bzw. Stil-Obergrenze
   if (!(stopDistPct > 0)) return null;
-  return Math.max(1, Math.min(maxLeverage, Math.floor(90 / (stopDistPct + bufferPct))));
+  const need = stopDistPct + bufferPct;
+  let lev = 90 / need;
+  if (exchangeMax > 0) lev = Math.min(lev, 100 / (need + 50 / exchangeMax));
+  return Math.max(1, Math.min(maxLeverage, Math.floor(lev)));
 }
 
 // Liquidations-Prüfung, an den Hebel angepasst:

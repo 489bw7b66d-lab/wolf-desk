@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 29.09.2026 · Etappe 5a · 440 Tests
+Stand: 29.09.2026 · Etappe 5b · 444 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -11,6 +11,8 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das R
 
 **Wolf Desk** ist eine Trading-App (PWA) für Hyperliquid-Perpetuals, gebaut komplett vom iPhone aus. Gehandelt wird über **Ledger**.
 Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, warnen und erinnern. Geschlossen wird **manuell**.
+
+**Grenzen von Ledger-Perpetuals (wichtig für alle Vorschläge):** kein Margin-Nachschießen und nur **eine Position pro Coin**. Die App darf nie „Margin nachschießen“ oder „zweite Position“ vorschlagen. Was beim Einstieg festgelegt ist (Hebel, Margin), bleibt; umso wichtiger ist die Rechnung vorher.
 
 - **App:** Marktüberblick, Konto, Positionen mit Trade-Weg, Risiko-Regeln, Signalgeber, Trade-Karten mit Hebel-Vorschau, Backtest, Statistik, Kosten, Geduld
 - **Telegram-Wächter:** läuft alle 15 Minuten bei GitHub, Signale in den Kanal, alles Persönliche privat
@@ -83,7 +85,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5a">` und eine Import-Map mit `?v=5a` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5b">` und eine Import-Map mit `?v=5b` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -101,7 +103,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - **SL nachziehen (Struktur, 4d):** frühestens ab TP1 · nur bestätigte Swing-Tiefs/-Hochs der Setup-Zeitebene (2 Kerzen links/rechts, abgeschlossen, nach Eröffnung) · Puffer ½ ATR · nur in Gewinnrichtung · spätestens ab TP2 Einstieg + Gebühren (2 × Taker) · Telegram erneut erst ab 0,5 % Verbesserung
 - **Gewinn gesamt (4d):** aus Hyperliquids Gesamt-PnL (Ein-/Auszahlungen herausgerechnet), Prozent auf die Netto-Einzahlungen; Startkapital nur noch Notlösung, solange der Verlauf nicht geladen ist
 - **Short-Filter (5a):** `signals.shortFilter` = aus · mild (Tageskurs unter EMA 200) · mittel (+ tiefere Hochs/Tiefs oder EMA 8<21<55 im Tageschart) · streng (+ Retest der EMA 200 in 10 Tagen). Standard **aus**, bis der Backtest die Stufe bestimmt. Gilt für App, Wächter (über my-settings.js) und alle Stile; Tagebuch speichert die Stufe je Signal (`sf`)
-- **Hebel-Vorschau:** Liquidation ≈ 90 % / Hebel vom Einstieg (wie im Risiko-Kern); Achse links bis 2× Stop-Abstand, weiter weg steht „← Liq“ am Rand
+- **Hebel-Vorschau / Liquidation (5b):** Abstand ≈ min(90 / Hebel, 100 / Hebel − 50 / Höchsthebel des Marktes); Hyperliquids Wartungs-Margin ist die Hälfte der Anfangs-Margin beim Höchsthebel. Beispiel ALGO (max. 5×): bei 5× nur ~10 % statt ~18 %; Achse links bis 2× Stop-Abstand, weiter weg steht „← Liq“ am Rand
 - **Indikatoren:** EMA 8/21/55/200 · RSI 14 · ATR 14 · MACD 12/26/9
 
 ---
@@ -262,11 +264,13 @@ Etappe 5a (Signale schärfen, Schritt 1): Short-Filter nach Tagestrend in drei S
 - Daytrade 45 Tage: 1.729 Trades, +0,03R/Trade, PF 1,05 · Long +0,18R (1.229, 49 %) · Short −0,35R (500, 30 %) · Score 85+ −0,01R · Nachziehen Plan +46,4R / Struktur +52,7R
 - Stabil in beiden: Shorts und bärische Ereignisse schwach. Nicht stabil: Umkehr-Kerzen (Swing gut, Daytrade schlecht). Markt-Tabellen wegen 5–13 Trades je Markt nicht zum Filtern nutzen.
 
+Etappe 5b (Sicherheits-Korrektur): Liquidations-Näherung rechnet den Höchsthebel des Marktes ein (vorher bei Coins mit max. 3×/5× zu optimistisch; Anlass: ALGO-Trade mit Liquidation vor dem Stop) · gilt für Trade-Karte, Rechner, Hebel-Vorschau und Signalgeber-Empfehlung
+
 ---
 
 ## 10. Offene Aufgaben (nächste Pakete)
 
-**Nächste Signal-Schritte (je ein Schritt, vorher Backtest gegen die Ausgangslage):** Short-Filter-Stufe nach Backtest festlegen · danach Konfluenz-Stufen/Score überarbeiten (Score trennt aktuell nicht) · Retest-Siegel überdenken (fast jedes Signal hat es)
+**Nächste Signal-Schritte (je ein Schritt, vorher Backtest gegen die Ausgangslage):** Short-Filter-Stufe nach Backtest festlegen · **Korrektur-Filter für Longs** (Anlass ALGO 29.09.: Long-Signal Score 89 genau ins Strong High/Order Block 1D bei RSI 82 und NW ▼): Kurs am oberen Nadaraya-Band (ohne Repainting) + bärischer Order Block/Strong High im Tageschart (≤ 1 ATR) + RSI 1D ≥ 80; im Backtest Varianten vergleichen (nur RSI · NW+SMC · alles), Nutzer-Idee: Mehrheit der Faktoren · weitere Kandidaten: MACD-Divergenz, Abstand zur EMA 21 in ATR, positives Funding · danach Konfluenz-Stufen/Score überarbeiten (Score trennt aktuell nicht) · Retest-Siegel überdenken (fast jedes Signal hat es)
 
 **Nächstes Politur-Paket (wenn sich Wünsche gesammelt haben):** kleine Haken beim Handling, optische Aufhübschung. **Keine neuen Indikatoren oder Infos** (Wunsch des Nutzers: „da ist wirklich alles drin“).
 - Lightweight Charts wurde bewusst nicht genommen: Claude hat beim Bauen kein Internet und könnte die Bibliothek nicht testen; die eigene Umsetzung ist voll getestet.

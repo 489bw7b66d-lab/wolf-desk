@@ -9,7 +9,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 // margin/available/budgetPct: für den Anteil am freien Kapital.
 // Achse wie beim Trade-Weg: Verlustseite links, Gewinnseite rechts (auch bei Shorts).
 // Links reicht die Achse bis zum doppelten Stop-Abstand: Liegt die Liquidation weiter weg, steht sie am Rand (pinned).
-export function levPreview({ dir, entry, stop, tps = [] }, lev, { bufferPct = 1, margin = null, available = null, budgetPct = 50 } = {}) {
+export function levPreview({ dir, entry, stop, tps = [] }, lev, { bufferPct = 1, margin = null, available = null, budgetPct = 50, exchangeMax = null } = {}) {
   if (!(entry > 0) || !(stop > 0) || !(lev >= 1) || stop === entry) return null;
   const long = dir === 'long';
   const dist = (p) => ((long ? p - entry : entry - p) / entry) * 100; // + = Gewinnseite, − = Verlustseite
@@ -21,7 +21,7 @@ export function levPreview({ dir, entry, stop, tps = [] }, lev, { bufferPct = 1,
   const total = lossSpan + gainSpan;
   const at = (d) => clamp01((d + lossSpan) / total);
 
-  const liqDist = approxLiqDistPct(lev);
+  const liqDist = approxLiqDistPct(lev, exchangeMax);
   const liqPrice = long ? entry * (1 - liqDist / 100) : entry * (1 + liqDist / 100);
   const pinned = liqDist >= lossSpan;
   const buffer = liqDist - stopDist; // % vom Einstieg zwischen Stop und Liquidation (negativ = Liquidation vor dem Stop)
@@ -49,10 +49,10 @@ export function levPreview({ dir, entry, stop, tps = [] }, lev, { bufferPct = 1,
 
 // Empfohlener Hebel für einen Plan (Signalgeber-Chart): gleiche Regeln wie Trade-Karte und Rechner.
 // Ohne Kontodaten nur der Höchsthebel, bei dem die Liquidation noch hinter dem Stop liegt.
-export function recommendedFor(plan, { equity = null, available = null, riskPct, cap, bufferPct = 1, budgetPct = 50 } = {}) {
+export function recommendedFor(plan, { equity = null, available = null, riskPct, cap, bufferPct = 1, budgetPct = 50, exchangeMax = null } = {}) {
   if (!plan || !(plan.entry > 0) || !(plan.stop > 0) || plan.entry === plan.stop) return null;
   const stopDistPct = (Math.abs(plan.entry - plan.stop) / plan.entry) * 100;
-  const maxLev = maxLeverageForStop(stopDistPct, bufferPct, cap);
+  const maxLev = maxLeverageForStop(stopDistPct, bufferPct, cap, exchangeMax);
   const size = positionSize(equity, riskPct, plan.entry, plan.stop);
   const rec = size ? recommendLeverage(size.notional, available, maxLev, budgetPct) : null;
   return { lev: rec?.lev ?? null, need: rec?.need ?? null, maxLev, riskPct, account: !!size };
