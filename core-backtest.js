@@ -139,10 +139,12 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
   let busyUntil = 0, done = 0;
   const steps = setup.filter((c) => c.T >= from);
 
+  let breath = Date.now();
   for (const bar of steps) {
     if (shouldStop?.()) break;
     done++;
-    if (done % 25 === 0) { onProgress?.(done / steps.length); await sleep(0); }
+    // Spätestens alle 40 ms dem iPhone Luft lassen (Anzeige, Tippen), sonst wirkt die App kurz eingefroren (5c)
+    if (Date.now() - breath > 40) { onProgress?.(done / steps.length); await sleep(0); breath = Date.now(); }
     if (bar.T < busyUntil) continue;
     const t = bar.T;
     const slices = series.map((list, k) => {

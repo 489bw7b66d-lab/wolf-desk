@@ -13,7 +13,7 @@ import { setupTf } from './core-guard.js';
 
 export const TRAIL = { bufferAtr: 0.5, pivotSide: 2, minGapPct: 0.3, minMovePct: 0.1 };
 
-export function trailStop({ side, entry, stop = null, mark, hits = 0, candles = null, atrValue = null, openedAt = 0, feePct = 0.045, cfg = TRAIL }) {
+export function trailStop({ side, entry, stop = null, mark, hits = 0, candles = null, atrValue = null, openedAt = 0, feePct = 0.045, cfg = TRAIL, liq = null }) {
   if (!(hits >= 1) || !(entry > 0) || !(mark > 0)) return null;
   const sg = side === 'long' ? 1 : -1;
   let best = null;
@@ -37,6 +37,8 @@ export function trailStop({ side, entry, stop = null, mark, hits = 0, candles = 
     if (!best || (be - best.stop) * sg > 0) best = { stop: be, kind: 'einstieg' };
   }
   if (!best) return null;
+  // Nie einen Stop vorschlagen, der hinter der Liquidation liegt (würde nie greifen)
+  if (liq > 0 && (best.stop - liq) * sg <= 0) return null;
   // Stop muss mit etwas Abstand hinter dem Kurs liegen, sonst wäre er sofort ausgelöst
   if ((mark * (1 - sg * cfg.minGapPct / 100) - best.stop) * sg <= 0) return null;
   // 4. nur, wenn es deinen Stop spürbar verbessert
@@ -76,6 +78,6 @@ export function trailForPosition(p, hits, openedAt, style, loader, fee = 0.045) 
   const tf = setupTf(style);
   // Ohne Kerzen (noch nicht geladen) gibt es nur das Sicherheitsnetz ab TP2
   const c = trailCandles(p.coin, tf, loader);
-  const tr = trailStop({ side: p.side, entry: p.entry, stop: p.stop, mark: p.mark, hits, candles: c?.candles || null, atrValue: c?.atr || null, openedAt: openedAt || 0, feePct: fee });
+  const tr = trailStop({ side: p.side, entry: p.entry, stop: p.stop, mark: p.mark, hits, candles: c?.candles || null, atrValue: c?.atr || null, openedAt: openedAt || 0, feePct: fee, liq: p.liq });
   return tr && { ...tr, tf };
 }

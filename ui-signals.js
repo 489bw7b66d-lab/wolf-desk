@@ -63,6 +63,7 @@ function wavesBlock(r) {
 }
 
 export function showDetail(r) {
+  const hasPos = (getState?.()?.account?.positions || []).some((x) => x.coin === r.coin);
   shown = r;
   const lv = r.levels, p = r.plan;
   $('sig-detail').innerHTML = `<div class="sig-head">
@@ -75,7 +76,8 @@ export function showDetail(r) {
     <div id="sig-chart" class="chart-box"></div>
     ${chartTools('sig-chart', r.coin)}` : ''}
     ${styleRow(r, CONFIG.signals.modes)}
-    ${p ? `<button type="button" class="wide" id="sig-trade" style="margin:6px 0 16px">Trade-Karte öffnen</button>` : ''}
+    ${hasPos ? `<p class="sig-note">Position in ${esc(dn(r.coin))} ist schon offen. Kein neues Signal (Ledger: eine Position pro Coin).</p>`
+      : p ? `<button type="button" class="wide" id="sig-trade" style="margin:6px 0 16px">Trade-Karte öffnen</button>` : ''}
     ${scoreBars(r.total)}
     ${mtfTable(r)}
     ${eventsBlock(r)}

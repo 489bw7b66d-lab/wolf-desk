@@ -5,6 +5,7 @@ import { getPlans } from './core-plans.js';
 import { getWatchlist } from './core-watchlist.js';
 import { getTradeable } from './core-tradeable.js';
 import { tradeableBlock, bindTradeable } from './ui-tradeable.js';
+import { shareReport } from './ui-export.js';
 import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile, listsForExport } from './core-settings.js';
 
 const $ = (id) => document.getElementById(id);
@@ -71,6 +72,7 @@ export function renderSettings() {
       <button type="button" id="set-save" ${errs.length || !dirty ? 'disabled' : ''}>Speichern und anwenden</button>
       <button type="button" id="set-export" class="ghost">Für den Wächter übernehmen</button>
       <button type="button" id="set-all-reset" class="ghost">Alles auf Empfehlung</button>
+      <button type="button" id="set-claude" class="ghost">📤 Daten für Claude exportieren</button>
     </div>
     <p class="empty" style="font-size:12px;margin-top:10px">„Speichern“ gilt sofort für die App auf diesem iPhone. „Für den Wächter übernehmen“ erzeugt die Datei <b>my-settings.js</b>. Die lädst du wie gewohnt bei GitHub hoch, dann rechnet auch der Telegram-Wächter mit deinen Werten.</p>`;
 }
@@ -106,6 +108,7 @@ async function exportFile() {
 export function initSettings(getState = () => ({})) {
   const box = $('settings');
   bindTradeable(box, () => Object.values(getState().markets || {}).flat());
+  box.addEventListener('click', (e) => { if (e.target.id === 'set-claude') shareReport(getState); });
   // Zahl eingegeben: erst beim Verlassen des Feldes übernehmen (sonst springt der Cursor)
   box.addEventListener('change', (e) => {
     const el = e.target, path = el.dataset.path;

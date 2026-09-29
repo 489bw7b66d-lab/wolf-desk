@@ -4,6 +4,7 @@ import { getWatchlist, onWatchlist } from './core-watchlist.js';
 import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
 import { BT, loadHistory, runBacktest, summarize, compareTrail } from './core-backtest.js';
 import { compareGate, GATE_LABEL } from './core-trendgate.js';
+import { saveBacktest, shareReport } from './ui-export.js';
 import { esc, dn, tipHead, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -111,6 +112,7 @@ function renderResult() {
     </div>
     <h3 class="sub-h">Verlauf in R</h3>
     ${curve(sm.curve)}
+    <button type="button" class="wide ghost" id="bt-export" style="margin:4px 0 14px">📤 Daten für Claude exportieren</button>
     ${gateBlock(compareGate(trades))}
     ${trailBlock(compareTrail(trades))}
     <h3 class="sub-h">Taugt ein höherer Score mehr?</h3>
@@ -157,6 +159,7 @@ async function start() {
   }
   const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage`;
   last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + r.missed.length, 0) };
+  saveBacktest(last, style); // für „Daten für Claude“
   const errs = runs.filter((r) => r.error);
   status(stopFlag ? 'Abgebrochen, Teilergebnis:' : errs.length ? `Fertig. Nicht geladen: ${errs.map((r) => r.coin).join(', ')}` : 'Fertig.', null);
   running = false;
@@ -194,4 +197,5 @@ export function initBacktest(getState = () => ({})) {
     renderControls();
   });
   $('bt-run').addEventListener('click', start);
+  $('bt-out').addEventListener('click', (e) => { if (e.target.closest('#bt-export')) shareReport(getState); });
 }

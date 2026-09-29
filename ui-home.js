@@ -12,6 +12,17 @@ import * as f from './core-format.js';
 const $ = (id) => document.getElementById(id);
 const HOT_KEY = 'wolfdesk.hotOn';
 let getState = () => ({});
+let lastIssues = [];
+
+// Liste aller Regelverstöße und Warnungen als Fenster (Dialog)
+function openAlerts() {
+  const dlg = $('alerts-dlg');
+  if (!dlg) return;
+  $('alerts-dlg-body').innerHTML = lastIssues.length
+    ? lastIssues.map((i) => `<p class="${i.status}">${i.status === 'bad' ? '●' : '○'} <b>${esc(i.who)}</b> ${esc(i.rule)}: ${esc(i.text)}</p>`).join('') + '<a href="#risiko" class="dlg-link" data-close>Alle Regeln im Risiko-Tab ›</a>'
+    : '<p class="ok">Alle Regeln eingehalten.</p>';
+  dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', '');
+}
 let onTrade = () => {}, onDetail = () => {}, onCoin = () => {};
 
 export function renderHome(s) {
@@ -58,13 +69,13 @@ export function renderHome(s) {
     ...r.checks.filter((c) => c.status !== 'ok').map((c) => ({ ...c, who: 'Konto' })),
     ...r.positions.flatMap((p) => p.evaluation.checks.filter((c) => c.status !== 'ok').map((c) => ({ ...c, who: p.coin }))),
   ].sort((a, b) => (a.status === 'bad' ? 0 : 1) - (b.status === 'bad' ? 0 : 1));
+  // 5c: nur ein kompakter Hinweis (rot bei Regelverstößen, gelb bei Warnungen, sonst gar nichts); Antippen öffnet die Liste
+  lastIssues = issues;
+  const nBad = issues.filter((i) => i.status === 'bad').length, nWarn = issues.length - nBad;
+  const parts = [nBad ? `${nBad} Regelverstoß${nBad > 1 ? 'e' : ''}` : '', nWarn ? `${nWarn} Warnung${nWarn > 1 ? 'en' : ''}` : ''].filter(Boolean);
   $('home-alerts').innerHTML = issues.length
-    ? `<a href="#risiko" class="alert-box ${issues.some((i) => i.status === 'bad') ? 'bad' : 'warn'}">
-        <b>${issues.filter((i) => i.status === 'bad').length ? issues.filter((i) => i.status === 'bad').length + ' Regelverstoß' + (issues.filter((i) => i.status === 'bad').length > 1 ? 'e' : '') : issues.length + ' Warnung' + (issues.length > 1 ? 'en' : '')}</b>
-        ${issues.slice(0, 4).map((i) => `<span>${i.status === 'bad' ? '●' : '○'} <b class="who">${esc(i.who)}</b> ${esc(i.rule)}: ${esc(i.text)}</span>`).join('')}
-        ${issues.length > 4 ? `<span class="more">+ ${issues.length - 4} weitere</span>` : ''}
-      </a>`
-    : '<div class="alert-box ok"><b>Alle Regeln eingehalten</b></div>';
+    ? `<button type="button" class="alert-pill ${nBad ? 'bad' : 'warn'}" id="alerts-open">${nBad ? '●' : '○'} ${parts.join(' · ')} <span aria-hidden="true">›</span></button>`
+    : '';
 
   $('home-pos').innerHTML = r.positions.length ? r.positions.map((p) => {
     const st = p.evaluation.worst;
@@ -87,7 +98,10 @@ function renderHot() {
   else status = 'Pausiert.';
   const prog = hot.running && hot.total && hot.phase !== 'Pause' ? `<div class="bar" style="margin-top:8px"><span style="width:${(hot.done / hot.total) * 100}%;background:var(--gold)"></span></div>` : '';
   $('hot-status').innerHTML = `<p class="empty" style="font-size:13px">${esc(status)}${hot.source ? ` · ${esc(hot.source)}` : ''}</p>${prog}${hot.error ? `<p class="warnline">${esc(hot.error)}</p>` : ''}`;
-  $('hot-list').innerHTML = hot.picks.length ? hot.picks.map(({ r }, i) => `<button type="button" class="hot-row" data-hot="${esc(r.coin)}">
+  // Coins mit offener Position zeigen kein neues Signal (Ledger: eine Position pro Coin)
+  const open = new Set((getState().account?.positions || []).map((p) => p.coin));
+  const picks = hot.picks.filter(({ r }) => !open.has(r.coin));
+  $('hot-list').innerHTML = picks.length ? picks.map(({ r }, i) => `<button type="button" class="hot-row" data-hot="${esc(r.coin)}">
       <span class="rank">${i + 1}</span>
       <span class="hot-main"><span class="sym">${coinIcon(r.coin)}${esc(dn(r.coin))} ${seal(r, true)} ${viewMark(alignment(viewFor(getViews(), r.coin), r.dir))}</span><span class="reasons">${topReasons(r, 2).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
       <span class="hot-side">${badge(r.dir)}<span class="heat">Score ${r.total[r.dir]}</span></span>
@@ -98,6 +112,11 @@ function renderHot() {
 
 export function initHome(stateGetter, openTrade, openDetail, openCoin) {
   getState = stateGetter;
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#alerts-open')) openAlerts();
+    const dlg = $('alerts-dlg');
+    if (dlg && (e.target.closest('#alerts-dlg [data-close]') || e.target === dlg)) dlg.close ? dlg.close() : dlg.removeAttribute('open');
+  });
   onTrade = openTrade; onDetail = openDetail; onCoin = openCoin;
   $('home-pos').addEventListener('click', (e) => { const b = e.target.closest('button[data-coin]'); if (b) onCoin(b.dataset.coin); });
   const markets = () => Object.values(getState().markets || {}).flat(); // alle Märkte inkl. xyz (für deine handelbaren Märkte)

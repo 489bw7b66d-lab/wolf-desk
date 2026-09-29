@@ -212,7 +212,10 @@ export function pathBar(path) {
 // Stop-Check einer offenen Position gegen die normale Schwankung (nur wenn der Stop noch auf der Verlustseite liegt)
 function posNoise(p) {
   if (p.stop == null || (p.side === 'long' ? p.stop >= p.entry : p.stop <= p.entry)) return '';
-  const tf = setupTf(), n = stopNoise(p.mark || p.entry, p.stop, atrFor(p.coin, tf));
+  const tf = setupTf(), n = stopNoise(p.mark || p.entry, p.stop, atrFor(p.coin, tf), undefined, p.liq);
   if (!n || n.status === 'ok') return '';
-  return `<p class="warnline" style="margin:0;color:${n.status === 'bad' ? 'var(--bad)' : 'var(--warn)'}">Stop-Check (${tf.toUpperCase()}): ${n.text}. Sinnvoller: ${f.price(n.suggest.stop)}</p>`;
+  const tip = n.suggest.beyondLiq
+    ? `Ein ATR-gerechter Stop (${f.price(n.suggest.stop)}) läge hinter der Liquidation (${f.price(n.suggest.liq)}). Bei diesem Hebel passt kein sinnvoller Stop: Position verkleinern oder schließen`
+    : `Sinnvoller: ${f.price(n.suggest.stop)}`;
+  return `<p class="warnline" style="margin:0;color:${n.status === 'bad' ? 'var(--bad)' : 'var(--warn)'}">Stop-Check (${tf.toUpperCase()}): ${n.text}. ${tip}</p>`;
 }

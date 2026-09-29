@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 29.09.2026 · Etappe 5b · 444 Tests
+Stand: 30.09.2026 · Etappe 5c · 451 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -68,7 +68,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 ---
 
-## 5. Aufbau der App (92 Dateien, fast alle im Hauptordner)
+## 5. Aufbau der App (94 Dateien, fast alle im Hauptordner)
 
 **Einstellungen:** `config.js` (Empfehlungen) · `ledger-markets.js` (deine Ledger-Märkte, Standard für „Handelbare Märkte“) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
 
@@ -81,11 +81,11 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - Positionen: `core-path` (Trade-Weg), `core-plans` (Ziele je Position), `core-autoplan` (automatischer Plan)
 - Sonstiges: `core-backtest`, `core-settings`, `core-views` (Einschätzung), `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-format`
 
-**Anzeige (`ui-*.js`):** `ui-chart` (Zeichnung) + **`ui-chartview`** (Bedienung: wischen, zoomen, Fadenkreuz, eigene Linien), `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
+**Anzeige (`ui-*.js`):** `ui-chart` (Zeichnung) + **`ui-chartview`** (Bedienung: wischen, zoomen, Fadenkreuz, eigene Linien), `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, **`ui-export`** (Datei „Daten für Claude“), `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5b">` und eine Import-Map mit `?v=5b` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5c">` und eine Import-Map mit `?v=5c` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -266,11 +266,13 @@ Etappe 5a (Signale schärfen, Schritt 1): Short-Filter nach Tagestrend in drei S
 
 Etappe 5b (Sicherheits-Korrektur): Liquidations-Näherung rechnet den Höchsthebel des Marktes ein (vorher bei Coins mit max. 3×/5× zu optimistisch; Anlass: ALGO-Trade mit Liquidation vor dem Stop) · gilt für Trade-Karte, Rechner, Hebel-Vorschau und Signalgeber-Empfehlung
 
+Etappe 5c (Sicherheit & Handling, keine Änderung an der Signal-Berechnung): Stop-Check schlägt nie einen Stop hinter der Liquidation vor (sagt stattdessen: Hebel passt nicht, verkleinern/schließen) · Nachziehen nie hinter die Liquidation · kein Signal für Coins mit offener Position oder solange das letzte Signal des Coins noch läuft (App: Heiße Coins/Signalgeber, Wächter) · Regelverstöße auf der Startseite als kompakter Hinweis, Antippen öffnet die Liste, ohne Verstöße nichts · Backtest lässt dem iPhone alle 40 ms Luft (kein Einfrieren) · Export „📤 Daten für Claude“ (Einstellungen und Backtest): Markdown-Datei mit Einstellungen, Konto, Positionen samt Regel-Prüfung, eigenen Trades, Signalen und den letzten Backtests je Stil
+
 ---
 
 ## 10. Offene Aufgaben (nächste Pakete)
 
-**Nächste Signal-Schritte (je ein Schritt, vorher Backtest gegen die Ausgangslage):** Short-Filter-Stufe nach Backtest festlegen · **Korrektur-Filter für Longs** (Anlass ALGO 29.09.: Long-Signal Score 89 genau ins Strong High/Order Block 1D bei RSI 82 und NW ▼): Kurs am oberen Nadaraya-Band (ohne Repainting) + bärischer Order Block/Strong High im Tageschart (≤ 1 ATR) + RSI 1D ≥ 80; im Backtest Varianten vergleichen (nur RSI · NW+SMC · alles), Nutzer-Idee: Mehrheit der Faktoren · weitere Kandidaten: MACD-Divergenz, Abstand zur EMA 21 in ATR, positives Funding · danach Konfluenz-Stufen/Score überarbeiten (Score trennt aktuell nicht) · Retest-Siegel überdenken (fast jedes Signal hat es)
+**Nächste Signal-Schritte (je ein Schritt, vorher Backtest gegen die Ausgangslage):** Short-Filter-Stufe nach Backtest festlegen · **Korrektur-Filter für Longs** (Faktoren inkl. Umkehrkerzen und Key-Levels; Anlass ALGO 29.09., SKY 30.09.: Long-Signal Score 89 genau ins Strong High/Order Block 1D bei RSI 82 und NW ▼): Kurs am oberen Nadaraya-Band (ohne Repainting) + bärischer Order Block/Strong High im Tageschart (≤ 1 ATR) + RSI 1D ≥ 80; im Backtest Varianten vergleichen (nur RSI · NW+SMC · alles), Nutzer-Idee: Mehrheit der Faktoren · weitere Kandidaten: MACD-Divergenz, Abstand zur EMA 21 in ATR, positives Funding · danach **Korrektur-Short** (gleiche Erkennung, Ziel mind. 0,5er Retracement, TP2 0,618, Stop über Strong High/Order Block + ½ ATR, nur ab CRV 1,5, Einstieg erst bei Reaktion auf 1H/4H, kleinste Risiko-Stufe, eigene Backtest-Zeile, Ausnahme vom Short-Filter nur mit voller Konfluenz) · **Golden-Pocket-Long mit Reaktion** (DASH, HBAR, NIL) · danach Konfluenz-Stufen/Score überarbeiten (Score trennt aktuell nicht) · Retest-Siegel überdenken (fast jedes Signal hat es)
 
 **Nächstes Politur-Paket (wenn sich Wünsche gesammelt haben):** kleine Haken beim Handling, optische Aufhübschung. **Keine neuen Indikatoren oder Infos** (Wunsch des Nutzers: „da ist wirklich alles drin“).
 - Lightweight Charts wurde bewusst nicht genommen: Claude hat beim Bauen kein Internet und könnte die Bibliothek nicht testen; die eigene Umsetzung ist voll getestet.
@@ -309,6 +311,11 @@ Vorgehen beim Chart: Struktur zuerst → Konfluenz (Key Level, RSI Tag/Woche, MA
 5. **ICP, 4H, ❌ Negativbeispiel:** sieben NW-▼ im Aufwärtstrend nach bullischem BOS, RSI nur 60–70 → Fehlsignale. Lehre: NW nur mit der Struktur, Kontra nur mit RSI über 80, Serie von ▼ bei neuen Hochs = Trendstärke.
 6. **NIL, 4H, Golden-Pocket-Reaktion:** Rücksetzer nach starkem Impuls ins Golden Pocket (0,0812–0,0777), RSI ~26; Auslöser erst bei Reaktion. Ziele 1,0 und 1,618. Ungültig unter 0,702/0,786.
 
+7. **DASH, 4H, ✅ Lehrbuch-Long (30.09.):** nach HH und Weak High Rücksetzer in die Fib-Zone (0,5 bis Golden Pocket 0,618/0,65) über Strong Low bzw. HL, NW ▲ in der Zone, RSI abgekühlt (~40–50). Einstieg bei Reaktion, Ziele zurück zum Hoch.
+8. **HBAR, 4H, ✅ Wunsch-Signal (30.09.):** Spike ins Weak High, danach zügiger Rücksetzer ins Golden Pocket (0,618–0,65 ≈ 0,1034–0,1023) über dem Ausbruchsniveau, RSI von überkauft auf ~66. Long erst bei Reaktion in der Zone.
+9. **ALGO, 1D, ❌ Fehlsignal der Engine (29.09.):** Long Score 89 genau ins Strong High / bärischen Order Block, RSI 1D 82, NW ▼. Einstieg am Docht, Stop lag bei 5× hinter der Liquidation (Formel-Fehler, 5b behoben).
+10. **SKY, 4H, ❌ Fehlsignal der Engine (30.09.):** Long Score 80 in Weak High / Angebotszone, RSI ~78, NW ▼ an der Spitze. Fall für den Korrektur-Filter.
+
 Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; die Engine nutzt nur Signale auf abgeschlossenen Kerzen.
 
 ---
@@ -319,4 +326,4 @@ Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; die Engine 
 2. Den aktuellen Code als ZIP anhängen: `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` in Brave öffnen (mit `https://`), herunterladen, im Chat anhängen. Ohne ZIP kann Claude einzelne Dateien über `raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/main/DATEINAME` lesen, wenn du die Adresse in den Chat schreibst.
 3. Diesen Text als erste Nachricht:
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter: modular, Etappen mit Tests (auch mit verstellten Einstellungen), Wächter vor jedem Paket komplett durchspielen, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Sprich locker mit mir wie ein Kumpel. Prüf zuerst, ob die Versionsnummer im Code zum Masterplan passt. Die App ist inhaltlich fertig; als Nächstes nur Politur (Abschnitt 10).
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter: modular, Etappen mit Tests (auch mit verstellten Einstellungen), Wächter vor jedem Paket komplett durchspielen, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Sprich locker mit mir wie ein Kumpel. Prüf zuerst, ob die Versionsnummer im Code zum Masterplan passt. Signal-Änderungen erst nach der ersten Tagebuch-Auswertung; Reihenfolge in Abschnitt 10.

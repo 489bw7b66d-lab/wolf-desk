@@ -288,3 +288,11 @@ export function cooldownText(cd, hours) {
   const t = new Date(cd.until).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
   return `🧊 <b>Abkühlphase</b> bis ${t} Uhr\n${cd.streak} Verlust-Trades in Folge (${cd.coins.map((c) => esc(dn(c))).join(', ')}). Für die nächsten ${hours} Std. Risiko halbieren und nur saubere Setups nehmen. Keine Rache-Trades.`;
 }
+
+// Kein neues Signal (5c): Ledger erlaubt nur eine Position pro Coin, und solange ein gemeldetes Signal
+// für den Coin noch läuft, wäre ein zweites nur eine Wiederholung.
+export function blockReason(coin, openCoins = [], journal = []) {
+  if (openCoins.includes(coin)) return 'Position offen';
+  if (journal.some((e) => e.coin === coin && e.status === 'offen')) return 'Signal läuft noch';
+  return null;
+}

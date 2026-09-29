@@ -581,3 +581,14 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .rule-box.ok { border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
 .kv .acc-pnl { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-top: 4px; font-size: 15px; font-weight: 800; }
 .kv .acc-pnl span { display: inline; font-size: inherit; }
+
+/* 5c: Regelverstöße kompakt, Liste als Fenster */
+.alert-pill { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; padding: 0 16px; border-radius: 14px; font-size: 15px; font-weight: 800; text-align: left; }
+.alert-pill.bad { background: color-mix(in srgb, var(--bad) 16%, var(--surface)); color: var(--bad); border: 1px solid color-mix(in srgb, var(--bad) 50%, transparent); }
+.alert-pill.warn { background: color-mix(in srgb, var(--warn) 14%, var(--surface)); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); }
+.dlg { width: min(560px, calc(100vw - 24px)); max-height: 80vh; padding: 16px 18px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--text); }
+.dlg::backdrop { background: rgba(0, 0, 0, .6); }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 18px; }
+.dlg p { margin: 8px 0; font-size: 14.5px; line-height: 1.4; }
+.dlg .bad { color: var(--bad); } .dlg .warn { color: var(--warn); } .dlg .ok { color: var(--ok); }
+.dlg-link { display: block; margin-top: 12px; color: var(--gold); font-weight: 700; text-decoration: none; }

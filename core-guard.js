@@ -10,19 +10,21 @@ import { getCandles } from './core-scanner.js';
 const G = () => CONFIG.guard;
 
 // Stop-Abstand im Verhältnis zum ATR. Ergebnis: { ratio, status, text, suggest } oder null
-export function stopNoise(entry, stop, atrValue, cfg = G()) {
+// liq (optional, offene Position): Liegt der ATR-gerechte Stop hinter der Liquidation, wird er NICHT vorgeschlagen (5c).
+export function stopNoise(entry, stop, atrValue, cfg = G(), liq = null) {
   if (!(entry > 0) || !(stop > 0) || !(atrValue > 0) || entry === stop) return null;
   const dist = Math.abs(entry - stop), ratio = dist / atrValue;
   const long = stop < entry, s = long ? 1 : -1;
   const status = ratio < cfg.stopNoiseAtr ? 'bad' : ratio < cfg.stopTightAtr ? 'warn' : 'ok';
   const suggestStop = entry - s * cfg.suggestAtr * atrValue;
+  const beyondLiq = liq > 0 && (long ? suggestStop <= liq : suggestStop >= liq);
   const r = (x) => x.toFixed(1).replace('.', ',');
   return {
     ratio, status, atr: atrValue,
     text: status === 'bad' ? `Stop liegt im normalen Rauschen (${r(ratio)}× ATR), wird wahrscheinlich ausgelöst`
       : status === 'warn' ? `Stop ist knapp (${r(ratio)}× ATR), normale Schwankungen können ihn erreichen`
       : `Stop mit genug Luft (${r(ratio)}× ATR)`,
-    suggest: status === 'ok' ? null : { stop: suggestStop, atrMult: cfg.suggestAtr, distPct: (cfg.suggestAtr * atrValue / entry) * 100 },
+    suggest: status === 'ok' ? null : { stop: suggestStop, atrMult: cfg.suggestAtr, distPct: (cfg.suggestAtr * atrValue / entry) * 100, beyondLiq, liq },
   };
 }
 

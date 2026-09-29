@@ -11,7 +11,7 @@ import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.
 import { scanUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText, patienceText, cooldownText } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText, patienceText, cooldownText, blockReason } from './core-alerts.js';
 import { cooldown } from './core-guard.js';
 import { evaluatePatience, patienceStats } from './core-patience.js';
 import { viewFor, alignment, viewEvents } from './core-views.js';
@@ -201,11 +201,13 @@ async function main() {
   await updateJournal(state, now);
 
   const { results, prices, volumes } = await scan();
+  const openCoins = (risk?.positions || []).map((p) => p.coin);
   const alerts = results
     .map((r0) => telegramView(r0))
     .filter(Boolean)
     .map((r) => ({ r, a: signalAlert(r, prices[r.coin], state.sent, now, CONFIG.alerts, { volume: volumes[r.coin], lastDir: state.lastDir }) }))
     .filter((x) => x.a)
+    .filter((x) => { const why = blockReason(x.r.coin, openCoins, state.journal); if (why) log('Kein Signal für', x.r.coin + ':', why); return !why; })
     .sort((x, y) => heat(y.r) - heat(x.r))
     .slice(0, CONFIG.alerts.maxPerRun);
   for (const { r, a } of alerts) {
