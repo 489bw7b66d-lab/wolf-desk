@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 30.09.2026 · Etappe 5c · 451 Tests
+Stand: 30.09.2026 · Etappe 5d · 456 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -55,7 +55,16 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 
 ---
 
-## 4. Zugänge und Geheimnisse (nur die Namen!)
+## 4. Datenschutz-Regeln (streng, vom Nutzer ausdrücklich gewünscht)
+
+1. **Nie Zugangsdaten, Wallet-Adresse oder Beträge** in Dateien, die ins (öffentliche) Repository gehen.
+2. **Einschätzungen und Ziele je Position** gehören nicht in `my-settings.js`, sondern ins Secret `PRIVATE_SETTINGS` (seit 5d).
+3. **Exporte für Claude** („📤 Daten für Claude“) enthalten Beträge, aber nie Wallet oder Zugangsdaten, und gehen nie ins Repository.
+4. **Bevor etwas Persönliches öffentlich würde**, sagt Claude es vorher ausdrücklich.
+5. **Im Chat** fragt Claude nie nach Seed-Phrase, Private Key oder Token.
+6. Öffentlich bleiben bewusst: `signals.json` (gemeldete Signale für die App), Ledger-Liste, harmlose Einstellungen. Alte Versionen von `my-settings.js` bleiben in der GitHub-Historie sichtbar (bei Bedarf: neues Repository).
+
+## 4b. Zugänge und Geheimnisse (nur die Namen!)
 
 | Secret | Inhalt | Wo man den Wert wiederbekommt |
 |---|---|---|
@@ -63,6 +72,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 | `TELEGRAM_CHAT` | private Chat-ID mit dem Bot | Secret löschen, Bot „hallo“ schreiben, Test starten → Bot schickt die ID |
 | `TELEGRAM_CHANNEL` | ID des Signal-Kanals (beginnt mit `-100`) | Secret löschen, im Kanal posten, Test starten → Bot schickt „Kanal gefunden“ |
 | `WALLET` | Hyperliquid-Adresse (öffentlich, nur lesend) | Hyperliquid / Ledger |
+| `PRIVATE_SETTINGS` | JSON mit Einschätzungen und Zielen je Position (5d) | App: ⚙️ → „🔒 Private Daten für den Wächter“ kopiert es; bei GitHub Secret anlegen bzw. „Update“ |
 
 Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather mit blauem Haken ist echt.
 
@@ -85,7 +95,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5c">` und eine Import-Map mit `?v=5c` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5d">` und eine Import-Map mit `?v=5d` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -116,7 +126,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 4. ~10 Min. warten, App komplett schließen und neu öffnen (aktualisiert sich selbst), `tests.html?v=XX` prüfen.
 5. Betrifft es den Wächter: Test starten (Run workflow).
 
-**Einstellungen/Einschätzungen/Ziele/Watchlist/handelbare Märkte an den Wächter:** ⚙️ → „Für den Wächter übernehmen“ → „In Dateien sichern“ → Ordner Claude → **Sichern** → `my-settings.js` hochladen. Vorher alte Datei im Ordner löschen.
+**Einstellungen/Watchlist/handelbare Märkte an den Wächter:** ⚙️ → „Für den Wächter übernehmen“ (öffentlich, ohne Einschätzungen und Ziele). **Einschätzungen und Ziele:** ⚙️ → „🔒 Private Daten für den Wächter“ → bei GitHub Secret `PRIVATE_SETTINGS` einfügen. Datei: → „In Dateien sichern“ → Ordner Claude → **Sichern** → `my-settings.js` hochladen. Vorher alte Datei im Ordner löschen.
 
 **Stolperfallen:** „Uploads are disabled“ = nicht angemeldet · iPhone hängt „2“ an doppelte Namen · Brave behandelt lange Adressen manchmal als Suche (immer mit `https://` eintippen) · Platzhalter nie wörtlich übernehmen · Dateien-Suche findet auch Texte, die den Namen enthalten · Nach dem Upload zeigt Brave evtl. noch die alte Testseite (`?v=XX` anhängen) · Paket gebaut heißt nicht hochgeladen: nach jedem Paket prüfen, ob die Versionsnummer bei GitHub stimmt.
 
@@ -183,6 +193,7 @@ jobs:
           TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
           WALLET: ${{ secrets.WALLET }}
+          PRIVATE_SETTINGS: ${{ secrets.PRIVATE_SETTINGS }}
           TEST_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}
 
       - uses: actions/cache/save@v5
@@ -267,6 +278,8 @@ Etappe 5a (Signale schärfen, Schritt 1): Short-Filter nach Tagestrend in drei S
 Etappe 5b (Sicherheits-Korrektur): Liquidations-Näherung rechnet den Höchsthebel des Marktes ein (vorher bei Coins mit max. 3×/5× zu optimistisch; Anlass: ALGO-Trade mit Liquidation vor dem Stop) · gilt für Trade-Karte, Rechner, Hebel-Vorschau und Signalgeber-Empfehlung
 
 Etappe 5c (Sicherheit & Handling, keine Änderung an der Signal-Berechnung): Stop-Check schlägt nie einen Stop hinter der Liquidation vor (sagt stattdessen: Hebel passt nicht, verkleinern/schließen) · Nachziehen nie hinter die Liquidation · kein Signal für Coins mit offener Position oder solange das letzte Signal des Coins noch läuft (App: Heiße Coins/Signalgeber, Wächter) · Regelverstöße auf der Startseite als kompakter Hinweis, Antippen öffnet die Liste, ohne Verstöße nichts · Backtest lässt dem iPhone alle 40 ms Luft (kein Einfrieren) · Export „📤 Daten für Claude“ (Einstellungen und Backtest): Markdown-Datei mit Einstellungen, Konto, Positionen samt Regel-Prüfung, eigenen Trades, Signalen und den letzten Backtests je Stil
+
+Etappe 5d (Datenschutz): Einschätzungen und Ziele je Position aus dem öffentlichen `my-settings.js` in das GitHub-Secret `PRIVATE_SETTINGS` verschoben (Knopf „🔒 Private Daten“, Wächter liest das Secret, Hinweis in ⚙️, falls die alte Datei noch private Daten enthält) · Datenschutz-Regeln im Masterplan
 
 ---
 

@@ -6,7 +6,8 @@ import { getWatchlist } from './core-watchlist.js';
 import { getTradeable } from './core-tradeable.js';
 import { tradeableBlock, bindTradeable } from './ui-tradeable.js';
 import { shareReport } from './ui-export.js';
-import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile, listsForExport } from './core-settings.js';
+import { MY_SETTINGS } from './config.js';
+import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile, listsForExport, privatePart, publicLeak } from './core-settings.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -71,9 +72,12 @@ export function renderSettings() {
     <div class="set-actions">
       <button type="button" id="set-save" ${errs.length || !dirty ? 'disabled' : ''}>Speichern und anwenden</button>
       <button type="button" id="set-export" class="ghost">Für den Wächter übernehmen</button>
+      <button type="button" id="set-private" class="ghost">🔒 Private Daten für den Wächter</button>
       <button type="button" id="set-all-reset" class="ghost">Alles auf Empfehlung</button>
       <button type="button" id="set-claude" class="ghost">📤 Daten für Claude exportieren</button>
     </div>
+    <p class="set-hint" id="set-private-msg" hidden></p>
+    ${publicLeak(MY_SETTINGS) ? '<p class="warnline" style="margin-top:10px">In deiner my-settings.js bei GitHub stehen noch Einschätzungen oder Ziele (öffentlich lesbar). „Für den Wächter übernehmen“ und die neue Datei hochladen, dazu die privaten Daten ins Secret.</p>' : ''}
     <p class="empty" style="font-size:12px;margin-top:10px">„Speichern“ gilt sofort für die App auf diesem iPhone. „Für den Wächter übernehmen“ erzeugt die Datei <b>my-settings.js</b>. Die lädst du wie gewohnt bei GitHub hoch, dann rechnet auch der Telegram-Wächter mit deinen Werten.</p>`;
 }
 
@@ -87,12 +91,23 @@ function setValue(path, v) {
   dirty = true;
 }
 
+// Einschätzungen und Ziele als JSON in die Zwischenablage, zum Einfügen ins GitHub-Secret PRIVATE_SETTINGS
+async function copyPrivate() {
+  const text = privatePart(getViews(), getPlans());
+  const msg = $('set-private-msg');
+  const n = Object.keys(getViews()).length, m = Object.keys(getPlans()).length;
+  try {
+    await navigator.clipboard.writeText(text);
+    msg.textContent = `Kopiert (${n} Einschätzungen, ${m} Ziele). Jetzt bei GitHub: Settings → Secrets and variables → Actions → PRIVATE_SETTINGS anlegen oder bearbeiten („Update“) → einfügen → speichern.`;
+  } catch {
+    msg.textContent = 'Kopieren ging nicht. Bitte diesen Text markieren und kopieren: ' + text;
+  }
+  msg.hidden = false;
+}
+
 async function exportFile() {
+  // 5d: Einschätzungen und Ziele NICHT mehr in die öffentliche Datei, die gehen ins Secret (Knopf „Private Daten“)
   const diff = diffFromRecommended(values);
-  const views = getViews();
-  if (Object.keys(views).length) diff.views = views;
-  const plans = getPlans();
-  if (Object.keys(plans).length) diff.plans = plans;
   Object.assign(diff, listsForExport(getWatchlist(), getTradeable()));
   const text = settingsFile(diff);
   const file = new File([text], 'my-settings.js', { type: 'text/javascript' });
@@ -109,6 +124,7 @@ export function initSettings(getState = () => ({})) {
   const box = $('settings');
   bindTradeable(box, () => Object.values(getState().markets || {}).flat());
   box.addEventListener('click', (e) => { if (e.target.id === 'set-claude') shareReport(getState); });
+  box.addEventListener('click', (e) => { if (e.target.id === 'set-private') copyPrivate(); });
   // Zahl eingegeben: erst beim Verlassen des Feldes übernehmen (sonst springt der Cursor)
   box.addEventListener('change', (e) => {
     const el = e.target, path = el.dataset.path;

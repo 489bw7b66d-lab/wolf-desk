@@ -158,3 +158,25 @@ export function listsForExport(watchlist, tradeable, rec = RECOMMENDED) {
   if (Array.isArray(tradeable) && tradeable.length) out.tradeable = [...tradeable];
   return out;
 }
+
+// Datenschutz (5d): Einschätzungen und Ziele je Position gehören nicht in das öffentliche Repository.
+// Sie gehen als JSON in das GitHub-Secret PRIVATE_SETTINGS; der Wächter liest es beim Start (applyPrivate).
+export function privatePart(views = {}, plans = {}) {
+  const out = {};
+  if (views && Object.keys(views).length) out.views = views;
+  if (plans && Object.keys(plans).length) out.plans = plans;
+  return JSON.stringify(out);
+}
+export function applyPrivate(cfg, text) {
+  if (!text || !String(text).trim()) return { ok: true, views: 0, plans: 0, empty: true };
+  try {
+    const p = JSON.parse(text);
+    if (p.views && typeof p.views === 'object') cfg.views = { ...(cfg.views || {}), ...p.views };
+    if (p.plans && typeof p.plans === 'object') cfg.plans = { ...(cfg.plans || {}), ...p.plans };
+    return { ok: true, views: Object.keys(p.views || {}).length, plans: Object.keys(p.plans || {}).length };
+  } catch (e) {
+    return { ok: false, error: 'PRIVATE_SETTINGS ist kein gültiges JSON: ' + e.message };
+  }
+}
+// Stehen im (öffentlichen) my-settings.js noch Einschätzungen oder Ziele? Dann sollte eine neue Datei hoch.
+export const publicLeak = (mySettings) => !!(mySettings && ((mySettings.views && Object.keys(mySettings.views).length) || (mySettings.plans && Object.keys(mySettings.plans).length)));

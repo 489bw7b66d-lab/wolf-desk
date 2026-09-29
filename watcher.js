@@ -3,6 +3,7 @@
 // 2. Prüft deine Positionen mit denselben Risiko-Regeln und meldet neue Regelverstöße (und Entwarnungen).
 // Merkt sich zwischen den Läufen, was schon gemeldet wurde (Datei .watch-state.json, von GitHub zwischengespeichert).
 // Geheim bleiben: TELEGRAM_TOKEN, TELEGRAM_CHAT, WALLET (als GitHub Secrets hinterlegt).
+import { applyPrivate } from './core-settings.js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
@@ -36,6 +37,9 @@ async function send(text, chat = CHAT) {
   const j = await res.json().catch(() => ({}));
   if (!j.ok) throw new Error(`Telegram: ${j.description || res.status}`);
 }
+
+// 5d: Einschätzungen und Ziele kommen aus dem GitHub-Secret PRIVATE_SETTINGS (nicht aus dem öffentlichen my-settings.js)
+const PRIVATE = applyPrivate(CONFIG, process.env.PRIVATE_SETTINGS);
 
 async function loadState() {
   let st = {};
@@ -156,6 +160,7 @@ async function main() {
     return;
   }
   const state = await loadState();
+  log(PRIVATE.ok ? (PRIVATE.empty ? 'Private Daten: keine (Secret PRIVATE_SETTINGS leer oder nicht gesetzt)' : `Private Daten: ${PRIVATE.views} Einschätzungen, ${PRIVATE.plans} Ziele`) : PRIVATE.error);
   const now = Date.now();
 
   // Risiko zuerst, das ist das Wichtigste
