@@ -11,7 +11,7 @@ import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getAutoPlan } from './core-autoplan.js';
 import { stopNoise, atrFor, setupTf } from './core-guard.js';
 import { getFeedSignals } from './ui-feed.js';
-import { tipInline } from './ui-parts.js';
+import { tipInline, coinIcon } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -70,7 +70,7 @@ function renderPositions(s, now) {
     const issues = ev.checks.filter((c) => c.status !== 'ok');
     return `<article class="pos" data-coin="${esc(p.coin)}" role="button" tabindex="0" aria-label="${esc(p.coin)}: Chart und Details öffnen">
       <div class="pos-head">
-        <span><span class="coin">${esc(p.coin.replace(/^[a-z]+:/, ''))}</span><span class="side ${p.side}">${p.side === 'long' ? 'LONG' : 'SHORT'} ${f.lev(p.leverage)} ${p.leverageType}</span></span>
+        <span><span class="coin">${coinIcon(p.coin, 24)}${esc(p.coin.replace(/^[a-z]+:/, ''))}</span><span class="side ${p.side}">${p.side === 'long' ? 'LONG' : 'SHORT'} ${f.lev(p.leverage)} ${p.leverageType}</span></span>
         <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span>
       </div>
       <div class="pos-live"><span>${f.price(p.mark)}</span><b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2) + ' 24h'}</b>

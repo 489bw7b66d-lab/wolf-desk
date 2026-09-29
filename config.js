@@ -1,6 +1,7 @@
 // ============================================================
 //  EINSTELLUNGEN – hier kannst du Dinge ändern, ohne Code anzufassen
 // ============================================================
+import { LEDGER_MARKETS } from './ledger-markets.js';
 export const CONFIG = {
   // Hyperliquid-Schnittstelle (öffentlich, nur lesen)
   api: {
@@ -27,7 +28,8 @@ export const CONFIG = {
 
   // HANDELBARE MÄRKTE (z. B. was über Ledger handelbar ist). In der App unter ⚙️ gepflegt, über my-settings.js auch für den Wächter.
   // Leer = Heiße Coins und Wächter scannen wie bisher die Top-Coins nach Market Cap. Mit Einträgen = nur diese Märkte (plus Watchlist).
-  tradeable: [],
+  // Standard seit 4c: deine Ledger-Liste aus ledger-markets.js.
+  tradeable: [...LEDGER_MARKETS],
 
   // DEINE MARKTEINSCHÄTZUNG je Markt (wird in der App gepflegt und über my-settings.js an den Wächter gegeben)
   views: {},

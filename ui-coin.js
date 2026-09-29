@@ -9,8 +9,8 @@ import { getAutoPlan } from './core-autoplan.js';
 import { getFeedSignals } from './ui-feed.js';
 import { analyzeAllModes } from './core-scanner.js';
 import { CONFIG } from './config.js';
-import { chartSvg } from './ui-chart.js';
-import { esc, dn, TFL, CHART_TFS } from './ui-parts.js';
+import { drawChart, chartTools } from './ui-chartview.js';
+import { esc, dn, TFL, CHART_TFS, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
 import * as f from './core-format.js';
 
@@ -70,7 +70,7 @@ function renderLive() {
       ...tpOrders(s, p).map((x, i) => ({ price: x, col: 'var(--ok)', label: 'TP' + (i + 1), dash: '4 3', fit: i < 2 })),
       { price: p.liq, col: 'var(--bad)', label: 'Liq', dash: '1 3', fit: false },
     ] : [];
-    box.innerHTML = chartSvg({ coin, candles: cs, tf, price: px, lines: [...lines, ...viewLines(viewFor(getViews(), coin))] });
+    drawChart(box, { coin, candles: cs, tf, price: px, lines: [...lines, ...viewLines(viewFor(getViews(), coin))] });
   }
 }
 
@@ -91,7 +91,7 @@ function loadChart() {
   if (cache.has(key)) { renderLive(); return; }
   $('coin-chart').innerHTML = `<p class="empty">Lade ${TFL[tf]}-Kerzen …</p>`;
   const c = coin, t = tf;
-  getCandles(c, t).then((cs) => { cache.set(c + '|' + t, cs.slice(-120)); if (coin === c && tf === t) renderLive(); })
+  getCandles(c, t).then((cs) => { cache.set(c + '|' + t, cs.slice(-300)); if (coin === c && tf === t) renderLive(); })
     .catch(() => { if (coin === c && tf === t) $('coin-chart').innerHTML = '<p class="empty">Kerzen konnten nicht geladen werden.</p>'; });
 }
 
@@ -102,7 +102,7 @@ export function openCoin(name) {
   tf = p ? '1h' : '4h';
   $('sheet-body').innerHTML = `<div id="coin-view">
     <div class="sheet-head">
-      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${esc(dn(coin))}</h2>
+      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${coinIcon(coin, 28)}${esc(dn(coin))}</h2>
       <span class="meta">${p ? 'Offene Position' : 'Markt'}</span></div>
       ${p ? `<span class="sig-badge ${p.side}">${p.side === 'long' ? 'LONG ▲' : 'SHORT ▼'}</span>` : ''}
     </div>
@@ -110,6 +110,7 @@ export function openCoin(name) {
     <div id="coin-live" class="live-box" aria-live="polite"></div>
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((t) => `<button type="button" data-ktf="${t}" aria-pressed="${t === tf}">${TFL[t]}</button>`).join('')}</div>
     <div id="coin-chart" class="chart-box"></div>
+    ${chartTools('coin-chart', coin)}
     <div id="coin-pos"></div>
     <div id="coin-plan"></div>
     <div class="sheet-actions"><button type="button" id="coin-analyze" class="span-2">Signal analysieren</button></div>

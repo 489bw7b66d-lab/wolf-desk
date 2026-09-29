@@ -2,9 +2,15 @@
 import { CONFIG } from './config.js';
 import { getWatchlist, addToWatchlist, removeFromWatchlist, onWatchlist, WATCHLIST_MAX } from './core-watchlist.js';
 import { analyzeMarket, analyzeAllModes, switchStyle } from './core-scanner.js';
-import { badge, ladder, esc, dn, TFL, styleRow, seal } from './ui-parts.js';
+import { badge, ladder, esc, dn, TFL, styleRow, seal, confirmsFor, coinIcon } from './ui-parts.js';
 import * as f from './core-format.js';
 import { change24h, entryDistance } from './core-trades.js';
+import { accountSummary } from './core-calc.js';
+import { recommendedFor, levTagText } from './core-levpreview.js';
+import { drawChart, chartTools } from './ui-chartview.js';
+import { getViews, viewFor as viewOf, viewLines } from './core-views.js';
+
+let sigTf = null; // gewählte Zeitebene im Signalgeber-Chart
 
 const $ = (id) => document.getElementById(id);
 const STACK = { bull: ['Bullisch', 'long'], bear: ['Bärisch', 'short'], mixed: ['Gemischt', 'muted'] };
@@ -60,11 +66,14 @@ export function showDetail(r) {
   shown = r;
   const lv = r.levels, p = r.plan;
   $('sig-detail').innerHTML = `<div class="sig-head">
-      <div><div class="coin" style="font-size:22px">${esc(dn(r.coin))}</div>
+      <div><div class="coin" style="font-size:22px">${coinIcon(r.coin, 26)}${esc(dn(r.coin))}</div>
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · letzte Kerze ${new Date(r.lastClose).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span></div>
       ${badge(r.dir)}
     </div>
     ${seal(r)}
+    ${r.candles ? `<div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${r.tfs.filter((t) => r.candles[t]).map((t) => `<button type="button" data-stf="${t}" aria-pressed="${t === sigTfFor(r)}">${TFL[t]}</button>`).join('')}</div>
+    <div id="sig-chart" class="chart-box"></div>
+    ${chartTools('sig-chart', r.coin)}` : ''}
     ${styleRow(r, CONFIG.signals.modes)}
     ${p ? `<button type="button" class="wide" id="sig-trade" style="margin:6px 0 16px">Trade-Karte öffnen</button>` : ''}
     ${scoreBars(r.total)}
@@ -82,6 +91,12 @@ export function showDetail(r) {
       <div><span class="k">Unterstützungen</span>${lv.support.map((x) => `<span class="v small">${f.price(x)}</span>`).join('') || '–'}</div>
     </div>
     <p class="empty" style="margin-top:14px">Regelbasierte Auswertung abgeschlossener Kerzen, keine Anlageberatung.</p>`;
+  drawSigChart(r);
+  $('sig-detail').querySelectorAll('button[data-stf]').forEach((b) => b.addEventListener('click', () => {
+    sigTf = b.dataset.stf;
+    $('sig-detail').querySelectorAll('button[data-stf]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.stf === sigTf)));
+    drawSigChart(r);
+  }));
   $('sig-trade')?.addEventListener('click', () => onTrade(r));
   $('sig-detail').querySelectorAll('button[data-style]').forEach((b) => b.addEventListener('click', () => {
     const next = switchStyle(r, b.dataset.style);
@@ -93,6 +108,23 @@ export function showDetail(r) {
     $('sig-modes').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.m === mode)));
   }
   $('sig-search').value = r.coin;
+}
+
+// Chart im Signalgeber: Setup-Zeitebene des Stils, Plan eingezeichnet, empfohlener Hebel unten links
+const sigTfFor = (r) => (sigTf && r.candles?.[sigTf] ? sigTf : r.tfs[1]);
+function levHint(r) {
+  if (!r.plan) return '';
+  const s = getState?.() || {};
+  const sum = s.account ? accountSummary(s.account, CONFIG.accountMode) : null;
+  const styleMax = CONFIG.signals.modes[r.mode]?.maxLeverage ?? CONFIG.rules.maxLeverage;
+  const cap = Math.min(CONFIG.rules.maxLeverage, styleMax, s.maxLev?.[r.coin] || Infinity);
+  return levTagText(recommendedFor(r.plan, { equity: sum?.equity, available: sum?.available, riskPct: CONFIG.rules.riskSteps?.[0] ?? 2, cap, bufferPct: CONFIG.rules.liqBufferPct, budgetPct: CONFIG.rules.marginBudgetPct }));
+}
+function drawSigChart(r) {
+  const box = $('sig-chart'), tf = sigTfFor(r);
+  if (!box || !r.candles?.[tf]) return;
+  const px = getState?.()?.prices?.[r.coin];
+  drawChart(box, { coin: r.coin, candles: r.candles[tf], tf, plan: r.plan, price: px, events: r.events, confirms: confirmsFor(r), lines: viewLines(viewOf(getViews(), r.coin)), levTag: levHint(r) });
 }
 
 export async function analyze(coin) {
@@ -137,7 +169,7 @@ function renderList() {
   $('sig-list').innerHTML = getWatchlist().map((c) => {
     const r = results.get(mode + '|' + c);
     return `<button type="button" class="sig-row" data-coin="${esc(c)}">
-      <span class="sym">${esc(dn(c))} ${r ? seal(r, true) : ''}
+      <span class="sym">${coinIcon(c)}${esc(dn(c))} ${r ? seal(r, true) : ''}
         <span class="wl-live"><span data-px="${esc(c)}"></span> <b data-chg="${esc(c)}"></b></span></span>
       <span class="wl-right">
         ${r ? `<span class="meta">${r.styles ? (r.best ? CONFIG.signals.modes[r.best].label + ' · ' + r.total[r.dir] : 'kein Stil passt') : `L ${r.total.long} · S ${r.total.short}`}</span>${badge(r.dir)}` : `<span class="meta">${scanning ? 'wird geprüft …' : 'noch nicht geprüft'}</span>`}

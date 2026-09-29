@@ -2,6 +2,7 @@
 // Gespeichert auf diesem Gerät, über „Für den Wächter übernehmen“ auch in my-settings.js.
 // Ist die Liste leer, scannen Heiße Coins und Wächter wie bisher die Top-Coins. Tests in test-tradeable.js.
 import { CONFIG } from './config.js';
+import { LEDGER_MARKETS } from './ledger-markets.js';
 
 const KEY = 'wolfdesk.tradeable';
 export const TRADEABLE_MAX = 300;
@@ -29,6 +30,10 @@ export function addTradeable(coin) {
 }
 export const removeTradeable = (coin) => save(getTradeable().filter((c) => c !== coin));
 export const clearTradeable = () => save([]);
+// Deine Ledger-Liste (ledger-markets.js) übernehmen, z. B. wenn vorher schon eine eigene Liste gespeichert war
+export const loadLedger = () => save([...LEDGER_MARKETS].slice(0, TRADEABLE_MAX));
+export const isLedgerList = (list) => list.length === LEDGER_MARKETS.length && LEDGER_MARKETS.every((c) => list.includes(c));
+export const LEDGER_COUNT = LEDGER_MARKETS.length;
 export const onTradeable = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 
 // Sortierung nach Anzeigename (ohne Börsen-Präfix), damit xyz-Märkte zwischen den anderen stehen

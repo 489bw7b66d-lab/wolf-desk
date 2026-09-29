@@ -5,7 +5,7 @@ import { CONFIG } from './config.js';
 import { analyzeAllModes, switchStyle } from './core-scanner.js';
 import { signalResult } from './core-feedplan.js';
 import { change24h, entryDistance } from './core-trades.js';
-import { badge, esc, dn, viewMark } from './ui-parts.js';
+import { badge, esc, dn, viewMark, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, alignment } from './core-views.js';
 import * as f from './core-format.js';
 
@@ -52,7 +52,7 @@ function render() {
     const zone = x.zone ? `${f.price(x.zone[0])} – ${f.price(x.zone[1])}` : f.price(x.px);
     return `<button type="button" class="feed-row" data-i="${i}">
       <div class="feed-top">
-        <span class="sym">${esc(dn(x.coin))}${x.seal ? ' <span class="seal-mini" aria-label="Retest bestätigt">🛡</span>' : ''} ${viewMark(alignment(viewFor(views, x.coin), x.dir))}</span>
+        <span class="sym">${coinIcon(x.coin)}${esc(dn(x.coin))}${x.seal ? ' <span class="seal-mini" aria-label="Retest bestätigt">🛡</span>' : ''} ${viewMark(alignment(viewFor(views, x.coin), x.dir))}</span>
         ${badge(x.dir)}
         <span class="feed-status ${cls}">${icon} ${label}${x.r != null && x.status !== 'offen' ? ` ${x.r >= 0 ? '+' : '−'}${Math.abs(x.r).toFixed(1).replace('.', ',')}R` : ''}</span>
       </div>

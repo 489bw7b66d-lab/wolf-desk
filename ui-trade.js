@@ -2,13 +2,13 @@
 import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, priceVsPlan, withEntry, leverageIssues } from './core-risk.js';
-import { chartSvg } from './ui-chart.js';
+import { drawChart, chartTools } from './ui-chartview.js';
 import { switchStyle, getCandles } from './core-scanner.js';
 import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.js';
 import { estimateFees, DEFAULT_RATES } from './core-fees.js';
 import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText } from './core-guard.js';
 import { tradeHistory } from './core-trades.js';
-import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut, tipInline } from './ui-parts.js';
+import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut, tipInline, coinIcon } from './ui-parts.js';
 import { ago } from './ui-feed.js';
 import * as f from './core-format.js';
 
@@ -59,7 +59,7 @@ function render() {
   const riskState = riskPct >= CONFIG.rules.riskPerTradeMaxPct ? 'bad' : riskPct >= CONFIG.rules.riskPerTradeWarnPct ? 'warn' : 'ok';
   $('sheet-body').innerHTML = `
     <div class="sheet-head">
-      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${esc(dn(r.coin))}</h2>
+      <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${coinIcon(r.coin, 28)}${esc(dn(r.coin))}</h2>
       <span class="meta">${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]} · ${r.fromSignal ? `Signal ${ago(r.fromSignal.at)}` : esc(p.entryMode)}</span></div>
       ${badge(p.dir)}
     </div>
@@ -72,6 +72,7 @@ function render() {
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((tf) => `<button type="button" data-ctf="${tf}" aria-pressed="${tf === chartTf}">${TFL[tf]}</button>`).join('')}</div>
     <div id="sheet-chart" class="chart-box"></div>
+    ${chartTools('sheet-chart', r.coin)}
     ${styleRow(r, CONFIG.signals.modes, !!r.fromSignal)}
     ${topReasons(r).length ? `<p class="reasons-line">${topReasons(r).map(esc).join(' · ')}</p>` : ''}
     ${p.liveEntry ? `<p class="plan-mode"><span class="chip">Einstieg = Live-Kurs ${f.price(p.entry)}</span></p>` : ''}
@@ -118,12 +119,12 @@ function renderLive() {
   const ch = $('sheet-chart');
   if (ch) {
     const cs = current.candles?.[chartTf] || extraCandles.get(current.coin + '|' + chartTf);
-    if (cs) ch.innerHTML = chartSvg({ coin: current.coin, candles: cs, tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current), lines: viewLines(viewFor(getViews(), current.coin)) });
+    if (cs) drawChart(ch, { coin: current.coin, candles: cs, tf: chartTf, plan: p, price: px, events: current.events, confirms: confirmsFor(current), lines: viewLines(viewFor(getViews(), current.coin)) });
     else if (!ch.dataset.loading) {
       ch.dataset.loading = '1';
       ch.innerHTML = `<p class="empty">Lade ${TFL[chartTf]}-Kerzen …</p>`;
       const coin = current.coin, tf = chartTf;
-      getCandles(coin, tf).then((c) => extraCandles.set(coin + '|' + tf, c.slice(-120)))
+      getCandles(coin, tf).then((c) => extraCandles.set(coin + '|' + tf, c.slice(-300)))
         .catch(() => { ch.innerHTML = '<p class="empty">Kerzen konnten nicht geladen werden.</p>'; })
         .finally(() => { delete ch.dataset.loading; });
     }

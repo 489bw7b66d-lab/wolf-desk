@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 28.09.2026 · Etappe 4b1 · 402 Tests
+Stand: 29.09.2026 · Etappe 4c · 414 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -66,9 +66,9 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 ---
 
-## 5. Aufbau der App (86 Dateien, fast alle im Hauptordner)
+## 5. Aufbau der App (88 Dateien, fast alle im Hauptordner)
 
-**Einstellungen:** `config.js` (Empfehlungen) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
+**Einstellungen:** `config.js` (Empfehlungen) · `ledger-markets.js` (deine Ledger-Märkte, Standard für „Handelbare Märkte“) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
 
 **Daten-Kern (`core-*.js`)**
 - Schnittstelle & Konto: `core-api`, `core-stream`, `core-store`, `core-health`, `core-account`, `core-calc`, `core-positions`, `core-stops`
@@ -79,11 +79,11 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - Positionen: `core-path` (Trade-Weg), `core-plans` (Ziele je Position), `core-autoplan` (automatischer Plan)
 - Sonstiges: `core-backtest`, `core-settings`, `core-views` (Einschätzung), `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-format`
 
-**Anzeige (`ui-*.js`):** `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
+**Anzeige (`ui-*.js`):** `ui-chart` (Zeichnung) + **`ui-chartview`** (Bedienung: wischen, zoomen, Fadenkreuz, eigene Linien), `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4b1">` und eine Import-Map mit `?v=4b1` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4c">` und eine Import-Map mit `?v=4c` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -97,7 +97,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - **Automatischer Plan für eigene Trades:** Swing
 - **Markt-Bias:** BTC 40 · ETH 20 · Marktbreite 25 · ETH/BTC 15 %
 - **Wächter (Empfehlung):** ab Score 75 · Swing + Daytrade · Mindestumsatz 20 Mio. $ (Nutzer: Score 80, 15 Mio. $)
-- **Handelbare Märkte:** leer = Top 150 nach Market Cap; mit Einträgen scannen Heiße Coins und Wächter nur diese (plus Watchlist)
+- **Handelbare Märkte:** Standard = Ledger-Liste (177 Märkte, `ledger-markets.js`); leer = Top 150 nach Market Cap. Der Wächter meldet trotzdem nur ab Mindestumsatz (15 Mio. $)
 - **Hebel-Vorschau:** Liquidation ≈ 90 % / Hebel vom Einstieg (wie im Risiko-Kern); Achse links bis 2× Stop-Abstand, weiter weg steht „← Liq“ am Rand
 - **Indikatoren:** EMA 8/21/55/200 · RSI 14 · ATR 14 · MACD 12/26/9
 
@@ -246,11 +246,15 @@ Etappe 4b: Tipp auf ein laufendes Signal öffnet die Trade-Karte mit dem Plan au
 
 Etappe 4b1: ⓘ-Erklärungen blieben nicht offen (Karten werden jede Sekunde neu gezeichnet) → aufgeklappte ⓘ werden gemerkt · Trade-Karte aus Signal ohne doppelten Hinweis „Kein klares Signal“ · Heiße Coins im Probelauf geprüft (Top-Coins und eigene Liste)
 
+Etappe 4c: Bedienbare Charts (eigene Umsetzung ohne Fremdbibliothek: waagrecht wischen = zurück in der Zeit, zwei Finger = zoomen, tippen = Fadenkreuz mit Preis/Zeit/OHLC, doppelt tippen = zurücksetzen, eigene blaue Linien je Markt zum Ziehen) in Trade-Karte, Markt-Blatt und Signalgeber · Signalgeber mit Chart und empfohlenem Hebel (bei kleinster Risiko-Stufe) · Coin-Logos von Hyperliquid mit Buchstaben-Ersatz · Ledger-Liste (177 Märkte) als Standard für handelbare Märkte, Knopf „Ledger-Liste laden“
+
 ---
 
 ## 10. Offene Aufgaben (nächste Pakete)
 
-**Paket 4c (größer):** **Interaktive Charts** mit TradingViews freier Bibliothek „Lightweight Charts“: verschieben, zoomen, Fadenkreuz, **horizontale Linie** zum Antippen und Verschieben mit Preisanzeige. Dabei die Live-Kerze je Markt (4b) beibehalten.
+**Politur-Paket (wenn sich Wünsche gesammelt haben):** kleine Haken beim Handling, optische Aufhübschung. **Keine neuen Indikatoren oder Infos** (Wunsch des Nutzers: „da ist wirklich alles drin“).
+- Lightweight Charts wurde bewusst nicht genommen: Claude hat beim Bauen kein Internet und könnte die Bibliothek nicht testen; die eigene Umsetzung ist voll getestet.
+- Ledger-Liste: zwischen ORDI und NXPC war im Screenshot eine Zeile abgeschnitten, nach GRIFFAIN evtl. weitere Märkte → über die Suche ergänzen.
 
 **Kleinigkeiten für später:**
 - Hebel-Vorschau auch als Was-wäre-wenn am Trade-Weg einer offenen Position (bewusst nicht in 4b, der Nutzer wollte die Trade-Karte)
@@ -294,4 +298,4 @@ Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; die Engine 
 2. Den aktuellen Code als ZIP anhängen: `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` in Brave öffnen (mit `https://`), herunterladen, im Chat anhängen. Ohne ZIP kann Claude einzelne Dateien über `raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/main/DATEINAME` lesen, wenn du die Adresse in den Chat schreibst.
 3. Diesen Text als erste Nachricht:
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter: modular, Etappen mit Tests (auch mit verstellten Einstellungen), Wächter vor jedem Paket komplett durchspielen, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Sprich locker mit mir wie ein Kumpel. Prüf zuerst, ob die Versionsnummer im Code zum Masterplan passt. Als Nächstes steht Paket 4c an (Abschnitt 10).
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter: modular, Etappen mit Tests (auch mit verstellten Einstellungen), Wächter vor jedem Paket komplett durchspielen, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Sprich locker mit mir wie ein Kumpel. Prüf zuerst, ob die Versionsnummer im Code zum Masterplan passt. Die App ist inhaltlich fertig; als Nächstes nur Politur (Abschnitt 10).

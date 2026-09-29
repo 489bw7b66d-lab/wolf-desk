@@ -1,3 +1,5 @@
+import { LEDGER_MARKETS } from './ledger-markets.js';
+import { isLedgerList } from './core-tradeable.js';
 import { matchMarkets, knownTradeable, byName } from './core-tradeable.js';
 import { ownUniverse } from './core-universe.js';
 import { listsForExport } from './core-settings.js';
@@ -21,4 +23,7 @@ export const tests = [
     return !('watchlist' in listsForExport(['BTC', 'ETH'], [], rec)) && listsForExport(['BTC', 'SOL'], [], rec).watchlist.join() === 'BTC,SOL';
   }],
   ['Export: handelbare Märkte nur, wenn eingetragen', () => !('tradeable' in listsForExport(['BTC'], [], { watchlist: ['BTC'] })) && listsForExport(['BTC'], ['SOL'], { watchlist: ['BTC'] }).tradeable.join() === 'SOL'],
+
+  ['Ledger-Liste: 177 Märkte ohne Doppelte, Hyperliquid-Schreibweise', () => LEDGER_MARKETS.length === 177 && new Set(LEDGER_MARKETS).size === 177 && LEDGER_MARKETS.includes('kPEPE') && LEDGER_MARKETS.includes('0G') && !LEDGER_MARKETS.some((c) => /\s/.test(c))],
+  ['Ledger-Liste: Erkennung unabhängig von der Reihenfolge', () => isLedgerList([...LEDGER_MARKETS].reverse()) && !isLedgerList(LEDGER_MARKETS.slice(1))],
 ];

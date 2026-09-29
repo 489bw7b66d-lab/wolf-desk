@@ -1,3 +1,4 @@
+import { recommendedFor, levTagText } from './core-levpreview.js';
 import { levPreview } from './core-levpreview.js';
 
 const L = { dir: 'long', entry: 100, stop: 95, tps: [105, 110, 115, 120] };  // Stop 5 %
@@ -37,4 +38,12 @@ export const tests = [
     const a = levPreview(L, 12), b = levPreview(L, 25);
     return a.gap.from <= a.gap.to && b.gap.from <= b.gap.to && near(b.gap.to, b.ticks[0].at);
   }],
+
+  ['Empfohlener Hebel: gleiche Regeln wie Trade-Karte', () => {
+    const r = recommendedFor({ entry: 100, stop: 95 }, { equity: 1000, available: 1000, riskPct: 2, cap: 10, bufferPct: 1, budgetPct: 50 });
+    // Risiko 20 $, 5 % Stop = 400 $ Position, max. 15× laut Liq-Regel -> Deckel 10×, Budget 500 $ -> 1×
+    return r.maxLev === 10 && r.lev === 1 && levTagText(r).includes('1× empfohlen (2 % Risiko)');
+  }],
+  ['Empfohlener Hebel: ohne Konto nur Höchsthebel', () => { const r = recommendedFor({ entry: 100, stop: 90 }, { riskPct: 2, cap: 20, bufferPct: 1 }); return r.lev === null && r.maxLev === 8 && levTagText(r).includes('max. 8×'); }],
+  ['Empfohlener Hebel: Kapital zu knapp wird gesagt', () => { const r = recommendedFor({ entry: 100, stop: 99.5 }, { equity: 10000, available: 50, riskPct: 5, cap: 3, bufferPct: 1 }); return r.lev === null && r.need > 3 && levTagText(r).includes('reicht nicht'); }],
 ];

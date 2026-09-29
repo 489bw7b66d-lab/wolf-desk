@@ -1,7 +1,7 @@
 // Hebel-Vorschau für Trade-Karte und Rechner: Was macht der gewählte Hebel mit Liquidation, Puffer und Margin?
 // Risiko und Positionsgröße ändern sich durch den Hebel nicht, nur wie nah die Liquidation am Stop liegt
 // und wie viel Kapital gebunden ist. Reine Funktionen, Tests in test-levpreview.js.
-import { approxLiqDistPct } from './core-risk.js';
+import { approxLiqDistPct, positionSize, maxLeverageForStop, recommendLeverage } from './core-risk.js';
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
@@ -45,4 +45,21 @@ export function levPreview({ dir, entry, stop, tps = [] }, lev, { bufferPct = 1,
     gap: { from: Math.min(liqAt, slAt), to: Math.max(liqAt, slAt) },
     share, marginStatus, budgetPct,
   };
+}
+
+// Empfohlener Hebel für einen Plan (Signalgeber-Chart): gleiche Regeln wie Trade-Karte und Rechner.
+// Ohne Kontodaten nur der Höchsthebel, bei dem die Liquidation noch hinter dem Stop liegt.
+export function recommendedFor(plan, { equity = null, available = null, riskPct, cap, bufferPct = 1, budgetPct = 50 } = {}) {
+  if (!plan || !(plan.entry > 0) || !(plan.stop > 0) || plan.entry === plan.stop) return null;
+  const stopDistPct = (Math.abs(plan.entry - plan.stop) / plan.entry) * 100;
+  const maxLev = maxLeverageForStop(stopDistPct, bufferPct, cap);
+  const size = positionSize(equity, riskPct, plan.entry, plan.stop);
+  const rec = size ? recommendLeverage(size.notional, available, maxLev, budgetPct) : null;
+  return { lev: rec?.lev ?? null, need: rec?.need ?? null, maxLev, riskPct, account: !!size };
+}
+export function levTagText(r) {
+  if (!r) return '';
+  if (r.lev) return `⚡ ${r.lev}× empfohlen (${String(r.riskPct).replace('.', ',')} % Risiko)`;
+  if (r.account && r.need) return `⚡ Kapital reicht nicht (bräuchte ${r.need}×)`;
+  return `⚡ max. ${r.maxLev}× (Liq hinter Stop)`;
 }

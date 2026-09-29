@@ -5,7 +5,7 @@ import { parsePortfolio } from './core-performance.js';
 import { perfSplit, change24h, tradeHistory } from './core-trades.js';
 import { cooldown, leftText, cooledRisk } from './core-guard.js';
 import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
-import { badge, esc, dn, topReasons, seal, viewMark } from './ui-parts.js';
+import { badge, esc, dn, topReasons, seal, viewMark, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, alignment } from './core-views.js';
 import * as f from './core-format.js';
 
@@ -70,7 +70,7 @@ export function renderHome(s) {
     const st = p.evaluation.worst;
     const ch = change24h(s.prices?.[p.coin], s.prevDay?.[p.coin]);
     return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}"><span class="dot r-${st}"></span>
-      <span class="sym">${esc(dn(p.coin))} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
+      <span class="sym">${coinIcon(p.coin)}${esc(dn(p.coin))} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
         <span class="pos-px">${f.price(p.mark)} <b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2)}</b></span></span>
       <span class="meta">Liq ${f.pct(p.liqDist)}</span>
       <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span></button>`;
@@ -89,7 +89,7 @@ function renderHot() {
   $('hot-status').innerHTML = `<p class="empty" style="font-size:13px">${esc(status)}${hot.source ? ` · ${esc(hot.source)}` : ''}</p>${prog}${hot.error ? `<p class="warnline">${esc(hot.error)}</p>` : ''}`;
   $('hot-list').innerHTML = hot.picks.length ? hot.picks.map(({ r }, i) => `<button type="button" class="hot-row" data-hot="${esc(r.coin)}">
       <span class="rank">${i + 1}</span>
-      <span class="hot-main"><span class="sym">${esc(dn(r.coin))} ${seal(r, true)} ${viewMark(alignment(viewFor(getViews(), r.coin), r.dir))}</span><span class="reasons">${topReasons(r, 2).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
+      <span class="hot-main"><span class="sym">${coinIcon(r.coin)}${esc(dn(r.coin))} ${seal(r, true)} ${viewMark(alignment(viewFor(getViews(), r.coin), r.dir))}</span><span class="reasons">${topReasons(r, 2).map(esc).join(' · ') || 'Trend-Konfluenz'}</span></span>
       <span class="hot-side">${badge(r.dir)}<span class="heat">Score ${r.total[r.dir]}</span></span>
     </button>`).join('')
     : hot.lastRound ? '<p class="empty">Gerade kein Coin mit klarem Signal. Kein Trade ist auch eine Entscheidung.</p>'

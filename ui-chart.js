@@ -1,8 +1,11 @@
 // Kerzenchart mit Live-Kerze, Einstiegszone, Stop, Zielen und Musterbruch-Linien. Reines SVG, keine Fremdbibliothek.
+// Seit 4c: Ausschnitt (verschieben/zoomen), Fadenkreuz und eigene horizontale Linien; die Bedienung steckt in ui-chartview.js.
 import * as f from './core-format.js';
 import { TFL } from './ui-parts.js';
 
 const W = 360, H = 230, PAD_R = 58, PAD_T = 8, PAD_B = 16, SHOW = 70, GAP = 6; // GAP: leere Kerzenplätze vor der Preisachse
+export const GEO = new Map(); // zuletzt gezeichnete Geometrie je Chart (für Fadenkreuz, Linien ziehen, Verschieben)
+export const CHART = { W, H, PAD_R, PAD_T, PAD_B, SHOW };
 const lives = new Map(); // laufende Kerze je Markt und Zeitebene: "coin|tf" -> { t, o, h, l, c }
 
 // Laufende Kerze aus Live-Kursen fortschreiben (beginnt am Schluss der letzten fertigen Kerze).
@@ -24,10 +27,20 @@ export function liveCandle(candles, tf, price, coin = '') {
 }
 
 // lines: zusätzliche Linien [{ price, col, label, dash }], z. B. Einstieg, Stop und Liquidation einer offenen Position
-export function chartSvg({ coin = '', candles, tf, plan, price, events = [], confirms = [], lines = [] }) {
+// Ausschnitt: count = sichtbare Kerzen, back = wie viele Kerzen vom rechten Rand zurück (0 = aktuell)
+export function viewWindow(len, view) {
+  const count = Math.max(15, Math.min(len, Math.round(view?.count || SHOW)));
+  const back = Math.max(0, Math.min(len - count, Math.round(view?.back || 0)));
+  return { count, back, from: len - back - count, to: len - back };
+}
+
+// view: Ausschnitt, cross: Fadenkreuz {x, y} in SVG-Einheiten, hlines: eigene Linien (Preise), levTag: z. B. „6× empfohlen“,
+// key: Schlüssel für die Geometrie (GEO), damit die Bedienung Finger-Positionen in Preis und Kerze umrechnen kann
+export function chartSvg({ coin = '', candles, tf, plan, price, events = [], confirms = [], lines = [], view = null, cross = null, hlines = [], levTag = '', key = '' }) {
   if (!candles?.length) return '<p class="empty">Keine Kursdaten für den Chart.</p>';
-  const cs = candles.slice(-SHOW);
-  const lc = liveCandle(candles, tf, price, coin);
+  const win = viewWindow(candles.length, view);
+  const cs = candles.slice(win.from, win.to);
+  const lc = win.back === 0 ? liveCandle(candles, tf, price, coin) : null;
   const all = lc ? [...cs, { ...lc, live: true }] : cs;
   const plotW = W - PAD_R, n = all.length, cw = plotW / (n + GAP);
 
@@ -37,6 +50,7 @@ export function chartSvg({ coin = '', candles, tf, plan, price, events = [], con
   lines.filter((l) => l.fit !== false && l.price > 0).forEach((l) => { lo = Math.min(lo, l.price); hi = Math.max(hi, l.price); });
   const span = hi - lo || 1; lo -= span * 0.04; hi += span * 0.04;
   const y = (p) => PAD_T + (1 - (p - lo) / (hi - lo)) * (H - PAD_T - PAD_B);
+  if (key) GEO.set(key, { lo, hi, cw, n, plotW, len: candles.length, count: win.count, back: win.back, times: all.map((c) => c.t) });
   const inRange = (p) => p >= lo && p <= hi;
 
   const bodies = all.map((c, i) => {
@@ -64,6 +78,19 @@ export function chartSvg({ coin = '', candles, tf, plan, price, events = [], con
   lines.forEach((l) => { if (l.price > 0) marks += line(l.price, l.col, l.label, l.dash || ''); });
   events.filter((e) => e.level && e.tf === tf).forEach((e) => { marks += line(e.level, 'var(--muted)', 'Bruch', '1 3'); });
   confirms.filter((c) => c.tf === tf).forEach((c) => { marks += line(c.level, 'var(--gold)', '🛡 Retest', '1 2'); });
+  // Eigene Linien: hell gepunktet mit Preis, links ein Griff zum Ziehen
+  hlines.forEach((hp) => {
+    if (!inRange(hp)) return;
+    const yy = y(hp).toFixed(1);
+    marks += `<line x1="0" x2="${plotW}" y1="${yy}" y2="${yy}" stroke="#7CC4FF" stroke-width="1.2" stroke-dasharray="6 3"/>
+      <circle cx="10" cy="${yy}" r="5" fill="#7CC4FF"/>
+      <rect x="${plotW + 1}" y="${(+yy - 7).toFixed(1)}" width="${PAD_R - 2}" height="14" rx="3" fill="#7CC4FF"/>
+      <text x="${plotW + 4}" y="${(+yy + 3.5).toFixed(1)}" fill="var(--bg)" font-size="9" font-weight="800">${f.price(hp)}</text>`;
+  });
+  // Freie Ecke unten links (bei Short oben): Hebel-Hinweis, beim Fadenkreuz stattdessen die Kerzenwerte
+  const cornerY = plan?.dir === 'short' ? 14 : H - PAD_B - 4;
+  if (levTag && !cross) marks += `<rect x="3" y="${cornerY - 10}" width="${(levTag.length * 5.4 + 8).toFixed(0)}" height="14" rx="3" fill="var(--bg)" opacity=".9"/>
+    <text x="6" y="${cornerY}" fill="var(--gold)" font-size="10" font-weight="800">${levTag}</text>`;
   if (price && inRange(price)) {
     const yy = y(price);
     const xLast = n * cw + cw * 0.6;
@@ -72,5 +99,27 @@ export function chartSvg({ coin = '', candles, tf, plan, price, events = [], con
       <rect x="${plotW + 1}" y="${(yy - 7).toFixed(1)}" width="${PAD_R - 2}" height="14" rx="3" fill="var(--text)"/>
       <text x="${plotW + 4}" y="${(yy + 3.5).toFixed(1)}" fill="var(--bg)" font-size="9" font-weight="800">${f.price(price)}</text>`;
   }
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Kerzenchart ${TFL[tf] || tf} mit Einstieg, Stop und Zielen">${marks}${bodies}</svg>`;
+  // Fadenkreuz: senkrecht an der Kerze, waagrecht am Finger, Preis rechts und Zeit unten
+  let crossSvg = '';
+  if (cross && n) {
+    const i = Math.max(0, Math.min(n - 1, Math.floor(cross.x / cw)));
+    const cx = i * cw + cw / 2, cy = Math.max(PAD_T, Math.min(H - PAD_B, cross.y));
+    const cp = lo + (1 - (cy - PAD_T) / (H - PAD_T - PAD_B)) * (hi - lo);
+    const c = all[i];
+    const when = new Date(c.t).toLocaleString('de-DE', ['1d'].includes(tf) ? { day: '2-digit', month: '2-digit' } : { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const tx = Math.max(34, Math.min(plotW - 34, cx));
+    const ohlc = `O ${f.price(c.o)} H ${f.price(c.h)} T ${f.price(c.l)} S ${f.price(c.c)}`;
+    crossSvg = `<g class="cv-cross"><line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${PAD_T}" y2="${H - PAD_B}" stroke="var(--text)" stroke-width=".7" stroke-dasharray="3 3" opacity=".75"/>
+      <line x1="0" x2="${plotW}" y1="${cy.toFixed(1)}" y2="${cy.toFixed(1)}" stroke="var(--text)" stroke-width=".7" stroke-dasharray="3 3" opacity=".75"/>
+      <rect x="${plotW + 1}" y="${(cy - 7).toFixed(1)}" width="${PAD_R - 2}" height="14" rx="3" fill="var(--gold)"/>
+      <text x="${plotW + 4}" y="${(cy + 3.5).toFixed(1)}" fill="var(--bg)" font-size="9" font-weight="800">${f.price(cp)}</text>
+      <rect x="${(tx - 34).toFixed(1)}" y="${H - PAD_B + 1}" width="68" height="${PAD_B - 2}" rx="3" fill="var(--gold)"/>
+      <text x="${tx.toFixed(1)}" y="${H - 4.5}" text-anchor="middle" fill="var(--bg)" font-size="8.5" font-weight="800">${when}</text>
+      <rect x="3" y="${cornerY - 9}" width="${(ohlc.length * 4.7 + 6).toFixed(0)}" height="12" rx="3" fill="var(--bg)" opacity=".9"/>
+      <text x="6" y="${cornerY}" fill="var(--text)" font-size="8.5" font-weight="700">${ohlc}</text></g>`;
+  }
+  const older = win.back > 0 ? `<text x="${(plotW - 4).toFixed(1)}" y="${PAD_T + 9}" text-anchor="end" fill="var(--gold)" font-size="9" font-weight="800">◀ ${win.back} zurück</text>` : '';
+  // Greifflächen für eigene Linien (HTML, damit das iPhone beim Ziehen nicht die Seite scrollt)
+  const hits = hlines.filter(inRange).map((hp) => `<div class="cv-hit" style="top:${((y(hp) / H) * 100).toFixed(2)}%;width:${((plotW / W) * 100).toFixed(1)}%"></div>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Kerzenchart ${TFL[tf] || tf} mit Einstieg, Stop und Zielen">${marks}${bodies}${crossSvg}${older}</svg>${hits}`;
 }

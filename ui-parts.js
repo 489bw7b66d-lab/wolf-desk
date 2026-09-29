@@ -191,3 +191,14 @@ export function tipInline(text, key = tipKey(text)) {
 export function tipHead(title, text, extra = '', key = 'h|' + tipKey(title)) {
   return `<details class="tip-h"${tipAttr(key)}><summary><h3 class="sub-h">${title} <span class="tip-mark" aria-hidden="true">ⓘ</span>${extra}</h3></summary><p class="tip-text">${esc(text)}</p></details>`;
 }
+
+// Coin-Logo von Hyperliquid (app.hyperliquid.xyz/coins/NAME.svg). Fehlt eins, bleibt ein Kreis mit Anfangsbuchstaben.
+// Fehlgeschlagene Logos werden gemerkt, damit das jede Sekunde neu gezeichnete Bild nicht ständig neu anfragt.
+const logoFail = new Set();
+export const logoUrl = (coin) => `https://app.hyperliquid.xyz/coins/${encodeURIComponent(coin)}.svg`;
+export const logoLetter = (coin) => (String(coin).replace(/^[a-z]+:/, '').replace(/^k(?=[A-Z])/, '')[0] || '?').toUpperCase();
+if (typeof window !== 'undefined') window.__wdLogoFail = (el, coin) => { logoFail.add(coin); el.remove(); };
+export function coinIcon(coin, size = 22) {
+  const img = logoFail.has(coin) ? '' : `<img src="${logoUrl(coin)}" alt="" loading="lazy" decoding="async" onerror="__wdLogoFail(this, '${esc(coin).replace(/'/g, '')}')">`;
+  return `<span class="ci" style="--ci:${size}px" aria-hidden="true"><b>${esc(logoLetter(coin))}</b>${img}</span>`;
+}
