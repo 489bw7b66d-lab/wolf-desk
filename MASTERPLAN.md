@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 29.09.2026 · Etappe 4c · 414 Tests
+Stand: 29.09.2026 · Etappe 4c1 · 415 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -83,7 +83,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4c">` und eine Import-Map mit `?v=4c` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4c1">` und eine Import-Map mit `?v=4c1` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -247,6 +247,8 @@ Etappe 4b: Tipp auf ein laufendes Signal öffnet die Trade-Karte mit dem Plan au
 Etappe 4b1: ⓘ-Erklärungen blieben nicht offen (Karten werden jede Sekunde neu gezeichnet) → aufgeklappte ⓘ werden gemerkt · Trade-Karte aus Signal ohne doppelten Hinweis „Kein klares Signal“ · Heiße Coins im Probelauf geprüft (Top-Coins und eigene Liste)
 
 Etappe 4c: Bedienbare Charts (eigene Umsetzung ohne Fremdbibliothek: waagrecht wischen = zurück in der Zeit, zwei Finger = zoomen, tippen = Fadenkreuz mit Preis/Zeit/OHLC, doppelt tippen = zurücksetzen, eigene blaue Linien je Markt zum Ziehen) in Trade-Karte, Markt-Blatt und Signalgeber · Signalgeber mit Chart und empfohlenem Hebel (bei kleinster Risiko-Stufe) · Coin-Logos von Hyperliquid mit Buchstaben-Ersatz · Ledger-Liste (177 Märkte) als Standard für handelbare Märkte, Knopf „Ledger-Liste laden“
+
+Etappe 4c1: Coin-Logos blinkten (jede Sekunde neues Bild) → jedes Logo wird einmal geladen und dann als CSS-Hintergrund gezeigt
 
 ---
 

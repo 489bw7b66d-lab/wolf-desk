@@ -1,3 +1,4 @@
+import { coinIcon } from './ui-parts.js';
 import { viewWindow, chartSvg, GEO } from './ui-chart.js';
 import { priceAt, yAt, panView, zoomView, getLines, setLines } from './ui-chartview.js';
 import { liveCandle } from './ui-chart.js';
@@ -55,5 +56,9 @@ export const tests = [
     const plain = chartSvg({ coin: 'X', candles: cs, tf: '1h', levTag: '⚡ 6× empfohlen', key: 'test-box2' });
     // Beim Fadenkreuz stehen die Kerzenwerte in der Ecke statt des Hebel-Hinweises
     return svg.includes('cv-cross') && svg.includes('O ') && !svg.includes('6× empfohlen') && plain.includes('6× empfohlen') && svg.includes('#7CC4FF') && svg.includes('10 zurück') && svg.includes('cv-hit') && g.count === 40 && g.back === 10 && g.n === 40;
+  }],
+  ['Coin-Logo: ohne geladenes Bild Kreis mit Buchstabe, kein <img> (kein Blinken beim Neuzeichnen)', () => {
+    const a = coinIcon('kPEPE'), b = coinIcon('xyz:GOLD');
+    return a.includes('<b>P</b>') && b.includes('<b>G</b>') && !a.includes('<img') && a.includes('data-ci="kPEPE"') && b.includes('data-ci="xyz_GOLD"');
   }],
 ];

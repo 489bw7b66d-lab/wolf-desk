@@ -193,12 +193,35 @@ export function tipHead(title, text, extra = '', key = 'h|' + tipKey(title)) {
 }
 
 // Coin-Logo von Hyperliquid (app.hyperliquid.xyz/coins/NAME.svg). Fehlt eins, bleibt ein Kreis mit Anfangsbuchstaben.
-// Fehlgeschlagene Logos werden gemerkt, damit das jede Sekunde neu gezeichnete Bild nicht ständig neu anfragt.
-const logoFail = new Set();
-export const logoUrl = (coin) => `https://app.hyperliquid.xyz/coins/${encodeURIComponent(coin)}.svg`;
+// Gegen Blinken (viele Karten werden jede Sekunde neu gezeichnet): Jedes Logo wird genau einmal im Hintergrund geladen.
+// Erst wenn es da ist, zeigt der Kreis es als CSS-Hintergrund – ein neu gezeichnetes Element holt es dann ohne Nachladen
+// aus dem Speicher, statt wie ein neues <img> kurz leer aufzublitzen.
+let logoBase = 'https://app.hyperliquid.xyz/coins/';
+export const setLogoBase = (b) => { logoBase = b; }; // nur für Tests
+export const logoUrl = (coin) => `${logoBase}${encodeURIComponent(coin)}.svg`;
 export const logoLetter = (coin) => (String(coin).replace(/^[a-z]+:/, '').replace(/^k(?=[A-Z])/, '')[0] || '?').toUpperCase();
-if (typeof window !== 'undefined') window.__wdLogoFail = (el, coin) => { logoFail.add(coin); el.remove(); };
+const logoState = new Map(); // coin -> 'loading' | 'ok' | 'fail'
+const logoKey = (coin) => String(coin).replace(/[^A-Za-z0-9]/g, '_');
+export const logoStatus = (coin) => logoState.get(coin) || null;
+
+function loadLogo(coin) {
+  if (logoState.has(coin) || typeof Image === 'undefined' || typeof document === 'undefined') return;
+  logoState.set(coin, 'loading');
+  const img = new Image();
+  img.onload = () => {
+    logoState.set(coin, 'ok');
+    let st = document.getElementById('ci-styles');
+    if (!st) { st = document.createElement('style'); st.id = 'ci-styles'; document.head.appendChild(st); }
+    st.sheet?.insertRule(`.ci.has-logo[data-ci="${logoKey(coin)}"]{background-image:url("${logoUrl(coin)}")}`, st.sheet.cssRules.length);
+    // Schon sichtbare Kreise dieses Coins sofort umstellen (ohne auf das nächste Neuzeichnen zu warten)
+    document.querySelectorAll(`.ci[data-ci="${logoKey(coin)}"]`).forEach((el) => { el.classList.add('has-logo'); el.textContent = ''; });
+  };
+  img.onerror = () => logoState.set(coin, 'fail');
+  img.src = logoUrl(coin);
+}
+
 export function coinIcon(coin, size = 22) {
-  const img = logoFail.has(coin) ? '' : `<img src="${logoUrl(coin)}" alt="" loading="lazy" decoding="async" onerror="__wdLogoFail(this, '${esc(coin).replace(/'/g, '')}')">`;
-  return `<span class="ci" style="--ci:${size}px" aria-hidden="true"><b>${esc(logoLetter(coin))}</b>${img}</span>`;
+  loadLogo(coin);
+  const ok = logoState.get(coin) === 'ok';
+  return `<span class="ci${ok ? ' has-logo' : ''}" data-ci="${logoKey(coin)}" style="--ci:${size}px" aria-hidden="true">${ok ? '' : `<b>${esc(logoLetter(coin))}</b>`}</span>`;
 }

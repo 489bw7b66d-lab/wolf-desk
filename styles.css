@@ -568,5 +568,5 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 /* 4c: Coin-Logos */
 .ci { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; width: var(--ci, 22px); height: var(--ci, 22px); margin-right: .38em; border-radius: 50%; background: var(--line); vertical-align: -0.28em; overflow: hidden; }
 .ci b { font-size: calc(var(--ci, 22px) * .5); font-weight: 800; color: var(--muted); line-height: 1; }
-.ci img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .mk-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ci.has-logo { background-color: transparent; background-size: cover; background-position: center; }
