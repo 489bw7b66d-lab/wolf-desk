@@ -10,6 +10,8 @@ import { getFeedSignals } from './ui-feed.js';
 import { analyzeAllModes } from './core-scanner.js';
 import { CONFIG } from './config.js';
 import { drawChart, chartTools } from './ui-chartview.js';
+import { positionPlan } from './ui-testpage.js';
+import { trailText } from './core-trail.js';
 import { esc, dn, TFL, CHART_TFS, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
 import * as f from './core-format.js';
@@ -34,6 +36,16 @@ function tpOrders(s, p) {
     .map((o) => Number(o.triggerPx)).sort((a, b) => (p.side === 'long' ? a - b : b - a));
 }
 
+// Warum der Punkt der Position grün, gelb oder rot ist: die Regel-Prüfung im Klartext
+const MARK = { ok: '✓', warn: '○', bad: '●' };
+function ruleBox(ev) {
+  if (!ev?.checks) return '';
+  const bad = ev.checks.filter((c) => c.status !== 'ok');
+  const head = { ok: 'Alle Regeln eingehalten', warn: 'Warnung', bad: 'Regelverstoß' }[ev.worst];
+  return `<div class="rule-box ${ev.worst}"><p class="${ev.worst}">${MARK[ev.worst]} ${head}</p>
+    ${(bad.length ? bad : []).map((c) => `<p class="${c.status}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}</div>`;
+}
+
 function renderLive() {
   if ($('sheet').hidden || !$('coin-view') || !coin) { clearInterval(timer); return; }
   const s = getState();
@@ -48,7 +60,10 @@ function renderLive() {
   if (p) {
     const trade = openTradeFor(tradeHistory(s.fills), coin);
     const roe = p.marginUsed > 0 ? (p.upnl / p.marginUsed) * 100 : null;
-    $('coin-pos').innerHTML = `<div class="kv">
+    const pp = positionPlan(s, p, trade);
+    $('coin-pos').innerHTML = `${ruleBox(p.evaluation)}
+    ${pp.trail ? `<p class="trail-hint" style="margin:0 0 12px">↗ ${esc(trailText(pp.trail, pp.trail.tf, f.price))}</p>` : ''}
+    <div class="kv">
       <div><span class="k">Offener PnL</span><span class="v ${p.upnl >= 0 ? 'long' : 'short'}">${f.signedUsd(p.upnl)}</span></div>
       <div><span class="k">Auf Margin</span><span class="v ${roe >= 0 ? 'long' : 'short'}">${pctTxt(roe, 1)}</span></div>
       <div><span class="k">Einstieg</span><span class="v">${f.price(p.entry)}</span></div>

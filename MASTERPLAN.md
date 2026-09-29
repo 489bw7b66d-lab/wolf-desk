@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 29.09.2026 · Etappe 4c1 · 415 Tests
+Stand: 29.09.2026 · Etappe 4d · 431 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -66,14 +66,14 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 ---
 
-## 5. Aufbau der App (88 Dateien, fast alle im Hauptordner)
+## 5. Aufbau der App (90 Dateien, fast alle im Hauptordner)
 
 **Einstellungen:** `config.js` (Empfehlungen) · `ledger-markets.js` (deine Ledger-Märkte, Standard für „Handelbare Märkte“) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
 
 **Daten-Kern (`core-*.js`)**
 - Schnittstelle & Konto: `core-api`, `core-stream`, `core-store`, `core-health`, `core-account`, `core-calc`, `core-positions`, `core-stops`
-- Risiko: `core-risk` (Regeln, Ausstiegsplan, Hebel), `core-guard` (Stop-Check gegen ATR, Abkühlphase), **`core-levpreview`** (Hebel-Vorschau: Liquidation, Puffer, Margin-Anteil)
-- Handel & Auswertung: `core-trades`, `core-performance`, `core-fees` (Gebühren/Funding), `core-patience` (Geduld-Statistik)
+- Risiko: `core-risk` (Regeln, Ausstiegsplan, Hebel), `core-guard` (Stop-Check gegen ATR, Abkühlphase), **`core-trail`** (SL nachziehen nach Struktur), **`core-levpreview`** (Hebel-Vorschau: Liquidation, Puffer, Margin-Anteil)
+- Handel & Auswertung: `core-trades`, `core-performance` (ehrlicher Gewinn aus Hyperliquids PnL-Verlauf), `core-fees` (Gebühren/Funding), `core-patience` (Geduld-Statistik)
 - Signale: `core-indicators`, `core-signals`, `core-scanner`, `core-fib`, `core-elliott`, `core-patterns`, `core-candlesticks`, `core-confirm` (🛡-Siegel), **`core-feedplan`** (Trade-Karte aus gemeldetem Signal)
 - Märkte: `core-universe` (Top-Coins bzw. deine Liste), `core-hotscan`, `core-market` (Markt-Bias, Fear & Greed mit Stand), `core-watchlist`, **`core-tradeable`** (handelbare Märkte, Marktsuche)
 - Positionen: `core-path` (Trade-Weg), `core-plans` (Ziele je Position), `core-autoplan` (automatischer Plan)
@@ -83,7 +83,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4c1">` und eine Import-Map mit `?v=4c1` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="4d">` und eine Import-Map mit `?v=4d` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -98,6 +98,8 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - **Markt-Bias:** BTC 40 · ETH 20 · Marktbreite 25 · ETH/BTC 15 %
 - **Wächter (Empfehlung):** ab Score 75 · Swing + Daytrade · Mindestumsatz 20 Mio. $ (Nutzer: Score 80, 15 Mio. $)
 - **Handelbare Märkte:** Standard = Ledger-Liste (177 Märkte, `ledger-markets.js`); leer = Top 150 nach Market Cap. Der Wächter meldet trotzdem nur ab Mindestumsatz (15 Mio. $)
+- **SL nachziehen (Struktur, 4d):** frühestens ab TP1 · nur bestätigte Swing-Tiefs/-Hochs der Setup-Zeitebene (2 Kerzen links/rechts, abgeschlossen, nach Eröffnung) · Puffer ½ ATR · nur in Gewinnrichtung · spätestens ab TP2 Einstieg + Gebühren (2 × Taker) · Telegram erneut erst ab 0,5 % Verbesserung
+- **Gewinn gesamt (4d):** aus Hyperliquids Gesamt-PnL (Ein-/Auszahlungen herausgerechnet), Prozent auf die Netto-Einzahlungen; Startkapital nur noch Notlösung, solange der Verlauf nicht geladen ist
 - **Hebel-Vorschau:** Liquidation ≈ 90 % / Hebel vom Einstieg (wie im Risiko-Kern); Achse links bis 2× Stop-Abstand, weiter weg steht „← Liq“ am Rand
 - **Indikatoren:** EMA 8/21/55/200 · RSI 14 · ATR 14 · MACD 12/26/9
 
@@ -250,12 +252,15 @@ Etappe 4c: Bedienbare Charts (eigene Umsetzung ohne Fremdbibliothek: waagrecht w
 
 Etappe 4c1: Coin-Logos blinkten (jede Sekunde neues Bild) → jedes Logo wird einmal geladen und dann als CSS-Hintergrund gezeigt
 
+Etappe 4d (Politur): Gewinn gesamt ehrlich aus Hyperliquids PnL-Verlauf (Einzahlungen zählen nicht als Gewinn), PnL-Zeile „offen · heute“ unter dem Kontowert, Abweichungs-Satz entfernt (Erklärung hinter ⓘ) · Positions-Blatt zeigt die Regel-Ampel im Klartext · Heiße-Coins-Text ohne veraltetes „Top 150“ · SL nachziehen nach Struktur (Positionskarte, Positions-Blatt, Telegram) · Backtest vergleicht dieselben Einstiege mit Nachziehen nach Plan und nach Struktur
+
 ---
 
 ## 10. Offene Aufgaben (nächste Pakete)
 
-**Politur-Paket (wenn sich Wünsche gesammelt haben):** kleine Haken beim Handling, optische Aufhübschung. **Keine neuen Indikatoren oder Infos** (Wunsch des Nutzers: „da ist wirklich alles drin“).
+**Nächstes Politur-Paket (wenn sich Wünsche gesammelt haben):** kleine Haken beim Handling, optische Aufhübschung. **Keine neuen Indikatoren oder Infos** (Wunsch des Nutzers: „da ist wirklich alles drin“).
 - Lightweight Charts wurde bewusst nicht genommen: Claude hat beim Bauen kein Internet und könnte die Bibliothek nicht testen; die eigene Umsetzung ist voll getestet.
+- Nachziehen: Backtest-Vergleich Plan gegen Struktur in der App auf den handelbaren Märkten laufen lassen; ist Struktur klar schlechter, Regel überdenken
 - Ledger-Liste: zwischen ORDI und NXPC war im Screenshot eine Zeile abgeschnitten, nach GRIFFAIN evtl. weitere Märkte → über die Suche ergänzen.
 
 **Kleinigkeiten für später:**

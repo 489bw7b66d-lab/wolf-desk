@@ -1,7 +1,7 @@
 // Startseite: das Wichtigste auf einen Blick.
 import { CONFIG } from './config.js';
 import { accountRisk } from './core-positions.js';
-import { parsePortfolio } from './core-performance.js';
+import { parsePortfolio, honestSplit, lifePnlOf } from './core-performance.js';
 import { perfSplit, change24h, tradeHistory } from './core-trades.js';
 import { cooldown, leftText, cooledRisk } from './core-guard.js';
 import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
@@ -23,14 +23,14 @@ export function renderHome(s) {
   }
   renderCool(s);
   const upnl = s.account.positions.reduce((n, p) => n + (p.upnl || 0), 0);
-  const split = perfSplit(r.summary.equity, CONFIG.startCapital, upnl);
+  const split = honestSplit(r.summary.equity, lifePnlOf(s.portfolio), upnl, CONFIG.startCapital);
   const rt = r.realizedToday;
   const day = s.portfolio ? parsePortfolio(s.portfolio).day?.pnl : null;
   const dayPnl = day?.length ? day.at(-1)[1] - day[0][1] : null;
   const cls = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : '');
   $('home-top').innerHTML = `<span class="k">Kontowert</span>
     <div class="home-equity">${f.usd(r.summary.equity)}</div>
-    ${split ? `<div class="home-perf ${split.total >= 0 ? 'long' : 'short'}">${f.signedUsd(split.total)} · ${split.pct >= 0 ? '+' : ''}${f.pct(split.pct, 1)} gesamt</div>` : ''}
+    ${split ? `<div class="home-perf ${split.total >= 0 ? 'long' : 'short'}">${f.signedUsd(split.total)}${split.pct == null ? '' : ` · ${split.pct >= 0 ? '+' : ''}${f.pct(split.pct, 1)}`} gesamt</div>` : ''}
     <div class="kv" style="margin-top:14px">
       <div><span class="k">PnL 24 Std</span><span class="v ${cls(dayPnl)}">${f.signedUsd(dayPnl)}</span></div>
       <div><span class="k">Heute realisiert</span><span class="v ${cls(rt)}">${f.signedUsd(rt)}</span></div>

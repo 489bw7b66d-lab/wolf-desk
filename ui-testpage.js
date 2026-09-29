@@ -11,6 +11,9 @@ import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getAutoPlan } from './core-autoplan.js';
 import { stopNoise, atrFor, setupTf } from './core-guard.js';
 import { getFeedSignals } from './ui-feed.js';
+import { trailForPosition, hitsFromPath, trailText } from './core-trail.js';
+import { dayPnlOf } from './core-performance.js';
+import { getCandles } from './core-scanner.js';
 import { tipInline, coinIcon } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -37,6 +40,14 @@ function renderHealth(s, now, hasAddr) {
     row(mkCount ? 'ok' : 'fehlt', 'Marktliste', `${mkCount} Märkte geladen`);
 }
 
+// Auf einen Blick unter dem Kontowert: offenes PnL und PnL der letzten 24 Std. (realisiert + offen)
+function pnlLine(s) {
+  const open = (s.account?.positions || []).reduce((n, p) => n + (p.upnl || 0), 0);
+  const day = dayPnlOf(s.portfolio);
+  const c = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
+  return `<div class="acc-pnl"><span class="${c(open)}">${f.signedUsd(open)} offen</span>${day == null ? '' : ` <span class="muted">·</span> <span class="${c(day)}">${f.signedUsd(day)} heute</span>`}</div>`;
+}
+
 function renderAccount(s) {
   const a = s.account;
   if (!a) {
@@ -45,7 +56,7 @@ function renderAccount(s) {
   }
   const sum = accountSummary(a, CONFIG.accountMode);
   $('account').innerHTML = `<div class="kv">
-    <div class="span2"><span class="k">Kontowert</span><span class="v big">${f.usd(sum.equity)}</span></div>
+    <div class="span2"><span class="k">Kontowert</span><span class="v big">${f.usd(sum.equity)}</span>${pnlLine(s)}</div>
     <div><span class="k">Verfügbar</span><span class="v">${f.usd(sum.available)}</span></div>
     <div><span class="k">In Positionen</span><span class="v">${f.usd(sum.inPositions)}</span></div>
     <div><span class="k">Kapital-Auslastung</span><span class="v">${f.pct(sum.usagePct)}</span></div>
@@ -68,6 +79,7 @@ function renderPositions(s, now) {
     const inProfit = p.stop != null && (p.side === 'long' ? p.stop >= p.entry : p.stop <= p.entry);
     const locked = inProfit ? Math.abs(p.size) * Math.abs(p.stop - p.entry) : null;
     const issues = ev.checks.filter((c) => c.status !== 'ok');
+    const pp = positionPlan(s, p, t);
     return `<article class="pos" data-coin="${esc(p.coin)}" role="button" tabindex="0" aria-label="${esc(p.coin)}: Chart und Details öffnen">
       <div class="pos-head">
         <span><span class="coin">${coinIcon(p.coin, 24)}${esc(p.coin.replace(/^[a-z]+:/, ''))}</span><span class="side ${p.side}">${p.side === 'long' ? 'LONG' : 'SHORT'} ${f.lev(p.leverage)} ${p.leverageType}</span></span>
@@ -95,12 +107,23 @@ function renderPositions(s, now) {
           <div><span class="k">Stop-Quelle</span>${p.stopSource || '–'}</div>
         </div>
       </details>
-      ${pathBar(tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan, targetsFor({ plan: planFor(getPlans(), p.coin, p.side, t?.openedAt), signal: signalFor(getFeedSignals(), p.coin, p.side, t?.openedAt), auto: t?.partial ? null : getAutoPlan(p.coin, p.side, p.entry, t?.openedAt) })))}
+      ${pathBar(pp.path)}
+      ${pp.trail ? `<p class="trail-hint">↗ ${esc(trailText(pp.trail, pp.trail.tf, f.price))}</p>` : ''}
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
       ${posNoise(p)}
       <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
   }).join('');
+}
+
+// Trade-Weg und Nachzieh-Vorschlag einer Position (auch fürs Markt-Blatt)
+export function positionPlan(s, p, t) {
+  const signal = signalFor(getFeedSignals(), p.coin, p.side, t?.openedAt);
+  const targets = targetsFor({ plan: planFor(getPlans(), p.coin, p.side, t?.openedAt), signal, auto: t?.partial ? null : getAutoPlan(p.coin, p.side, p.entry, t?.openedAt) });
+  const path = tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan, targets);
+  const style = signal?.style || CONFIG.positions?.autoStyle || 'swing';
+  const trail = trailForPosition(p, hitsFromPath(path), t?.openedAt, style, getCandles);
+  return { path, trail };
 }
 
 function renderWatch(s, now) {

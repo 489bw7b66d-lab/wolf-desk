@@ -1,4 +1,4 @@
-import { simulateTrade, summarize } from './core-backtest.js';
+import { simulateTrade, summarize, compareTrail } from './core-backtest.js';
 
 const near = (a, b, eps = 1e-6) => a != null && Math.abs(a - b) < eps;
 const C = (t, o, h, l, c) => ({ t, T: t + 9, o, h, l, c });
@@ -26,4 +26,15 @@ export const tests = [
     return near(summarize(t).byEvent[0].edge, 3);
   }],
   ['Auswertung: leer = n 0', () => summarize([]).n === 0],
+  ['Backtest: Nachziehen nach Struktur hebt den Stop und sichert Gewinn', () => {
+    const plan = { dir: 'long', zone: [99, 101], entry: 100, stop: 95, tps: [105, 110, 115, 120] };
+    const path = [{ t: 1, T: 2, o: 100, h: 106, l: 99.5, c: 105.5 }, { t: 3, T: 4, o: 105.5, h: 106, l: 104, c: 105 }, { t: 5, T: 6, o: 105, h: 105, l: 101, c: 101 }];
+    const plain = simulateTrade(plan, path, { fillNow: true, nowPx: 100 });
+    const trailed = simulateTrade(plan, path, { fillNow: true, nowPx: 100, stepTrail: false, trailFn: (c, hits) => (hits >= 1 ? 103 : null) });
+    return plain.outcome === 'offen' && trailed.outcome === 'stop' && trailed.r > plain.r;
+  }],
+  ['Backtest: Vergleich Plan gegen Struktur über dieselben Trades', () => {
+    const c = compareTrail([{ r: 1, alt: { r: 1.5 } }, { r: -1, alt: { r: -1 } }, { r: 2, alt: { r: 1 } }, { r: 0.5, alt: null }]);
+    return c.n === 3 && c.plan === 2 && c.struct === 1.5 && c.better === 1 && c.worse === 1;
+  }],
 ];

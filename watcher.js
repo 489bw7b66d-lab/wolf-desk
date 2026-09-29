@@ -18,6 +18,9 @@ import { viewFor, alignment, viewEvents } from './core-views.js';
 import { planFor, signalFor, targetsFor, targetHits } from './core-plans.js';
 import { computeAutoPlan } from './core-autoplan.js';
 import { tradeHistory, openTradeFor } from './core-trades.js';
+import { trailStop, trailText, atrOf } from './core-trail.js';
+import { setupTf } from './core-guard.js';
+import * as fmt from './core-format.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
 // Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
@@ -37,7 +40,7 @@ async function send(text, chat = CHAT) {
 async function loadState() {
   let st = {};
   try { st = JSON.parse(await readFile(STATE_FILE, 'utf8')); } catch { /* erster Lauf */ }
-  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, tpHits: {}, autoPlans: {}, cooldown: null, patience: {}, ...st };
+  return { sent: {}, bad: null, journal: [], lastDir: {}, lastReport: null, viewHits: {}, tpHits: {}, autoPlans: {}, trails: {}, cooldown: null, patience: {}, ...st };
 }
 
 async function marketNames() {
@@ -247,14 +250,32 @@ async function main() {
         if (!targets) continue;
         const tps = targets.tps.slice(0, n);
         const key = t?.openedAt || plan?.at || signal?.at;
-        const hits = targetHits(p.coin, p.side, tps, prices[p.coin] || p.mark, key, state.tpHits);
-        if (!hits.length) continue;
-        await send(targetText(p.coin, hits, tps.length));
-        hits.forEach((h) => { state.tpHits[h.key] = now; });
+        const mark = prices[p.coin] || p.mark;
+        const hits = targetHits(p.coin, p.side, tps, mark, key, state.tpHits);
+        // Nachzieh-Vorschlag (Struktur ab TP1, spätestens ab TP2 Einstieg + Gebühren)
+        const reached = tps.filter((x, i) => state.tpHits[`${p.coin}|${key}|tp${i + 1}`] || (p.side === 'long' ? mark >= x : mark <= x)).length;
+        let trail = null;
+        if (reached) {
+          const tf = setupTf(signal?.style || CONFIG.positions?.autoStyle || 'swing');
+          const cs = await getCandles(p.coin, tf, true).catch(() => null);
+          trail = trailStop({ side: p.side, entry: p.entry, stop: p.stop, mark, hits: reached, candles: cs, atrValue: atrOf(cs), openedAt: t?.openedAt || 0 });
+          if (trail) trail.tf = tf;
+        }
+        const tKey = `${p.coin}|${key}`, last = state.trails[tKey];
+        const newTrail = trail && (!last || (trail.stop - last.stop) * (p.side === 'long' ? 1 : -1) > p.entry * 0.005); // erst ab 0,5 % Verbesserung erneut melden
+        if (hits.length) {
+          await send(targetText(p.coin, hits, tps.length, CONFIG.exitPlan, trail ? trailText(trail, trail.tf, fmt.price) : ''));
+          hits.forEach((h) => { state.tpHits[h.key] = now; });
+          if (trail) state.trails[tKey] = { stop: trail.stop, at: now };
+        } else if (newTrail) {
+          await send(`↗ <b>${p.coin.replace(/^[a-z]+:/, '')}</b>: ${trailText(trail, trail.tf, fmt.price)}.`);
+          state.trails[tKey] = { stop: trail.stop, at: now };
+        }
       }
     } catch (err) { log('Ziele prüfen:', err.message); }
   }
   Object.keys(state.tpHits).forEach((k) => { if (now - state.tpHits[k] > 60 * 864e5) delete state.tpHits[k]; });
+  Object.keys(state.trails).forEach((k) => { if (now - state.trails[k].at > 60 * 864e5) delete state.trails[k]; });
   Object.keys(state.autoPlans).forEach((k) => { if (now - state.autoPlans[k].at > 60 * 864e5) delete state.autoPlans[k]; });
 
   // Deine Marken: Bruch, Bestätigung oder Ziel erreicht → privat an dich

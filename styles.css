@@ -570,3 +570,14 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .ci b { font-size: calc(var(--ci, 22px) * .5); font-weight: 800; color: var(--muted); line-height: 1; }
 .mk-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .ci.has-logo { background-color: transparent; background-size: cover; background-position: center; }
+
+/* 4d: Nachzieh-Vorschlag und Regel-Ampel */
+.trail-hint { margin: 8px 0 2px; padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--gold) 14%, transparent); color: var(--gold); font-size: 13.5px; font-weight: 800; }
+.rule-box { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: 13.5px; }
+.rule-box p { margin: 2px 0; font-weight: 600; }
+.rule-box .ok { color: var(--ok); } .rule-box .warn { color: var(--warn); } .rule-box .bad { color: var(--bad); }
+.rule-box.bad { border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.rule-box.warn { border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+.rule-box.ok { border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+.kv .acc-pnl { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-top: 4px; font-size: 15px; font-weight: 800; }
+.kv .acc-pnl span { display: inline; font-size: inherit; }

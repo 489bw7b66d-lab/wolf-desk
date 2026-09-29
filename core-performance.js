@@ -34,3 +34,27 @@ export function maxDrawdown(values) {
   }
   return dd;
 }
+
+// Ehrlicher Gewinn (seit 4d): Hyperliquids PnL-Verlauf rechnet Ein- und Auszahlungen heraus.
+// Gewinn = letzter Wert des Gesamt-PnL (inkl. offener Positionen), Einsatz = Kontowert − Gewinn (= deine Einzahlungen netto).
+// Ohne Verlauf (noch nicht geladen) vorläufig wie bisher: Kontowert − Startkapital.
+export function honestSplit(equity, lifePnl, openPnl, startCapital) {
+  const book = openPnl || 0;
+  if (equity != null && Number.isFinite(lifePnl)) {
+    const invested = equity - lifePnl;
+    return { total: lifePnl, pct: invested > 0 ? (lifePnl / invested) * 100 : null, book, realized: lifePnl - book, invested, source: 'hl' };
+  }
+  if (!(startCapital > 0) || equity == null) return null;
+  const total = equity - startCapital;
+  return { total, pct: (total / startCapital) * 100, book, realized: total - book, invested: startCapital, source: 'start' };
+}
+
+// PnL der letzten 24 Std. aus dem Verlauf (realisiert + offen, ohne Einzahlungen)
+export const dayPnlOf = (portfolio) => {
+  const d = portfolio ? parsePortfolio(portfolio).day?.pnl : null;
+  return d?.length ? d.at(-1)[1] - d[0][1] : null;
+};
+export const lifePnlOf = (portfolio) => {
+  const l = portfolio ? parsePortfolio(portfolio).allTime?.pnl : null;
+  return l?.length ? l.at(-1)[1] : null;
+};

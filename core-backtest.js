@@ -5,6 +5,8 @@ import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { INTERVAL_MS, closedCandles } from './core-signals.js';
 import { signalFromSeries, modeTfs } from './core-scanner.js';
+import { atr } from './core-indicators.js';
+import { trailStop } from './core-trail.js';
 
 export const BT = {
   days: { swing: 180, intraday: 45, scalp: 14 }, // Testzeitraum je Stil (Hyperliquid liefert max. 5000 Kerzen)
@@ -18,7 +20,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const eventName = (n) => n.replace(/ \(.*\)$/, '').replace(/ ×.*$/, '');
 
 // Verlauf eines Trades nachspielen. plan: { dir, zone, entry, stop, tps }, path: Kerzen NACH dem Signal (feinster Timeframe).
-// opts: { fillNow: Kurs liegt schon in der Zone, nowPx, validUntil, maxUntil, splits }
+// opts: { fillNow: Kurs liegt schon in der Zone, nowPx, validUntil, maxUntil, splits,
+//         trailFn(c, hits, stop, entryPx, fillTime) → neuer Stop (Nachziehen nach Struktur), stepTrail: false = ohne Stufen-Regel }
 // Konservativ: Berührt eine Kerze Stop und Ziel gleichzeitig, zählt der Stop.
 export function simulateTrade(plan, path, opts = {}) {
   const long = plan.dir === 'long', sg = long ? 1 : -1;
@@ -56,8 +59,13 @@ export function simulateTrade(plan, path, opts = {}) {
       exitAt(plan.tps[hits], splits[hits]);
       hits++; lastT = c.T;
       // Nachzieh-Stop wie im Ausstiegsplan: ab TP2 auf Einstieg, danach eine Stufe hinter dem letzten Ziel
-      if (hits === 2) stop = entryPx;
-      else if (hits > 2) stop = plan.tps[hits - 2];
+      if (hits === 2 && (entryPx - stop) * sg > 0) stop = entryPx;
+      else if (hits > 2 && opts.stepTrail !== false) stop = plan.tps[hits - 2];
+    }
+    // Variante „Struktur“: nach jeder Kerze prüfen, ob ein neues höheres Tief (Short: tieferes Hoch) den Stop verbessert
+    if (opts.trailFn && hits >= 1) {
+      const ns = opts.trailFn(c, hits, stop, entryPx, fillTime);
+      if (ns != null && (ns - stop) * sg > 0 && (c.c - ns) * sg > 0) stop = ns;
     }
   }
   if (open > 1e-9) { exitAt(path.at(-1)?.c ?? entryPx, open); return done('offen', path.at(-1)?.T ?? fillTime); }
@@ -127,6 +135,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
   const setupMs = INTERVAL_MS[tfs[1]];
   const ptr = series.map(() => -1);
   const trades = [], missed = [];
+  const setupAtr = atr(setup, CONFIG.indicators.atrPeriod);
   let busyUntil = 0, done = 0;
   const steps = setup.filter((c) => c.T >= from);
 
@@ -159,11 +168,36 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       events: [...new Set(r.events.filter((e) => e.dir === p.dir).map((e) => eventName(e.name)))],
       seal: (r.confirms || []).some((c) => c.dir === p.dir),
     };
-    if (sim.filled) { trades.push({ ...meta, ...sim }); busyUntil = sim.exitTime; }
+    if (sim.filled) {
+      // Dieselben Einstiege noch einmal mit „Nachziehen nach Struktur“ (Vergleich der Ausstiegsregel, 4d)
+      const alt = simulateTrade(p, path, { fillNow, nowPx: close, validUntil: t + BT.entryBars * setupMs, maxUntil: t + BT.maxBars * setupMs, stepTrail: false, trailFn: structureTrail(p, setup, setupAtr) });
+      trades.push({ ...meta, ...sim, alt: alt.filled ? { r: alt.r, outcome: alt.outcome, hits: alt.hits } : null });
+      busyUntil = sim.exitTime;
+    }
     else { missed.push({ ...meta, reason: sim.reason }); busyUntil = sim.end || t + BT.entryBars * setupMs; }
   }
   onProgress?.(1);
   return { coin, mode: modeKey, days, trades, missed, from, to: setup.at(-1)?.T };
+}
+
+// Nachziehen nach Struktur für den Backtest: nur Setup-Kerzen, die zum Zeitpunkt c schon abgeschlossen waren
+export function structureTrail(plan, setup, setupAtr) {
+  let k = -1;
+  return (c, hits, stop, entryPx, fillTime) => {
+    while (k + 1 < setup.length && setup[k + 1].T <= c.T) k++;
+    if (k < 10) return null;
+    const tr = trailStop({ side: plan.dir, entry: entryPx, stop, mark: c.c, hits, candles: setup.slice(Math.max(0, k - 80), k + 1), atrValue: setupAtr[k], openedAt: fillTime, feePct: BT.feePct });
+    return tr ? tr.stop : null;
+  };
+}
+
+// Vergleich der Ausstiegsregeln über dieselben Trades: Plan (Stufen) gegen Struktur
+export function compareTrail(trades) {
+  const both = trades.filter((t) => t.alt);
+  if (!both.length) return null;
+  const sum = (a) => a.reduce((n, x) => n + x, 0);
+  const plan = sum(both.map((t) => t.r)), struct = sum(both.map((t) => t.alt.r));
+  return { n: both.length, plan, struct, avgPlan: plan / both.length, avgStruct: struct / both.length, better: both.filter((t) => t.alt.r > t.r + 1e-9).length, worse: both.filter((t) => t.alt.r < t.r - 1e-9).length };
 }
 
 // Deinen echten Taker-Satz übernehmen (z. B. 0.00035 → 0,035 % je Seite)

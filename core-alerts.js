@@ -257,18 +257,19 @@ export function viewEventText(coin, view, ev, price) {
 }
 
 // ===== Ziel deiner offenen Position erreicht (manuelles Schließen) =====
-export function targetText(coin, hits, total, exitPlan = CONFIG.exitPlan) {
+export function targetText(coin, hits, total, exitPlan = CONFIG.exitPlan, trail = '') { // trail: Nachzieh-Vorschlag (core-trail)
   const top = hits.at(-1);
   const step = exitPlan[top.n - 1];
   const runner = exitPlan.find((x) => x.label === 'Runner');
   const name = `<b>${esc(dn(coin))}</b>`;
   if (top.n >= total) {
     return `🏁 ${name}: <b>letztes Ziel TP${top.n}</b> erreicht (${f.price(top.price)}).`
-      + (step?.pct ? ` Laut Plan ${step.pct} % verkaufen` : '') + (runner?.pct ? `, Runner (${runner.pct} %) nachziehen oder schließen.` : '.');
+      + (step?.pct ? ` Laut Plan ${step.pct} % verkaufen` : '') + (runner?.pct ? `, Runner (${runner.pct} %) nachziehen oder schließen.` : '.')
+      + (trail ? ` ↗ <b>${trail}</b>.` : '');
   }
   const also = hits.length > 1 ? ` (auch ${hits.slice(0, -1).map((h) => 'TP' + h.n).join(', ')} überschritten)` : '';
   return `🎯 ${name}: <b>TP${top.n}</b> erreicht (${f.price(top.price)})${also}.` + (step?.pct ? ` Laut Plan jetzt ${step.pct} % verkaufen.` : '')
-    + (top.n === 2 ? ' Stop auf Einstieg nachziehen.' : '');
+    + (trail ? ` ↗ <b>${trail}</b>.` : '');
 }
 
 // ===== Geduld im Wochenbericht =====

@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { getWatchlist, onWatchlist } from './core-watchlist.js';
 import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
-import { BT, loadHistory, runBacktest, summarize } from './core-backtest.js';
+import { BT, loadHistory, runBacktest, summarize, compareTrail } from './core-backtest.js';
 import { esc, dn, tipHead, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -60,6 +60,18 @@ function table(head, rows) {
   return `<div class="bt-table" role="table"><div class="bt-row head" role="row">${head.map((h) => `<span>${h}</span>`).join('')}</div>${rows.join('')}</div>`;
 }
 
+// Dieselben Einstiege, zwei Ausstiegsregeln: Stufen laut Plan gegen Nachziehen nach Struktur
+function trailBlock(c) {
+  if (!c) return '';
+  const diff = c.struct - c.plan, win = diff > 0.05 ? 'Struktur' : diff < -0.05 ? 'Plan' : null;
+  return `${tipHead('Nachziehen: Plan oder Struktur?', 'Gleiche Einstiege, nur der Stop wird anders nachgezogen. Plan: ab TP2 auf Einstieg, danach hinter das letzte Ziel. Struktur: ab TP1 unter jedes neue höhere Tief (Short: über jedes tiefere Hoch) der Setup-Zeitebene mit ½ ATR Puffer, spätestens ab TP2 auf Einstieg plus Gebühren.')}
+    <div class="kv">
+      <div><span class="k">Plan · Summe</span><span class="v ${cls(c.plan)}">${R(c.plan, 1)}</span></div>
+      <div><span class="k">Struktur · Summe</span><span class="v ${cls(c.struct)}">${R(c.struct, 1)}</span></div>
+    </div>
+    <p class="bt-verdict ${win === 'Struktur' ? 'ok' : 'warn'}">${win ? `${win} schneidet hier besser ab (${R(Math.abs(diff), 1)} über ${c.n} Trades; Struktur besser in ${c.better}, schlechter in ${c.worse}).` : `Kaum Unterschied über ${c.n} Trades.`}${c.n < 30 ? ' Noch wenige Trades, eher ein Hinweis als ein Beweis.' : ''}</p>`;
+}
+
 function renderResult() {
   const box = $('bt-out');
   if (!last) { box.innerHTML = ''; return; }
@@ -83,6 +95,7 @@ function renderResult() {
     </div>
     <h3 class="sub-h">Verlauf in R</h3>
     ${curve(sm.curve)}
+    ${trailBlock(compareTrail(trades))}
     <h3 class="sub-h">Taugt ein höherer Score mehr?</h3>
     ${table(['Score', 'Trades', 'Gewinn', 'Ø R'], sm.byScore.map((b) => `<div class="bt-row" role="row"><span><b>${b.label}</b></span><span>${b.n}</span><span>${P(b.winRate)}</span><span class="${cls(b.avgR)}">${R(b.avgR)}</span></div>`))}
     ${tipHead('Welche Ereignisse helfen?', 'Vorteil = Ø R mit diesem Ereignis minus Ø R ohne. Erst ab 3 Trades gelistet.')}

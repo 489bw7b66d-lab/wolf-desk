@@ -1,7 +1,7 @@
 // Performance-Anzeige: Startkapital vs. Kontowert, Verlauf, Drawdown.
 import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
-import { parsePortfolio, equityCurve, maxDrawdown } from './core-performance.js';
+import { parsePortfolio, equityCurve, maxDrawdown, honestSplit, lifePnlOf } from './core-performance.js';
 import { perfSplit, tradeHistory, closedTrades, tradeStats } from './core-trades.js';
 import { costSummary, fundingForTrade } from './core-fees.js';
 import { evaluatePatience, patienceStats, PATIENCE_KEY, windowDays } from './core-patience.js';
@@ -50,33 +50,28 @@ export function renderPerformance(s) {
   if (!a) { $('perf').innerHTML = '<p class="empty">Noch keine Kontodaten.</p>'; $('perf-chart').innerHTML = ''; return; }
   const equity = accountSummary(a, CONFIG.accountMode).equity;
   const upnl = a.positions.reduce((n, p) => n + (p.upnl || 0), 0);
-  const sp = perfSplit(equity, CONFIG.startCapital, upnl);
+  const sp = honestSplit(equity, lifePnlOf(s.portfolio), upnl, CONFIG.startCapital);
   const cls = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : '');
   // Anteil realisiert / Buchgewinn als Balken (nur wenn beide positiv, sonst nur Zahlen)
   const bar = sp && sp.realized > 0 && sp.book > 0
     ? `<div class="split-bar" aria-hidden="true"><span style="width:${(sp.realized / (sp.realized + sp.book)) * 100}%"></span></div>` : '';
   $('perf').innerHTML = sp ? `<div class="kv">
-    <div><span class="k">Gesamtperformance</span><span class="v big ${cls(sp.total)}">${sp.pct >= 0 ? '+' : ''}${f.pct(sp.pct, 2)}</span></div>
-    <div><span class="k">Gewinn gesamt</span><span class="v ${cls(sp.total)}" style="margin-top:6px">${f.signedUsd(sp.total)}</span></div>
+    <div><span class="k">Gesamtperformance</span><span class="v big ${cls(sp.total)}">${sp.pct == null ? '–' : (sp.pct >= 0 ? '+' : '') + f.pct(sp.pct, 2)}</span></div>
+    <div><span class="k">Gewinn gesamt ${tipInline(sp.source === 'hl'
+      ? `Aus Hyperliquids PnL-Verlauf: Ein- und Auszahlungen sind herausgerechnet. Prozent bezogen auf deine Einzahlungen (netto ${f.usd(sp.invested)}).`
+      : 'Hyperliquids Verlauf ist noch nicht geladen, vorläufig Kontowert minus Startkapital. Einzahlungen zählen hier noch als Gewinn.', 'perf-total')}</span><span class="v ${cls(sp.total)}" style="margin-top:6px">${f.signedUsd(sp.total)}</span></div>
     <div><span class="k">Realisiert</span><span class="v ${cls(sp.realized)}">${f.signedUsd(sp.realized)}</span></div>
     <div><span class="k">Buchgewinn (offen)</span><span class="v ${cls(sp.book)}">${f.signedUsd(sp.book)}</span></div>
   </div>${bar}` : '<p class="empty">Startkapital fehlt in der Konfiguration.</p>';
 
   const all = s.portfolio ? parsePortfolio(s.portfolio) : null;
-  const life = all?.allTime?.pnl;
-  if (life?.length && sp) {
-    const diff = sp.total - life.at(-1)[1];
-    if (Math.abs(diff) > Math.max(25, Math.abs(life.at(-1)[1]) * 0.05)) {
-      $('perf').innerHTML += `<p class="empty" style="margin-top:10px">Hyperliquid meldet ${f.signedUsd(diff)} Abweichung zur eigenen Rechnung. Das kann an weiteren Ein- oder Auszahlungen liegen.</p>`;
-    }
-  }
   const data = all ? all[period] : null;
   if (!data) { $('perf-chart').innerHTML = `<p class="empty">${s.portfolioError ? 'Verlauf konnte nicht geladen werden.' : 'Verlauf wird geladen …'}</p>`; return; }
   const curve = equityCurve(data.pnl, equity);
   const periodPnl = data.pnl.length ? data.pnl.at(-1)[1] - data.pnl[0][1] : null;
   const dd = maxDrawdown(curve.map((c) => c[1]));
   const ddCls = dd >= 35 ? 'short' : dd >= 20 ? 'warn-t' : '';
-  // Für „Gesamt“ kein eigenes Ergebnis: das steht schon oben (Kontowert minus Startkapital)
+  // Für „Gesamt“ kein eigenes Ergebnis: das steht schon oben (Gewinn gesamt)
   $('perf-chart').innerHTML = chart(curve) + `<div class="kv" style="margin-top:12px">
     ${period === 'allTime' ? '' : `<div><span class="k">Ergebnis ${PERIODS[period]}</span><span class="v ${periodPnl >= 0 ? 'long' : 'short'}">${f.signedUsd(periodPnl)}</span></div>`}
     <div><span class="k">Max. Drawdown</span><span class="v ${ddCls}">${f.pct(dd)}</span></div>

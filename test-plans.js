@@ -29,6 +29,7 @@ export const tests = [
     const p = tradePath({ coin: 'SOL', side: 'long', entry: 100, stop: 101, mark: 105 }, [], [], PLAN3, { tps: [110, 120, 130], label: 'x' });
     return p.entry.at === 0 && p.stop.inProfit && near(p.stop.at, 1 / 30);
   }],
-  ['Meldung: TP2 mit Anteil laut Plan', () => { const t = targetText('SOL', [{ n: 2, price: 120 }], 3, PLAN3); return t.includes('TP2') && t.includes('30 %') && t.includes('Einstieg'); }],
+  ['Meldung: TP2 mit Anteil laut Plan und Nachzieh-Vorschlag', () => { const t = targetText('SOL', [{ n: 2, price: 120 }], 3, PLAN3, 'SL auf 100,1 nachziehen (Einstieg plus Gebühren, TP2 erreicht)'); return t.includes('TP2') && t.includes('30 %') && t.includes('↗') && t.includes('Einstieg plus Gebühren'); }],
+  ['Meldung: ohne Vorschlag kein Nachzieh-Satz (Stop schon nachgezogen)', () => !targetText('SOL', [{ n: 2, price: 120 }], 3, PLAN3).includes('↗')],
   ['Meldung: letztes Ziel mit 🏁 und Runner', () => { const t = targetText('SOL', [{ n: 3, price: 130 }], 3, PLAN3); return t.includes('🏁') && t.includes('Runner'); }],
 ];
