@@ -1,3 +1,4 @@
+import { engine2FromSlices } from './core-engine2.js';
 // Backtest: spielt den Signalgeber auf vergangenen Kerzen nach, ohne in die Zukunft zu schauen.
 // Pro Zeitpunkt sieht die Berechnung nur Kerzen, die damals schon abgeschlossen waren.
 // simulateTrade und summarize sind reine Funktionen, Tests in test-backtest.js.
@@ -128,7 +129,8 @@ function advance(list, idx, t) {
 }
 
 // Backtest für einen Markt und Stil. series in der Reihenfolge von modeTfs(modeKey).
-export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKey], onProgress, shouldStop } = {}) {
+export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKey], onProgress, shouldStop, engine = 1 } = {}) {
+  const allTfs = modeTfs(modeKey); // Reihenfolge der Kerzenreihen (Engine 2 braucht sie beim Namen)
   const tfs = CONFIG.signals.modes[modeKey].tfs;
   const setup = series[1], fine = series[2];
   const from = Date.now() - days * 864e5;
@@ -152,7 +154,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       return list.slice(Math.max(0, ptr[k] + 1 - BT.lookback), ptr[k] + 1);
     });
     let r;
-    try { r = signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
+    try { r = engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
     const p = r.plan;
     if (!p) continue;
     const close = r.analyses[1].close;
@@ -180,7 +182,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
     else { missed.push({ ...meta, reason: sim.reason }); busyUntil = sim.end || t + BT.entryBars * setupMs; }
   }
   onProgress?.(1);
-  return { coin, mode: modeKey, days, trades, missed, from, to: setup.at(-1)?.T };
+  return { coin, mode: modeKey, days, trades, missed, from, to: setup.at(-1)?.T, engine };
 }
 
 // Nachziehen nach Struktur für den Backtest: nur Setup-Kerzen, die zum Zeitpunkt c schon abgeschlossen waren
@@ -205,3 +207,11 @@ export function compareTrail(trades) {
 
 // Deinen echten Taker-Satz übernehmen (z. B. 0.00035 → 0,035 % je Seite)
 export function setFeeRate(taker) { if (Number.isFinite(taker) && taker >= 0) BT.feePct = taker * 100; }
+
+// Entwicklung / Bestätigung (7a): erste zwei Drittel des Zeitraums gegen das letzte Drittel (Swing: 120 / 60 Tage)
+export function splitPeriods(trades, from, to) {
+  if (!trades?.length || !(to > from)) return null;
+  const cut = from + (to - from) * 2 / 3;
+  const part = (list) => ({ n: list.length, avgR: list.length ? list.reduce((a, t) => a + t.r, 0) / list.length : null, sum: list.reduce((a, t) => a + t.r, 0) });
+  return { cut, dev: part(trades.filter((t) => t.time < cut)), conf: part(trades.filter((t) => t.time >= cut)) };
+}

@@ -57,7 +57,8 @@ import { tests as pv } from './test-privacy.js';
 import { tests as s5 } from './test-signal5f.js';
 import { tests as ps } from './test-positions.js';
 import { tests as pst } from './test-planstate.js';
-const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst];
+import { tests as e2 } from './test-engine2.js';
+const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst, ...e2];
 let pass = 0;
 const list = document.getElementById('list');
 for (const [name, fn] of tests) {

@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { getWatchlist, onWatchlist } from './core-watchlist.js';
 import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
-import { BT, loadHistory, runBacktest, summarize, compareTrail } from './core-backtest.js';
+import { BT, loadHistory, runBacktest, summarize, compareTrail, splitPeriods } from './core-backtest.js';
 import { compareGate, GATE_LABEL } from './core-trendgate.js';
 import { saveBacktest, shareReport } from './ui-export.js';
 import { loadRun, saveRun, clearRun, remaining, saveResult, loadResult, savedList } from './core-btstore.js';
@@ -15,6 +15,9 @@ let extra = null; // über die Suche gewählter Markt außerhalb der Watchlist
 let getNames = () => [];
 const STYLES = ['swing', 'intraday', 'scalp'];
 let style = 'swing', running = false, stopFlag = false, last = null;
+let engine = 1; // 7a: 1 = bisherige Engine, 2 = Engine 2 (Bauplan des Nutzers)
+const keyOf = (st, en) => st + (en === 2 ? ':e2' : '');
+const ENG = { 1: 'Alte Engine', 2: 'Engine 2' };
 
 const R = (v, d = 2) => (v == null || !Number.isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + new Intl.NumberFormat('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }).format(Math.abs(v)) + 'R');
 const P = (v) => (v == null ? '–' : f.pct(v, 0));
@@ -31,6 +34,7 @@ function renderControls(prefer = null) {
     + single.map((c) => `<option value="${esc(c)}">${esc(dn(c))}${c === extra && !wl.includes(c) ? ' (Suche)' : ''}</option>`).join('');
   const ok = [ALL, ...(tr.length ? [TRADE] : []), ...single];
   sel.value = ok.includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
+  $('bt-engine') && ($('bt-engine').innerHTML = [1, 2].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${e === 2 ? 'neu · dein Bauplan' : 'bisher · Telegram'}</small></button>`).join(''));
   $('bt-styles').innerHTML = STYLES.map((k) => `<button type="button" data-bts="${k}" aria-pressed="${k === style}">${CONFIG.signals.modes[k].label}<small>${BT.days[k]} Tage</small></button>`).join('');
 }
 
@@ -61,6 +65,31 @@ function verdict(sm) {
 
 function table(head, rows) {
   return `<div class="bt-table" role="table"><div class="bt-row head" role="row">${head.map((h) => `<span>${h}</span>`).join('')}</div>${rows.join('')}</div>`;
+}
+
+// Entwicklung / Bestätigung (7a): hält das Ergebnis auch im letzten Drittel, das man vorher nicht angeschaut hat?
+function periodBlock(trades, from, to) {
+  const sp = splitPeriods(trades, from, to);
+  if (!sp || !sp.dev.n || !sp.conf.n) return '';
+  const d1 = Math.round((sp.cut - from) / 864e5), d2 = Math.round((to - sp.cut) / 864e5);
+  const holds = sp.dev.avgR > 0 && sp.conf.avgR > 0;
+  return `${tipHead('Hält es in beiden Zeiträumen?', 'Die ersten zwei Drittel des Zeitraums gelten als „Entwicklung“, das letzte Drittel als „Bestätigung“. Eine Regel taugt nur, wenn sie in beiden Teilen im Plus liegt. Sonst passt sie sich wahrscheinlich nur an die Vergangenheit an.')}
+    ${table(['Zeitraum', 'Trades', 'Ø R', 'Summe'], [['Entwicklung', `erste ${d1} Tage`, sp.dev], ['Bestätigung', `letzte ${d2} Tage`, sp.conf]].map(([a, b, x]) => `<div class="bt-row" role="row"><span><b>${a}</b><br><small class="muted">${b}</small></span><span>${x.n}</span><span class="${cls(x.avgR)}">${R(x.avgR)}</span><span class="${cls(x.sum)}">${R(x.sum, 1)}</span></div>`))}
+    <p class="bt-verdict ${holds ? 'ok' : 'warn'}">${holds ? 'In beiden Zeiträumen im Plus.' : 'Nicht in beiden Zeiträumen im Plus, also noch kein belastbarer Vorteil.'}</p>`;
+}
+
+// Alte Engine gegen Engine 2 (7a): gleicher Stil, jeweils der letzte vollständige Lauf
+async function fillCompare() {
+  const box = $('bt-cmp');
+  if (!box || !last) return;
+  const st = style, a = await loadResult(keyOf(st, 1)), b = await loadResult(keyOf(st, 2));
+  if (!a || !b) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich alt gegen Engine 2: rechne ${CONFIG.signals.modes[st].label} mit ${a ? 'Engine 2' : 'der alten Engine'} auf denselben Märkten, dann erscheint er hier.</p>`; return; }
+  const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
+  const sa = summarize(a.trades), sb = summarize(b.trades), spb = splitPeriods(b.trades, b.from, b.to);
+  const better = sb.avgR > sa.avgR && spb?.dev.avgR > 0 && spb?.conf.avgR > 0;
+  box.innerHTML = `${tipHead('Alte Engine gegen Engine 2', 'Jeweils der letzte vollständige Lauf dieses Stils. „Bestätigung“ ist das letzte Drittel des Zeitraums. Engine 2 gilt erst als besser, wenn sie im Schnitt besser ist UND in beiden Zeiträumen im Plus liegt. Erst dann kommt sie in den Telegram-Wächter.')}
+    ${table(['Engine', 'Trades', 'Ø R', 'Ø Bestätigung'], [row('Alt', a), row('Engine 2', b)])}
+    <p class="bt-verdict ${better ? 'ok' : 'warn'}">${better ? 'Engine 2 ist hier besser und hält in beiden Zeiträumen.' : 'Engine 2 hat es hier noch nicht bewiesen.'}</p>`;
 }
 
 // Short-Filter: dieselben Signale, Shorts je Stufe nur mit bärischem Tagestrend
@@ -113,6 +142,8 @@ function renderResult() {
     </div>
     <h3 class="sub-h">Verlauf in R</h3>
     ${curve(sm.curve)}
+    ${periodBlock(trades, last.from, last.to)}
+    <div id="bt-cmp"></div>
     <button type="button" class="wide ghost" id="bt-export" style="margin:4px 0 14px">📤 Daten für Claude exportieren</button>
     ${gateBlock(compareGate(trades))}
     ${trailBlock(compareTrail(trades))}
@@ -130,21 +161,25 @@ function renderResult() {
     <h3 class="sub-h">Letzte Trades</h3>
     ${table(['Datum', 'Markt', 'Ausgang', 'R'], trades.slice(-8).reverse().map((t) => `<div class="bt-row" role="row"><span>${date(t.time)}</span><span>${esc(dn(t.coin))} <small class="${t.dir}">${t.dir === 'long' ? 'L' : 'S'}</small></span><span class="muted">${OUT[t.outcome] || t.outcome}${t.hits ? ` · TP${t.hits}` : ''}</span><span class="${cls(t.r)}">${R(t.r)}</span></div>`))}
     <div class="empty" style="font-size:12.5px;margin-top:12px">So wurde gerechnet ${tipInline(`1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen (${f.pct(BT.feePct, 3)} je Seite), Slippage und Funding nicht. Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.`)}</div>`;
+  fillCompare();
 }
 
 // resume: gespeicherter Zwischenstand (6a) – macht beim nächsten fehlenden Coin weiter
 async function start(resume = null) {
   if (running) { stopFlag = true; return; }
   const sel = resume?.sel ?? $('bt-coin').value;
-  if (resume) style = resume.style;
+  if (resume) { style = resume.style; engine = resume.engine || 1; }
   const coins = resume?.coins ?? (sel === ALL ? getWatchlist() : sel === TRADE ? getTradeable() : [sel]);
   running = true; stopFlag = false; globalThis.__wdBusy = true;
   $('bt-run').textContent = 'Abbrechen';
   $('bt-resume') && ($('bt-resume').innerHTML = '');
   const runs = resume?.runs ? [...resume.runs] : [];
   const todo = resume ? remaining(resume) : coins;
-  const cp = { style, sel, coins, runs, startedAt: resume?.startedAt ?? Date.now() };
-  await saveRun(cp);
+  const cp = { style, engine, sel, coins, runs, startedAt: resume?.startedAt ?? Date.now() };
+  // 7a: Speichern läuft im Hintergrund (mit Zeitlimit) und blockiert den Start nie
+  let saving = Promise.resolve();
+  const persist = (data) => { saving = saving.then(() => saveRun(data)).catch(() => {}); };
+  persist(cp);
   const status = (txt, frac) => {
     $('bt-status').innerHTML = `<p class="empty" style="font-size:13px;margin:10px 0 0">${esc(txt)}</p>${frac != null ? `<div class="bar" style="margin-top:6px"><span style="width:${(frac * 100).toFixed(0)}%;background:var(--gold)"></span></div>` : ''}`;
   };
@@ -155,7 +190,7 @@ async function start(resume = null) {
     try {
       status(pre + 'lade Kursdaten …', (i) / coins.length);
       const series = await loadHistory(coin, style);
-      const res = await runBacktest(coin, style, series, {
+      const res = await runBacktest(coin, style, series, { engine,
         onProgress: (x) => status(pre + 'spiele Signale nach …', (i + x) / coins.length),
         shouldStop: () => stopFlag,
       });
@@ -165,13 +200,15 @@ async function start(resume = null) {
     } catch (e) {
       runs.push({ coin, trades: [], missed: [], error: e.message });
     }
-    await saveRun({ ...cp, runs }); // Zwischenstand nach jedem Coin
+    persist({ ...cp, runs }); // Zwischenstand nach jedem Coin (im Hintergrund)
   }
-  const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage`;
+  const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage${engine === 2 ? ' · Engine 2' : ''}`;
   const complete = !stopFlag && runs.length === coins.length;
-  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missed?.length || 0), 0), complete, done: runs.length, total: coins.length };
-  saveBacktest(last, style); // für „Daten für Claude“
-  if (complete) { await saveResult(style, last); await clearRun(); } // nur vollständige Läufe ersetzen das gespeicherte Ergebnis
+  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missedN ?? r.missed?.length ?? 0), 0), complete, done: runs.length, total: coins.length, engine,
+    from: Math.min(...runs.map((r) => r.from).filter(Boolean)), to: Math.max(...runs.map((r) => r.to).filter(Boolean)) };
+  saveBacktest(last, keyOf(style, engine)); // für „Daten für Claude“
+  await saving;
+  if (complete) { await saveResult(keyOf(style, engine), last); await clearRun(); } // nur vollständige Läufe ersetzen das gespeicherte Ergebnis
   globalThis.__wdBusy = false;
   renderSaved();
   const errs = runs.filter((r) => r.error);
@@ -182,7 +219,8 @@ async function start(resume = null) {
 }
 
 // Eine Zeile unter dem Start-Knopf: unterbrochener Lauf (Weitermachen) und gespeicherte Ergebnisse je Stil
-const BT_STYLES = ['swing', 'intraday', 'scalp'];
+const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2'];
+const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : '');
 async function renderSaved() {
   const box = $('bt-resume');
   if (!box) return;
@@ -190,9 +228,9 @@ async function renderSaved() {
   const saved = await savedList(BT_STYLES);
   const time = (t) => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   box.innerHTML = (run && remaining(run).length
-    ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
+    ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)}${run.engine === 2 ? ' E2' : ''} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
         <span><button type="button" id="bt-go" class="small-btn">Weitermachen</button><button type="button" id="bt-drop" class="small-btn ghost">Verwerfen</button></span></div>` : '')
-    + (saved.length ? `<div class="bt-saved">${saved.map((x) => `<button type="button" data-bt-show="${x.style}">${esc(CONFIG.signals.modes[x.style].label)} ✓ ${time(x.at)}</button>`).join('')}</div>` : '');
+    + (saved.length ? `<div class="bt-saved">${saved.map((x) => `<button type="button" data-bt-show="${x.style}">${esc(keyLabel(x.style))} ✓ ${time(x.at)}</button>`).join('')}</div>` : '');
 }
 
 // Suche über alle Hyperliquid-Märkte (auch xyz: Rohstoffe, Aktien, Devisen)
@@ -230,8 +268,14 @@ export function initBacktest(getState = () => ({})) {
     if (e.target.id === 'bt-go') { const r = await loadRun(); if (r) start(r); }
     if (e.target.id === 'bt-drop') { await clearRun(); renderSaved(); }
     const b = e.target.closest('button[data-bt-show]');
-    if (b) { const r = await loadResult(b.dataset.btShow); if (r) { style = r.style; last = r; renderControls(); renderResult(); } }
+    if (b) { const r = await loadResult(b.dataset.btShow); if (r) { style = r.style.split(':')[0]; engine = r.engine || 1; last = r; renderControls(); renderResult(); } }
   });
-  renderSaved().then(async () => { if (!last) { const r = await loadResult(style); if (r) { last = r; renderResult(); } } });
+  renderSaved().then(async () => { if (!last) { const r = await loadResult(keyOf(style, engine)); if (r) { last = r; renderResult(); } } });
+  $('bt-engine')?.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-bte]');
+    if (!b || running) return;
+    engine = Number(b.dataset.bte);
+    renderControls();
+  });
   $('bt-out').addEventListener('click', (e) => { if (e.target.closest('#bt-export')) shareReport(getState); });
 }

@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 01.10.2026 · Etappe 6a · 481 Tests
+Stand: 01.10.2026 · Etappe 7a · 492 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -96,7 +96,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="6a">` und eine Import-Map mit `?v=6a` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="7a">` und eine Import-Map mit `?v=7a` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -295,6 +295,9 @@ Etappe 6a (Handwerk, keine Signal-Änderung): **Plan-Ampel** je Position (🟢 P
 ---
 
 ## 10. Offene Aufgaben (nächste Pakete)
+
+**Etappe 7a (Engine 2, Etappe A – umgesetzt):** `core-engine2.js`. Trend-Zeitebene (Swing: Woche aus Tageskerzen gebaut, Daytrade/Scalp: Tag) → Zonen-Zeitebene (Swing Tag, Daytrade 4H, Scalp 1H) → Auslöser (Swing 4H, Daytrade 1H, Scalp 15M). Pflicht: Struktur (HH/HL der Trend-Zeitebene, bei Seitwärts die Zonen-Zeitebene) · Fib-Zone des letzten Impulses (0,5 bis Golden Pocket 0,65, Toleranz ¼ ATR; maßgeblich ist der Docht der Reaktion) · Reaktion = **Umkehrpunkt-Regel des Nutzers** (Umkehrkerze Doji/Dragonfly/Hammer/Engulfing, danach schließt der Körper der nächsten Kerze jenseits des Körpers der Kerze vor der Umkehrkerze) oder Liquiditäts-Sweep · Chance/Risiko bis TP1 mind. **1 : 2**. Einstieg zum Schluss der Bestätigung, Stop hinter der Reaktion + ½ ATR, Ziele: Impuls-Extrem, 1,272 / 1,618 / 2,0. Punkte (A, max. 85): Großwetter 20/10 · Fib GP 20 / 0,5 10 · Key Level 15 + Liquidität 10 · RSI 10/5 · MACD 5 · EMA 8>21 5. Bremse: RSI der Zonen-Zeitebene ≥ 80 (Long) / ≤ 20 (Short). Im **Backtest wählbar** („Alte Engine“ / „Engine 2“), Ergebnis je Stil und Engine gespeichert, Block **„Hält es in beiden Zeiträumen?“** (erste ⅔ = Entwicklung, letztes ⅓ = Bestätigung) und **„Alte Engine gegen Engine 2“**. Im Signalgeber eine Zeile „🧭 Engine 2 (Test)“ mit Signal oder Grund und Zone. Telegram unverändert alte Engine. Dazu: Backtest-„Weitermachen“ hing auf dem iPhone → Speicherzugriffe mit Zeitlimit, Speichern im Hintergrund, kompakte Ablage.
+Offen für Engine 2 (Sammelliste): Etappe B (Order Blocks, Nadaraya ohne Repainting), „Auf der Lauer“-Liste, Ampel-Stufe 🟠 „Wendesignal · beobachten“, Trade-Karte ohne Signal („Als Long/Short prüfen“), Chance/Risiko ab jetzt in der Positionskarte, Ziele eigener Pläne mind. 2R, Etappe C mit zweiter Datenquelle für Woche/Monat (Hyperliquid erst seit 2023; Dreieck-Ausbruch erst bei Monatsschluss + Retest, Beispiele XLM/QNT).
 
 **ENGINE 2 – Bauplan (vom Nutzer am 30.09.2026 unterschrieben, ersetzt die bisherigen Einzelschritte):**
 Grundsatz: weniger, dafür die richtigen Faktoren – nach der Handschrift des Nutzers (Top-down, Nadaraya + Smart Money als Hauptansatz). Die heutige Engine gewichtet fast umgekehrt (MA-Kreuzungen viele Punkte, Ort/Zone kaum, kein Warten auf Reaktion, kein Wochen-/Monatschart).

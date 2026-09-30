@@ -111,7 +111,7 @@ export function signalFromSeries(coin, modeKey, series, volume, opts = {}) {
   // Bestätigungen (Retests) auf Trend- und Setup-Timeframe, nur in Signalrichtung relevant
   const confirms = analyses.slice(0, 2).flatMap((a) => (a.confirmations || []).map((c) => ({ ...c, tf: a.tf })));
   const candles = {};
-  mode.tfs.forEach((tf, i) => { candles[tf] = series[i].slice(-120); });
+  tfs.forEach((tf, i) => { candles[tf] = series[i].slice(tf === '1d' ? -260 : -120); }); // 7a: Tageskerzen länger (Engine 2 baut daraus Wochen)
   return {
     coin, mode: modeKey, tfs: mode.tfs, analyses, daily, scores, total, dir, levels, events, waves, volume, candles, confirms, gate, blocked,
     plan: plan && { ...plan, warnings: [...plan.warnings, ...warnings] },

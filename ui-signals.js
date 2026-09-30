@@ -1,8 +1,9 @@
+import { engine2 } from './core-engine2.js';
 // Signale-Bereich: Suche, Modus, Detail-Analyse, Watchlist-Scan.
 import { CONFIG } from './config.js';
 import { getWatchlist } from './core-watchlist.js';
 import { analyzeMarket, analyzeAllModes, switchStyle } from './core-scanner.js';
-import { badge, ladder, esc, dn, TFL, styleRow, seal, confirmsFor, coinIcon } from './ui-parts.js';
+import { badge, ladder, esc, dn, TFL, styleRow, seal, confirmsFor, coinIcon, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 import { accountSummary } from './core-calc.js';
 import { recommendedFor, levTagText } from './core-levpreview.js';
@@ -70,6 +71,18 @@ function openSheet(html) {
   return $('sig-view');
 }
 
+// Engine 2 (7a): läuft zum Vergleich mit, meldet noch nichts nach Telegram
+function e2Line(r) {
+  let e;
+  try { e = engine2(r.candles || {}, r.mode); } catch { return ''; }
+  if (!e) return '';
+  const crv = (x) => '1 : ' + x.toFixed(1).replace('.', ',');
+  const txt = e.ok
+    ? `<b class="${e.dir}">${e.dir === 'long' ? 'LONG' : 'SHORT'}</b> · Score ${e.score} · Auslöser ${esc(e.trigger)} · Chance/Risiko ${crv(e.crv)}`
+    : `${esc(e.reason || 'kein Setup')}${e.watch ? ` · Zone ${f.price(e.watch.from)}–${f.price(e.watch.to)}` : ''}`;
+  return `<p class="e2-line">🧭 Engine 2 (Test): ${txt} ${tipInline('Die neue Engine nach deinem Bauplan: Struktur, Fib-Zone, Umkehrpunkt-Regel und Chance/Risiko mind. 1 : 2 sind Pflicht. Sie läuft nur zum Vergleich mit. Telegram meldet weiter die alte Engine, bis Engine 2 im Backtest besser ist.', 'e2')}</p>`;
+}
+
 export function showDetail(r) {
   const hasPos = (getState?.()?.account?.positions || []).some((x) => x.coin === r.coin);
   shown = r;
@@ -86,6 +99,7 @@ export function showDetail(r) {
     <div id="sig-chart" class="chart-box"></div>
     ${chartTools('sig-chart', r.coin)}` : ''}
     ${styleRow(r, CONFIG.signals.modes)}
+    ${e2Line(r)}
     ${hasPos ? `<p class="sig-note">Position in ${esc(dn(r.coin))} ist schon offen. Kein neues Signal (Ledger: eine Position pro Coin).</p>`
       : p ? `<button type="button" class="wide" id="sig-trade" style="margin:6px 0 16px">Trade-Karte öffnen</button>` : ''}
     <details class="sig-more"><summary>Details <span aria-hidden="true">▾</span></summary>
