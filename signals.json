@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "WLD",
+   "dir": "long",
+   "style": "swing",
+   "score": 83,
+   "seal": true,
+   "at": 1790783915065,
+   "px": 0.53523,
+   "zone": [
+    0.5081146617078126,
+    0.53573
+   ],
+   "stop": 0.4629023308539063,
+   "tps": [
+    0.5809423308539062,
+    0.6399623308539062,
+    0.6989823308539062,
+    0.7580023308539061
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Volumen-Spike",
+    "Ausbruch aus Seitwärtsphase",
+    "Doppelboden bestätigt"
+   ],
+   "id": 1
+  },
+  {
    "coin": "CRV",
    "dir": "long",
    "style": "swing",
