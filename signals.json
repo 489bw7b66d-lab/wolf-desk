@@ -274,5 +274,91 @@
    ],
    "id": "BTC|long|1790497536401"
   }
+ ],
+ "archive": [
+  {
+   "key": "BTC|long|1790497536401",
+   "id": "BTC|long|1790497536401",
+   "coin": "BTC",
+   "dir": "long",
+   "style": "intraday",
+   "score": 76,
+   "seal": false,
+   "at": 1790497536401,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790558099999,
+   "sf": "aus"
+  },
+  {
+   "key": "ZEC|long|1790501901046",
+   "id": "ZEC|long|1790501901046",
+   "coin": "ZEC",
+   "dir": "long",
+   "style": "swing",
+   "score": 82,
+   "seal": true,
+   "at": 1790501901046,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790625599999,
+   "sf": "aus"
+  },
+  {
+   "key": "PUMP|long|1790510936619",
+   "id": "PUMP|long|1790510936619",
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 75,
+   "seal": true,
+   "at": 1790510936619,
+   "status": "tp2",
+   "r": 1.5125471426003043,
+   "doneAt": 1790524799999,
+   "sf": "aus"
+  },
+  {
+   "key": "WLD|long|1790540644842",
+   "id": "WLD|long|1790540644842",
+   "coin": "WLD",
+   "dir": "long",
+   "style": "swing",
+   "score": 88,
+   "seal": true,
+   "at": 1790540644842,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790607599999,
+   "sf": "aus"
+  },
+  {
+   "key": "CRV|long|1790640610315",
+   "id": "CRV|long|1790640610315",
+   "coin": "CRV",
+   "dir": "long",
+   "style": "swing",
+   "score": 89,
+   "seal": true,
+   "at": 1790640610315,
+   "status": "tp1",
+   "r": 0.7704978562708064,
+   "doneAt": 1790704799999,
+   "sf": "aus"
+  },
+  {
+   "key": "ETH|long|1790683820436",
+   "id": "ETH|long|1790683820436",
+   "coin": "ETH",
+   "dir": "long",
+   "style": "intraday",
+   "score": 87,
+   "seal": true,
+   "at": 1790683820436,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790749799999,
+   "sf": "aus"
+  }
  ]
 }
