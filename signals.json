@@ -26,7 +26,8 @@
     "MACD-Kreuzung aufwärts",
     "Ausbruch aus Dreieck",
     "EMA 21/55 Kreuzung aufwärts"
-   ]
+   ],
+   "id": "CRV|long|1790683820436"
   },
   {
    "coin": "ETH",
@@ -54,7 +55,8 @@
     "EMA 8/21 Kreuzung aufwärts",
     "MACD-Kreuzung aufwärts",
     "Bruch Abwärts-Trendlinie"
-   ]
+   ],
+   "id": "ETH|long|1790683820436"
   },
   {
    "coin": "XLM",
@@ -82,7 +84,8 @@
     "Volumen-Spike",
     "EMA 8/21 Kreuzung aufwärts",
     "MACD-Kreuzung aufwärts"
-   ]
+   ],
+   "id": "XLM|long|1790647603098"
   },
   {
    "coin": "CRV",
@@ -110,7 +113,8 @@
     "MACD-Kreuzung aufwärts",
     "Ausbruch aus Dreieck",
     "EMA 8/21 Kreuzung aufwärts"
-   ]
+   ],
+   "id": "CRV|long|1790640610315"
   },
   {
    "coin": "LINK",
@@ -138,7 +142,8 @@
     "Volumen-Spike",
     "Bullish Engulfing",
     "Starkes Momentum"
-   ]
+   ],
+   "id": "LINK|long|1790622516553"
   },
   {
    "coin": "PUMP",
@@ -166,7 +171,8 @@
     "Volumen-Spike",
     "MACD-Kreuzung aufwärts",
     "Ausbruch aus Dreieck"
-   ]
+   ],
+   "id": "PUMP|long|1790615281666"
   },
   {
    "coin": "WLD",
@@ -194,7 +200,8 @@
     "Starkes Momentum",
     "Ausbruch aus Seitwärtsphase",
     "Doppelboden bestätigt"
-   ]
+   ],
+   "id": "WLD|long|1790540644842"
   },
   {
    "coin": "PUMP",
@@ -217,7 +224,8 @@
     "Hammer",
     "Bullish Engulfing",
     "MACD-Kreuzung aufwärts"
-   ]
+   ],
+   "id": "PUMP|long|1790510936619"
   },
   {
    "coin": "ZEC",
@@ -239,7 +247,8 @@
    "events": [
     "MACD-Kreuzung aufwärts",
     "Ausbruch aus Dreieck"
-   ]
+   ],
+   "id": "ZEC|long|1790501901046"
   },
   {
    "coin": "BTC",
@@ -262,7 +271,8 @@
     "EMA 8/21 Kreuzung aufwärts",
     "Ausbruch aus Dreieck",
     "EMA 21/55 Kreuzung aufwärts"
-   ]
+   ],
+   "id": "BTC|long|1790497536401"
   }
  ]
 }
