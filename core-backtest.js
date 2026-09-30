@@ -139,6 +139,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
   const trades = [], missed = [];
   const setupAtr = atr(setup, CONFIG.indicators.atrPeriod);
   let busyUntil = 0, done = 0;
+  const usedImpulses = new Set(); // Engine 2 (A2): ein Signal je Impuls
   const steps = setup.filter((c) => c.T >= from);
 
   let breath = Date.now();
@@ -157,6 +158,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
     try { r = engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
     const p = r.plan;
     if (!p) continue;
+    if (p.impulseKey) { if (usedImpulses.has(p.impulseKey)) continue; usedImpulses.add(p.impulseKey); }
     const close = r.analyses[1].close;
     const fillNow = close >= p.zone[0] && close <= p.zone[1];
     const startIdx = advance(fine, ptr[2], t) + 1;

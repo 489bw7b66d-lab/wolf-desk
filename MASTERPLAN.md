@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 01.10.2026 · Etappe 7a · 492 Tests
+Stand: 01.10.2026 · Etappe 7b · 494 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -96,7 +96,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="7a">` und eine Import-Map mit `?v=7a` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="7b">` und eine Import-Map mit `?v=7b` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -297,6 +297,8 @@ Etappe 6a (Handwerk, keine Signal-Änderung): **Plan-Ampel** je Position (🟢 P
 ## 10. Offene Aufgaben (nächste Pakete)
 
 **Etappe 7a (Engine 2, Etappe A – umgesetzt):** `core-engine2.js`. Trend-Zeitebene (Swing: Woche aus Tageskerzen gebaut, Daytrade/Scalp: Tag) → Zonen-Zeitebene (Swing Tag, Daytrade 4H, Scalp 1H) → Auslöser (Swing 4H, Daytrade 1H, Scalp 15M). Pflicht: Struktur (HH/HL der Trend-Zeitebene, bei Seitwärts die Zonen-Zeitebene) · Fib-Zone des letzten Impulses (0,5 bis Golden Pocket 0,65, Toleranz ¼ ATR; maßgeblich ist der Docht der Reaktion) · Reaktion = **Umkehrpunkt-Regel des Nutzers** (Umkehrkerze Doji/Dragonfly/Hammer/Engulfing, danach schließt der Körper der nächsten Kerze jenseits des Körpers der Kerze vor der Umkehrkerze) oder Liquiditäts-Sweep · Chance/Risiko bis TP1 mind. **1 : 2**. Einstieg zum Schluss der Bestätigung, Stop hinter der Reaktion + ½ ATR, Ziele: Impuls-Extrem, 1,272 / 1,618 / 2,0. Punkte (A, max. 85): Großwetter 20/10 · Fib GP 20 / 0,5 10 · Key Level 15 + Liquidität 10 · RSI 10/5 · MACD 5 · EMA 8>21 5. Bremse: RSI der Zonen-Zeitebene ≥ 80 (Long) / ≤ 20 (Short). Im **Backtest wählbar** („Alte Engine“ / „Engine 2“), Ergebnis je Stil und Engine gespeichert, Block **„Hält es in beiden Zeiträumen?“** (erste ⅔ = Entwicklung, letztes ⅓ = Bestätigung) und **„Alte Engine gegen Engine 2“**. Im Signalgeber eine Zeile „🧭 Engine 2 (Test)“ mit Signal oder Grund und Zone. Telegram unverändert alte Engine. Dazu: Backtest-„Weitermachen“ hing auf dem iPhone → Speicherzugriffe mit Zeitlimit, Speichern im Hintergrund, kompakte Ablage.
+**Backtest 30.09. alt gegen Engine 2 A (175 Märkte):** Swing −0,03 → −0,04R, Daytrade ±0,00 → −0,20R, Scalp +0,05 → −0,08R; Engine 2 mit fast doppelt so vielen Trades, nur ~20 % Treffer (Stop im Rauschen, Ziel weit weg), Shorts tiefrot (Short-Filter wirkte nicht). Aber Longs besser: Swing +0,01 → +0,12R, Scalp +0,09 → +0,22R.
+**Etappe 7b (Engine 2 A2, Feinschliff):** Struktur der Trend-Zeitebene ist strikt Pflicht (keine Ausweichregel) · Short-Filter (Einstellung, z. B. „Mittel“) gilt auch für Engine 2 · 0,5er nur mit Key Level, sonst Golden Pocket · Stop hinter die Zone (unter GP bzw. Reaktion, was weiter weg ist) mit ¼ ATR der Zonen-Zeitebene · TP1 bei 2R, danach Impuls-Extrem und Erweiterungen · Platz bis zum Impuls-Extrem mind. 2R · ein Signal je Impuls (Backtest).
 Offen für Engine 2 (Sammelliste): Etappe B (Order Blocks, Nadaraya ohne Repainting), „Auf der Lauer“-Liste, Ampel-Stufe 🟠 „Wendesignal · beobachten“, Trade-Karte ohne Signal („Als Long/Short prüfen“), Chance/Risiko ab jetzt in der Positionskarte, Ziele eigener Pläne mind. 2R, Etappe C mit zweiter Datenquelle für Woche/Monat (Hyperliquid erst seit 2023; Dreieck-Ausbruch erst bei Monatsschluss + Retest, Beispiele XLM/QNT).
 
 **ENGINE 2 – Bauplan (vom Nutzer am 30.09.2026 unterschrieben, ersetzt die bisherigen Einzelschritte):**

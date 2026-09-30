@@ -10,8 +10,11 @@
 // BREMSE: RSI der Zonen-Zeitebene über 80 (Long) bzw. unter 20 (Short)
 // Reine Funktionen, Tests in test-engine2.js.
 import { ema, rsi, macd, atr, pivots } from './core-indicators.js';
+import { CONFIG } from './config.js';
+import { gatePasses } from './core-trendgate.js';
 
-export const E2 = { crvMin: 2, pivotSide: 2, tolAtr: 0.25, stopAtr: 0.5 };
+// A2 (7b): Stop hinter die Zone mit Puffer der ZONEN-Zeitebene, TP1 bei 2R, strengere Pflicht, Short-Filter, ein Signal je Impuls
+export const E2 = { crvMin: 2, pivotSide: 2, tolAtr: 0.25, stopAtrZ: 0.25, tp1R: 2 };
 const TFMAP = { swing: { T: 'w', Z: '1d', G: '4h' }, intraday: { T: '1d', Z: '4h', G: '1h' }, scalp: { T: '1d', Z: '1h', G: '15m' } };
 
 // Wochenkerzen aus Tageskerzen (Woche beginnt Montag, UTC)
@@ -109,6 +112,18 @@ export function confluence(candles, zoneMid, tol, dir, side = E2.pivotSide) {
   return { key, liq };
 }
 
+// Short-Filter (wie bei der alten Engine, Stufe aus den Einstellungen): Shorts nur mit bärischem Tagestrend
+export function e2ShortGate(daily) {
+  const closes = (daily || []).map((c) => c.c);
+  const e200 = ema(closes, 200).at(-1), e8 = ema(closes, 8).at(-1), e21 = ema(closes, 21).at(-1), e55 = ema(closes, 55).at(-1);
+  const close = closes.at(-1);
+  if (!(e200 > 0) || !(close > 0)) return { known: false, mild: true, mittel: true, streng: true };
+  const mild = close < e200;
+  const mittel = mild && (structure(daily).trend === 'down' || (e8 < e21 && e21 < e55));
+  const streng = mittel && Math.max(...daily.slice(-10).map((c) => c.h)) >= e200 * 0.99;
+  return { known: true, mild, mittel, streng };
+}
+
 // ---- Die Bewertung ----
 // series: Objekt { '1d': [...], '4h': [...], ... } mit abgeschlossenen Kerzen
 export function engine2(series, style = 'swing', opts = {}) {
@@ -127,9 +142,9 @@ export function engine2(series, style = 'swing', opts = {}) {
   for (const dir of ['long', 'short']) {
     const lng = dir === 'long';
     // Pflicht 1: Struktur (Trend-Zeitebene), sonst höchstens die Zonen-Zeitebene gleichgerichtet
-    const zs = structure(Z);
-    const structOk = lng ? st.trend === 'up' || (st.trend === 'range' && zs.trend === 'up') : st.trend === 'down' || (st.trend === 'range' && zs.trend === 'down');
-    if (!structOk) { best.reason ||= 'Struktur passt nicht'; continue; }
+    // A2: Struktur MUSS auf der Trend-Zeitebene passen (keine Ausweichregel mehr)
+    if (st.trend !== (lng ? 'up' : 'down')) { best.reason ||= 'Struktur passt nicht'; continue; }
+    if (!lng && !gatePasses(e2ShortGate(series['1d']), opts.shortFilter ?? CONFIG.signals.shortFilter)) { best.reason ||= 'Short gesperrt: Tagestrend nicht bärisch'; continue; }
     // Pflicht 2: Zone (Fibonacci des letzten Impulses auf der Zonen-Zeitebene)
     const imp = impulse(Z, dir);
     // Maßgeblich ist, wie tief die Reaktion in die Zone gegriffen hat (Docht der letzten Kerzen), sonst der aktuelle Kurs
@@ -138,21 +153,27 @@ export function engine2(series, style = 'swing', opts = {}) {
     if (!reactionZone) { best.reason = best.reason === 'Struktur passt nicht' || !best.reason ? `Struktur ${lng ? 'bullisch' : 'bärisch'}, Kurs noch nicht in der Zone` : best.reason; best.watch ||= imp ? { dir, from: Math.min(imp.f50, imp.f65), to: Math.max(imp.f50, imp.f65) } : null; continue; }
     // Bremse
     if (rsiZ != null && (lng ? rsiZ >= 80 : rsiZ <= 20)) { best.reason = `Bremse: RSI ${Math.round(rsiZ)}`; continue; }
+    // A2: das 0,5er zählt nur, wenn dort ein Key Level liegt
+    const conf = confluence(Z, (imp.f50 + imp.f65) / 2, tol, dir);
+    if (reactionZone === 'half' && !conf.key) { best.reason = 'Nur am 0,5er ohne Key Level, warte aufs Golden Pocket'; best.watch = { dir, from: Math.min(imp.f618, imp.f65), to: Math.max(imp.f618, imp.f65) }; continue; }
     // Pflicht 3: Reaktion
     const rev = reversalPoint(G, dir) || liquiditySweep(G, dir);
     if (!rev) { best.reason = `In der Zone (${reactionZone === 'gp' ? 'Golden Pocket' : '0,5'}), warte auf Reaktion`; best.watch = { dir, from: Math.min(imp.f50, imp.f65), to: Math.max(imp.f50, imp.f65) }; continue; }
     // Plan: Einstieg zum Schluss der Bestätigung, Stop hinter Reaktion bzw. Zone, Ziele am Impuls-Extrem und Erweiterungen
     const entry = price;
-    // Stop hinter der Reaktion (die ja in der Zone stattfand) plus Puffer; nicht pauschal unter das ganze Golden Pocket
-    const stop = lng ? rev.low - E2.stopAtr * atrG : rev.high + E2.stopAtr * atrG;
+    // A2: Stop hinter die Zone (Golden Pocket bzw. Reaktion, was weiter weg ist) mit Puffer der ZONEN-Zeitebene – raus aus dem Rauschen
+    const stop = lng ? Math.min(rev.low, imp.f65) - E2.stopAtrZ * atrZ : Math.max(rev.high, imp.f65) + E2.stopAtrZ * atrZ;
     const R = Math.abs(entry - stop);
+    const sg = lng ? 1 : -1;
     const ext = (f) => (lng ? imp.to + f * imp.range : imp.to - f * imp.range);
-    const tps = [imp.to, ext(0.272), ext(0.618), ext(1)];
-    const crv = ((tps[0] - entry) * (lng ? 1 : -1)) / R;
+    // Chance/Risiko: Platz bis zum alten Impuls-Extrem muss mind. crvMin × Risiko sein
+    const crv = ((imp.to - entry) * sg) / R;
+    // Ziele: TP1 bei 2R, dann Impuls-Extrem und Erweiterungen (aufsteigend, ohne Doppelte)
+    const tps = [...new Set([entry + sg * E2.tp1R * R, imp.to, ext(0.272), ext(0.618), ext(1)].map((x) => +x.toPrecision(10)))]
+      .filter((x) => (x - entry) * sg > 0).sort((a, b) => (a - b) * sg).slice(0, 4);
     // Pflicht 4: Chance/Risiko
     if (!(crv >= (opts.crvMin ?? E2.crvMin))) { best.reason = `Chance/Risiko nur 1 : ${crv > 0 ? crv.toFixed(1).replace('.', ',') : '0'}`; continue; }
     // Punkte
-    const conf = confluence(Z, (imp.f50 + imp.f65) / 2, tol, dir);
     const closes = G.map((c) => c.c), h = macd(closes).hist, e8 = ema(closes, 8).at(-1), e21 = ema(closes, 21).at(-1);
     const pts = {
       gross: st.trend === (lng ? 'up' : 'down') ? 20 : 10,
@@ -163,7 +184,7 @@ export function engine2(series, style = 'swing', opts = {}) {
       ma: e8 != null && e21 != null && (lng ? e8 > e21 : e8 < e21) ? 5 : 0,
     };
     const score = Object.values(pts).reduce((a, b) => a + b, 0);
-    const plan = { dir, entry, stop, zone: [entry, entry], tps, R, stopDistPct: (R / entry) * 100, method: 'engine2', entryMode: 'Reaktion', stopLabel: 'hinter Reaktion/Zone', crv, warnings: [] };
+    const plan = { dir, entry, stop, zone: [entry, entry], tps, R, stopDistPct: (R / entry) * 100, method: 'engine2', entryMode: 'Reaktion', stopLabel: 'hinter der Zone', crv, warnings: [], impulseKey: `${dir}|${imp.from}|${imp.to}` };
     return { ok: true, style, dir, plan, score, pts, trigger: rev.name, zone: reactionZone, crv, price };
   }
   return best;

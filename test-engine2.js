@@ -1,4 +1,4 @@
-import { toWeekly, reversalCandle, reversalPoint, liquiditySweep, fibZone, impulse, engine2 } from './core-engine2.js';
+import { toWeekly, reversalCandle, reversalPoint, liquiditySweep, fibZone, impulse, engine2, e2ShortGate } from './core-engine2.js';
 import { splitPeriods } from './core-backtest.js';
 import { compactTrade } from './core-btstore.js';
 
@@ -42,7 +42,7 @@ export const tests = [
   ['Engine 2: Impuls vom letzten Swing-Tief zum Hoch', () => { const i = impulse(D, 'long'); return i && Math.abs(i.to - 151.6) < 0.5 && i.from < 100; }],
   ['Engine 2: komplettes Long-Setup (Struktur, Golden Pocket, Hammer + Bestätigung, CRV ≥ 2)', () => {
     const e = engine2({ '1d': D, '4h': G }, 'swing');
-    return e.ok && e.dir === 'long' && e.trigger === 'Hammer' && e.crv >= 2 && e.plan.stop < 117.9 && e.plan.stop > 115 && e.plan.tps[0] > 149 && e.zone === 'gp' && e.score >= 40;
+    return e.ok && e.dir === 'long' && e.trigger === 'Hammer' && e.crv >= 2 && e.plan.stop < 117 && e.plan.stop > 112 && Math.abs(e.plan.tps[0] - (e.plan.entry + 2 * e.plan.R)) < 1e-6 && e.plan.tps.some((x) => Math.abs(x - 151.6) < 0.01) && e.zone === 'gp' && e.score >= 40 && !!e.plan.impulseKey;
   }],
   ['Engine 2: ohne Bestätigung kein Signal, sondern „warte auf Reaktion“ mit Zone', () => {
     const e = engine2({ '1d': D, '4h': G.slice(0, -1) }, 'swing');
@@ -54,4 +54,10 @@ export const tests = [
     return sp.dev.n === 2 && sp.conf.n === 1 && sp.conf.avgR === 2 && sp.dev.avgR === 0;
   }],
   ['Backtest-Speicher: kompakt, ohne unnötige Daten', () => { const t = compactTrade({ time: 1, r: 1, dir: 'long', riesig: new Array(1000).fill(1) }); return t.r === 1 && !('riesig' in t); }],
+  ['Engine 2 (A2): Shorts nur mit bärischem Tagestrend (Short-Filter)', () => {
+    const up = daily([[0, 50], [260, 150]]), down = daily([[0, 150], [120, 170], [200, 120], [230, 130], [260, 90]]);
+    const a = e2ShortGate(up), b = e2ShortGate(down);
+    return a.known && !a.mild && !a.mittel && b.mild && b.mittel;
+  }],
+  ['Engine 2 (A2): Wochen-Struktur Pflicht, sonst kein Signal', () => { const flat = daily([[0, 100], [100, 110], [200, 100], [300, 110]]); const e = engine2({ '1d': flat, '4h': G }, 'swing'); return !e.ok && e.reason === 'Struktur passt nicht'; }],
 ];
