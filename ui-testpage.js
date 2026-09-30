@@ -9,7 +9,7 @@ import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
 import { tradePath } from './core-path.js';
 import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getAutoPlan } from './core-autoplan.js';
-import { stopNoise, atrFor, setupTf } from './core-guard.js';
+import { stopNoise, atrFor, setupTf, lossAtStop } from './core-guard.js';
 import { getFeedSignals } from './ui-feed.js';
 import { trailForPosition, hitsFromPath, trailText } from './core-trail.js';
 import { dayPnlOf } from './core-performance.js';
@@ -70,6 +70,7 @@ function renderPositions(s, now) {
   if (!a.positions.length) { $('positions').innerHTML = '<p class="empty">Aktuell keine offenen Positionen.</p>'; return; }
   const COLOR = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)' };
   const trades = s.fills ? tradeHistory(s.fills) : null;
+  const sumEq = accountSummary(a, CONFIG.accountMode)?.equity;
   const openMore = new Set([...$('positions').querySelectorAll('details[open]')].map((d) => d.dataset.more));
   $('positions').innerHTML = enrichPositions(s, now).map((p) => {
     const ev = p.evaluation;
@@ -110,7 +111,7 @@ function renderPositions(s, now) {
       ${pathBar(pp.path)}
       ${pp.trail ? `<p class="trail-hint">↗ ${esc(trailText(pp.trail, pp.trail.tf, f.price))}</p>` : ''}
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
-      ${posNoise(p)}
+      ${posNoise(p, sumEq)}
       <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
   }).join('');
@@ -210,12 +211,18 @@ export function pathBar(path) {
 }
 
 // Stop-Check einer offenen Position gegen die normale Schwankung (nur wenn der Stop noch auf der Verlustseite liegt)
-function posNoise(p) {
+function posNoise(p, equity) {
   if (p.stop == null || (p.side === 'long' ? p.stop >= p.entry : p.stop <= p.entry)) return '';
   const tf = setupTf(), n = stopNoise(p.mark || p.entry, p.stop, atrFor(p.coin, tf), undefined, p.liq);
   if (!n || n.status === 'ok') return '';
   const tip = n.suggest.beyondLiq
     ? `Ein ATR-gerechter Stop (${f.price(n.suggest.stop)}) läge hinter der Liquidation (${f.price(n.suggest.liq)}). Bei diesem Hebel passt kein sinnvoller Stop: Position verkleinern oder schließen`
     : `Sinnvoller: ${f.price(n.suggest.stop)}`;
-  return `<p class="warnline" style="margin:0;color:${n.status === 'bad' ? 'var(--bad)' : 'var(--warn)'}">Stop-Check (${tf.toUpperCase()}): ${n.text}. ${tip}</p>`;
+  // Was es kostet, wenn der Stop greift (Verlust gegenüber Einstieg, dazu wie viel davon noch dazukäme)
+  const L = lossAtStop(p);
+  const pctOf = equity > 0 && L ? ` (${f.pct(Math.abs(L.pnl) / equity * 100, 1)} vom Konto)` : '';
+  const cost = !L ? '' : L.pnl < 0
+    ? ` Greift ${L.liqFirst ? 'die Liquidation' : 'der Stop'}, beträgt der Verlust ca. ${f.usd(-L.pnl)}${pctOf}${L.fromNow < 0 ? `, gegenüber jetzt noch ${f.usd(-L.fromNow)} mehr` : ''}.`
+    : ` Greift der Stop, bleibt ein Gewinn von ca. ${f.usd(L.pnl)}.`;
+  return `<p class="warnline" style="margin:0;color:${n.status === 'bad' ? 'var(--bad)' : 'var(--warn)'}">Stop-Check (${tf.toUpperCase()}): ${n.text}. ${tip}.${cost}</p>`;
 }

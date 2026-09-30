@@ -1,4 +1,4 @@
-import { stopNoise } from './core-guard.js';
+import { stopNoise, lossAtStop } from './core-guard.js';
 import { trailStop } from './core-trail.js';
 import { blockReason } from './core-alerts.js';
 import { btDigest, buildReport, saveBacktest } from './ui-export.js';
@@ -25,4 +25,13 @@ export const tests = [
     const t = buildReport({}, Date.now(), st);
     return t.startsWith('# Wolf Desk') && t.includes('## Einstellungen') && t.includes('## Letzte Signale') && t.includes('## Backtests') && t.includes('Handelbare Märkte · Swing') && !/0x[0-9a-f]{20,}/i.test(t);
   }],
+  ['Stop-Check: Verlust bei Auslösung (ALGO: Einstieg 0,13439, Stop 0,122, 5.617 Stück)', () => {
+    const L = lossAtStop({ side: 'long', size: 5617, entry: 0.13439, stop: 0.122, mark: 0.1238, liq: 0.11967, marginUsed: 90.31 });
+    return !L.liqFirst && Math.abs(L.pnl + 69.59) < 0.05 && Math.abs(L.fromNow + 10.11) < 0.05;
+  }],
+  ['Stop-Check: liegt der Stop hinter der Liquidation, ist die ganze Margin weg', () => {
+    const L = lossAtStop({ side: 'long', size: 5617, entry: 0.13439, stop: 0.11671, mark: 0.1238, liq: 0.11967, marginUsed: 109.64 });
+    return L.liqFirst && L.pnl === -109.64 && L.exit === 0.11967;
+  }],
+  ['Stop-Check: Short und Stop im Gewinn', () => { const L = lossAtStop({ side: 'short', size: -10, entry: 100, stop: 95, mark: 90, liq: 120 }); return L.pnl === 50 && L.fromNow === -50; }],
 ];

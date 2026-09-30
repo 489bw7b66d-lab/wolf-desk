@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 30.09.2026 · Etappe 5f · 462 Tests
+Stand: 30.09.2026 · Etappe 5g · 465 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -95,7 +95,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5f">` und eine Import-Map mit `?v=5f` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5g">` und eine Import-Map mit `?v=5g` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -284,6 +284,8 @@ Etappe 5d (Datenschutz): Einschätzungen und Ziele je Position aus dem öffentli
 Etappe 5e (Bedienung Signalgeber, Wunsch des Nutzers: „klobig“): im Signale-Tab nur noch ein Suchfeld (Coin eingeben, Enter), Analyse öffnet als Blatt von unten mit Kurzzeile (Score, empfohlener Hebel), Chart, Stil-Zeile und Trade-Karte-Knopf; alles Weitere unter „Details ▾“ eingeklappt · Stil-Knöpfe und Watchlist-Chips entfernt, immer „Auto“ · Watchlist wird unter ⚙️ gepflegt
 
 Etappe 5f: Telegram-Signal neu gegliedert (eigene Gestaltung nach dem Vorbild klar strukturierter Signal-Kanäle, nicht kopiert): Kopf „📌 WOLF DESK #WD-0001“ (fortlaufende Nummer im Wächter-Gedächtnis, auch im Tagebuch), Richtung · Coin · Stil, Hebel-Spanne (Hälfte bis sicherer Höchsthebel aus Stop, Stil und Höchsthebel des Marktes), Einstieg, TP1–TP4, Stop mit Abstand, Begründung aus Trend/Struktur und Auslösern, „Ungültig bei Schluss unter …“, Score/Siegel/Kurs · Trade-Karte: Stop umschalten zwischen Plan-Stop und ATR-Vorschlag (Position, Hebel und Ziele rechnen sofort neu, auch nach „Live-Kurs als Einstieg“) · Korrektur: Hebel-Spanne und -Empfehlung nie über dem Höchsthebel des Marktes
+
+Etappe 5g: Stop-Check der offenen Position nennt, was es kostet: „Greift der Stop, beträgt der Verlust ca. X $ (Y % vom Konto), gegenüber jetzt noch Z $ mehr“; liegt der Stop hinter der Liquidation, zählt die ganze Margin (lossAtStop in core-guard)
 
 ---
 

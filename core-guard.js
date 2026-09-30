@@ -93,3 +93,16 @@ export function planOrigStop(p) {
   const { origStop, origStopLabel, stopAdjusted, ...rest } = p;
   return { ...rest, stop: origStop, stopLabel: origStopLabel, R, stopDistPct: (R / p.entry) * 100 };
 }
+
+// Was kostet es, wenn der Stop greift? (5g) Liegt die Liquidation vor dem Stop, ist die ganze Margin weg.
+// pnl: Ergebnis gegenüber dem Einstieg (negativ = Verlust), fromNow: zusätzlich gegenüber dem aktuellen Kurs.
+export function lossAtStop(p) {
+  const q = Math.abs(p?.size || 0);
+  if (!q || !(p.entry > 0) || p.stop == null) return null;
+  const long = p.side === 'long', mark = p.mark ?? p.entry;
+  const liqFirst = p.liq > 0 && (long ? p.stop <= p.liq : p.stop >= p.liq);
+  const exit = liqFirst ? p.liq : p.stop;
+  const move = (a, b) => (long ? b - a : a - b) * q;
+  const pnl = liqFirst && p.marginUsed > 0 ? -p.marginUsed : move(p.entry, exit);
+  return { pnl, fromNow: move(mark, exit), liqFirst, exit };
+}
