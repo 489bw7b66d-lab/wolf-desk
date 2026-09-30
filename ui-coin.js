@@ -10,7 +10,8 @@ import { getFeedSignals } from './ui-feed.js';
 import { analyzeAllModes } from './core-scanner.js';
 import { CONFIG } from './config.js';
 import { drawChart, chartTools } from './ui-chartview.js';
-import { positionPlan } from './ui-testpage.js';
+import { positionPlan, planLine } from './ui-testpage.js';
+import { accountSummary } from './core-calc.js';
 import { trailText } from './core-trail.js';
 import { esc, dn, TFL, CHART_TFS, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
@@ -62,6 +63,7 @@ function renderLive() {
     const roe = p.marginUsed > 0 ? (p.upnl / p.marginUsed) * 100 : null;
     const pp = positionPlan(s, p, trade);
     $('coin-pos').innerHTML = `${ruleBox(p.evaluation)}
+    ${planLine(p, pp, s.account ? accountSummary(s.account, CONFIG.accountMode)?.equity : null)}
     ${pp.trail ? `<p class="trail-hint" style="margin:0 0 12px">↗ ${esc(trailText(pp.trail, pp.trail.tf, f.price))}</p>` : ''}
     <div class="kv">
       <div><span class="k">Offener PnL</span><span class="v ${p.upnl >= 0 ? 'long' : 'short'}">${f.signedUsd(p.upnl)}</span></div>

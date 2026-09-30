@@ -11,7 +11,7 @@ import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
 let getState = () => ({}), onTrade = () => {}, onCoin = () => {};
-let feed = null, error = null, loadedAt = 0, busy = null;
+let feed = null, error = null, loadedAt = 0, busy = null, archive = [];
 
 const STATUS = {
   offen: ['⏳', 'läuft', 'muted'], tp1: ['☑️', 'TP1', 'long'], tp2: ['✅', 'TP2', 'long'],
@@ -31,7 +31,7 @@ async function load() {
     const res = await fetch(CONFIG.feed.url + '?t=' + Date.now(), { cache: 'no-store' });
     if (res.status === 404) { feed = []; error = null; }
     else if (!res.ok) throw new Error('Status ' + res.status);
-    else { feed = (await res.json()).signals || []; error = null; }
+    else { const j = await res.json(); feed = j.signals || []; archive = j.archive || []; error = null; }
   } catch (e) { error = e.message; }
   loadedAt = Date.now();
   render();
@@ -39,6 +39,7 @@ async function load() {
 
 export function renderFeed() { render(); }
 export const getFeedSignals = () => feed || [];
+export const getArchive = () => archive || [];
 
 function render() {
   const box = $('feed');

@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 30.09.2026 · Etappe 5g · 465 Tests
+Stand: 01.10.2026 · Etappe 6a · 481 Tests
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -33,6 +33,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 - **Vor größeren Änderungen:** erst Bestand prüfen (aktuellen Code von GitHub laden, Versionsnummer prüfen!) und Plan zeigen, dann bauen.
 - **Ehrlichkeit:** keine Trefferquoten-Versprechen, Hinweise bei riskanten Werten, **Bremse bei Überpacen**.
 - **Messen vor Ändern:** Alles, was die **Signale** verändert, wartet bis zur Tagebuch-Analyse (siehe Abschnitt 11).
+- **Arbeitsweise (seit 5g):** erst mehrere Punkte sammeln (Sammelliste), dann ein Paket schnüren – nicht nach jedem Gedanken ein Update. Pakete müssen in der App übersichtlich bedienbar sein (keine neuen Kästen, wo eine Zeile reicht; Sichtprüfung in iPhone-Größe vor der Auslieferung).
 - **Übersicht (seit 4b):** Neue Funktionen bringen **keine zusätzlichen Fußnoten** mit. Erklärungen stehen hinter einem **ⓘ** zum Antippen (`tipInline`, `tipHead` in `ui-parts.js`). Die App merkt sich aufgeklappte ⓘ, weil viele Karten jede Sekunde neu gezeichnet werden.
 
 ---
@@ -95,7 +96,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="5g">` und eine Import-Map mit `?v=5g` je Datei (auch `tests.html`). Bei jedem Update erhöhen und **neue Dateien in beide Import-Maps eintragen**; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="6a">` und eine Import-Map mit `?v=6a` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -287,11 +288,25 @@ Etappe 5f: Telegram-Signal neu gegliedert (eigene Gestaltung nach dem Vorbild kl
 
 Etappe 5g: Stop-Check der offenen Position nennt, was es kostet: „Greift der Stop, beträgt der Verlust ca. X $ (Y % vom Konto), gegenüber jetzt noch Z $ mehr“; liegt der Stop hinter der Liquidation, zählt die ganze Margin (lossAtStop in core-guard)
 
+Etappe 6a (Handwerk, keine Signal-Änderung): **Plan-Ampel** je Position (🟢 Plan intakt, laufen lassen · 🟡 knapp mit besserem Stop · 🔴 Plan kaputt, besser schließen, mit Grund: kein Stop, Liquidation vor Stop, Stop im Rauschen ohne sinnvollen Stop, Struktur gebrochen, Einschätzung oder Signal ungültig) in Positionskarte und Positions-Blatt; nur bei 🔴 Verlust bei Auslösung und Orientierung „Stop zuerst / Ziel zuerst / Stop in 24 Std.“ (Zufallslauf aus ATR, keine Vorhersage) · **Backtest-Speicher**: Zwischenstand je Coin, „Weitermachen“ nach Neuladen, Ergebnis bleibt gespeichert, keine Selbst-Aktualisierung während eines Laufs, je Stil nur der letzte Lauf, Statuszeile unter dem Start-Knopf · **Speicher** in ⚙️ (Größe, Backtest-Daten bzw. Zwischenspeicher löschen, persönliche Daten bleiben) · Export-Dateiname mit Uhrzeit und Inhalt · **Tagebuch-Archiv** (abgeschlossene Signale dauerhaft in `signals.json` → `archive`, öffentlich unbedenklich ohne echte Trades; wird bei jedem Lauf aus dem veröffentlichten Zweig nachgeladen) · Tests für Positionen/Stops · Aufräumen: `esc` zentral in core-format, Begründungen (`topReasons`) im Kern (core-reasons), tote Reste der alten Signalgeber-Schnellwahl entfernt, eine einzige Import-Liste · Einstellungs-Hinweise hinter ⓘ bzw. kürzer
+
+**Experten-Analyse (30.09.2026, Rollenspiel):** Aufbau gut (Kern/Anzeige/Wächter getrennt, keine Kreis-Abhängigkeiten, App und Wächter teilen den Kern). Später: Backtest mit Entwicklungs-/Bestätigungszeitraum, Slippage und Funding, Überlebende-Verzerrung beachten (heutige Ledger-Liste), Korrelation offener Positionen, Regelbrüche im Wochenbericht, Markt-Bias als Kandidat. Bewusst nicht: neu schreiben, mehr Indikatoren.
+
 ---
 
 ## 10. Offene Aufgaben (nächste Pakete)
 
-**Nächste Signal-Schritte (je ein Schritt, vorher Backtest gegen die Ausgangslage):** Short-Filter-Stufe nach Backtest festlegen · **Korrektur-Filter für Longs** (Faktoren inkl. Umkehrkerzen und Key-Levels; Anlass ALGO 29.09., SKY 30.09.: Long-Signal Score 89 genau ins Strong High/Order Block 1D bei RSI 82 und NW ▼): Kurs am oberen Nadaraya-Band (ohne Repainting) + bärischer Order Block/Strong High im Tageschart (≤ 1 ATR) + RSI 1D ≥ 80; im Backtest Varianten vergleichen (nur RSI · NW+SMC · alles), Nutzer-Idee: Mehrheit der Faktoren · weitere Kandidaten: MACD-Divergenz, Abstand zur EMA 21 in ATR, positives Funding · danach **Korrektur-Short** (gleiche Erkennung, Ziel mind. 0,5er Retracement, TP2 0,618, Stop über Strong High/Order Block + ½ ATR, nur ab CRV 1,5, Einstieg erst bei Reaktion auf 1H/4H, kleinste Risiko-Stufe, eigene Backtest-Zeile, Ausnahme vom Short-Filter nur mit voller Konfluenz) · **Golden-Pocket-Long mit Reaktion** (DASH, HBAR, NIL) · danach Konfluenz-Stufen/Score überarbeiten (Score trennt aktuell nicht) · Retest-Siegel überdenken (fast jedes Signal hat es)
+**ENGINE 2 – Bauplan (vom Nutzer am 30.09.2026 unterschrieben, ersetzt die bisherigen Einzelschritte):**
+Grundsatz: weniger, dafür die richtigen Faktoren – nach der Handschrift des Nutzers (Top-down, Nadaraya + Smart Money als Hauptansatz). Die heutige Engine gewichtet fast umgekehrt (MA-Kreuzungen viele Punkte, Ort/Zone kaum, kein Warten auf Reaktion, kein Wochen-/Monatschart).
+- **Pflicht (sonst kein Signal):** Struktur passt · Kurs in einer Zone · **Reaktion** (am besten Liquiditäts-Sweep: Stich unter gleiche Tiefs und Schluss wieder darüber; sonst Umkehrkerze/CHoCH, abgeschlossene Kerze) · **Chance/Risiko mind. 1,5–2** (Stop hinter Zone/Order Block + Puffer, erstes Ziel an der nächsten Gegenzone)
+- **Punkte:** Großwetterlage Woche/Monat (Trend + Muster) 20 · Fibonacci (Golden Pocket 0,618–0,65 voll, 0,5 halb) 20 · **SMC-Konfluenz** (Order Block, Liquiditätszone, Key Level/horizontale Zone, **eigene blaue Chart-Linien des Nutzers** – für den Wächter über das Secret) 25 · **Nadaraya-Watson** (ohne Repainting) am passenden Band, nur mit der Struktur 15 · RSI 10 · MACD (Drehen/Divergenz) 5 · MA-Kreuzungen 5
+- **Bremsen (hartes Nein):** RSI-Extrem gegen die Richtung (Tag über 80 bei Long, unter 20 bei Short) · Nadaraya gegen die Richtung · Muster gegen die Richtung (Doppel-/Dreifachtop, SKS am Widerstand) · V-Erholung ohne Rücksetzer
+- **Zeitebenen:** Swing Woche / Tag / 4H · Daytrade Tag / 4H / 1H
+- **Etappen:** A (vorhandene Teile: Wochen-Trend, Fib, Key Levels, RSI, Reaktion als Pflicht, CRV) → B (Order Blocks, Liquiditäts-Sweep, Nadaraya) → C (Muster im Wochen-/Monatschart: Bull Flag, SKS, Dreiecke; Ausweichregel für junge Coins ohne genug Historie)
+- **Vorgehen:** Engine 2 läuft zuerst nur **neben** der alten in App und Backtest; entwickeln an den ersten 120 Tagen, bestätigen an den letzten 60; scharf (Telegram) erst, wenn in beiden Zeiträumen bei Swing und Daytrade besser, mit Versionsschnitt im Tagebuch. Ziel: lieber 3 gute Signale pro Woche als 30 mittelmäßige.
+- **Backtest-Lage 30.09. (Ausgangspunkt):** Short-Filter „Mittel“ (aktiv) verbessert alle drei Stile (Swing −48→−33R, Daytrade −11→+79R, Scalp +87→+132R), die übrigen Shorts bleiben aber negativ · Longs Daytrade +0,15R, Scalp +0,09R, Swing ±0 · Nachziehen Struktur besser bei Swing/Daytrade, schlechter bei Scalp · Score/Siegel trennen nicht · 500–770 Signale je Stil ohne Einstieg (Signale zu früh) · Umkehrkerzen und Dreiecks-Ausbruch wiederholt vorn.
+
+**Frühere Einzelschritte (in Engine 2 aufgegangen):** Short-Filter-Stufe nach Backtest festlegen · **Korrektur-Filter für Longs** (Faktoren inkl. Umkehrkerzen und Key-Levels; Anlass ALGO 29.09., SKY 30.09.: Long-Signal Score 89 genau ins Strong High/Order Block 1D bei RSI 82 und NW ▼): Kurs am oberen Nadaraya-Band (ohne Repainting) + bärischer Order Block/Strong High im Tageschart (≤ 1 ATR) + RSI 1D ≥ 80; im Backtest Varianten vergleichen (nur RSI · NW+SMC · alles), Nutzer-Idee: Mehrheit der Faktoren · weitere Kandidaten: MACD-Divergenz, Abstand zur EMA 21 in ATR, positives Funding · danach **Korrektur-Short** (gleiche Erkennung, Ziel mind. 0,5er Retracement, TP2 0,618, Stop über Strong High/Order Block + ½ ATR, nur ab CRV 1,5, Einstieg erst bei Reaktion auf 1H/4H, kleinste Risiko-Stufe, eigene Backtest-Zeile, Ausnahme vom Short-Filter nur mit voller Konfluenz) · **Golden-Pocket-Long mit Reaktion** (DASH, HBAR, NIL) · danach Konfluenz-Stufen/Score überarbeiten (Score trennt aktuell nicht) · Retest-Siegel überdenken (fast jedes Signal hat es)
 
 **Nächstes Politur-Paket (wenn sich Wünsche gesammelt haben):** kleine Haken beim Handling, optische Aufhübschung. **Keine neuen Indikatoren oder Infos** (Wunsch des Nutzers: „da ist wirklich alles drin“).
 - Lightweight Charts wurde bewusst nicht genommen: Claude hat beim Bauen kein Internet und könnte die Bibliothek nicht testen; die eigene Umsetzung ist voll getestet.

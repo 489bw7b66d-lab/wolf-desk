@@ -12,7 +12,7 @@ import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.
 import { scanUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
-import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText, patienceText, cooldownText, blockReason } from './core-alerts.js';
+import { signalAlert, badChecks, riskDiff, signalText, riskText, telegramView, journalEntry, judgeSignal, reportText, journalStats, linkTrades, executionStats, executionText, publicSignals, viewEventText, targetText, patienceText, cooldownText, blockReason, archiveEntries, mergeArchive } from './core-alerts.js';
 import { cooldown } from './core-guard.js';
 import { evaluatePatience, patienceStats } from './core-patience.js';
 import { viewFor, alignment, viewEvents } from './core-views.js';
@@ -139,8 +139,21 @@ async function updateJournal(state, now) {
 }
 
 // Öffentliche Signal-Liste für die App (wird vom Zeitplan in den Zweig "signals" gelegt)
+// Archiv (6a): bisheriges Archiv aus dem veröffentlichten Zweig holen (überlebt so auch einen verlorenen Zwischenspeicher),
+// neue abgeschlossene Signale dazu, zusammen mit den letzten Signalen veröffentlichen
+async function loadArchive() {
+  const repo = process.env.GITHUB_REPOSITORY;
+  if (!repo) return [];
+  try {
+    const res = await fetch(`https://raw.githubusercontent.com/${repo}/signals/signals.json?t=${Date.now()}`);
+    if (!res.ok) return [];
+    return (await res.json()).archive || [];
+  } catch { return []; }
+}
 async function publish(state) {
-  await writeFile('signals.json', JSON.stringify({ signals: publicSignals(state.journal) }, null, 1));
+  if (!state.archiveLoaded) { state.archive = mergeArchive(await loadArchive(), state.archive || []); state.archiveLoaded = true; }
+  state.archive = mergeArchive(state.archive, archiveEntries(state.journal));
+  await writeFile('signals.json', JSON.stringify({ signals: publicSignals(state.journal), archive: state.archive }, null, 1));
 }
 
 // Ziele eines abgeschlossenen Trades für die Geduld-Auswertung: eigener Plan oder zugehöriges Signal

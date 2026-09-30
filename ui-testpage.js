@@ -1,5 +1,6 @@
 // Anzeige der Testseite. Liest nur aus dem Store, rechnet nichts selbst,
 // außer über die Funktionen aus core/calc.js.
+import { esc } from './core-format.js';
 import { CONFIG } from './config.js';
 import { getWatchlist } from './core-watchlist.js';
 import { priceHealth, accountHealth, streamHealth } from './core-health.js';
@@ -11,14 +12,15 @@ import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getAutoPlan } from './core-autoplan.js';
 import { stopNoise, atrFor, setupTf, lossAtStop } from './core-guard.js';
 import { getFeedSignals } from './ui-feed.js';
-import { trailForPosition, hitsFromPath, trailText } from './core-trail.js';
+import { trailForPosition, hitsFromPath, trailText, trailCandles } from './core-trail.js';
+import { planState, structureBroken, viewInvalid, stopFirstProb, touchProb } from './core-planstate.js';
+import { getViews, viewFor } from './core-views.js';
 import { dayPnlOf } from './core-performance.js';
 import { getCandles } from './core-scanner.js';
 import { tipInline, coinIcon } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const STATUS_TEXT = { ok: 'OK', veraltet: 'Veraltet', fehler: 'Fehler', fehlt: 'Keine Daten' };
 const STREAM_TEXT = { verbunden: 'Live verbunden', verbinde: 'Verbinde …', getrennt: 'Getrennt', fallback: 'Ersatzbetrieb (Abfrage alle 5 s)' };
 
@@ -111,7 +113,7 @@ function renderPositions(s, now) {
       ${pathBar(pp.path)}
       ${pp.trail ? `<p class="trail-hint">↗ ${esc(trailText(pp.trail, pp.trail.tf, f.price))}</p>` : ''}
       ${issues.map((c) => `<p class="warnline" style="margin:0;color:${COLOR[c.status]}">${esc(c.rule)}: ${esc(c.text)}</p>`).join('')}
-      ${posNoise(p, sumEq)}
+      ${planLine(p, pp, sumEq)}
       <span class="pos-open">Chart & Teilverkäufe anzeigen</span>
     </article>`;
   }).join('');
@@ -124,7 +126,40 @@ export function positionPlan(s, p, t) {
   const path = tradePath(p, s.account?.orders, t?.exits, CONFIG.exitPlan, targets);
   const style = signal?.style || CONFIG.positions?.autoStyle || 'swing';
   const trail = trailForPosition(p, hitsFromPath(path), t?.openedAt, style, getCandles);
-  return { path, trail };
+  // Plan-Zustand (6a): Stop-Rauschen, Struktur, Einschätzung, Signal
+  const tf = setupTf(style);
+  const c = trailCandles(p.coin, tf, getCandles);
+  const atr = c?.atr ?? atrFor(p.coin, tf);
+  const noise = p.stop != null ? stopNoise(p.mark || p.entry, p.stop, atr, undefined, p.liq) : null;
+  const liqFirst = p.stop != null && p.liq > 0 && (p.side === 'long' ? p.stop <= p.liq : p.stop >= p.liq);
+  const state = planState({
+    hasStop: p.stop != null, liqFirst, noise,
+    struct: structureBroken(c?.candles, p.side, t?.openedAt),
+    viewBad: viewInvalid(viewFor(getViews(), p.coin), p.side, p.mark),
+    signalBad: signal?.status === 'ungültig',
+  });
+  return { path, trail, state, noise, atr, tf };
+}
+
+// Eine Zeile je Position: 🟢 laufen lassen · 🟡 knapp · 🔴 besser schließen (nur dann mit Zahlen)
+export function planLine(p, pp, equity) {
+  const st = pp.state;
+  if (!st) return '';
+  if (st.state === 'ok') return '<p class="plan-line ok">🟢 Plan intakt · laufen lassen, der Stop macht seine Arbeit</p>';
+  if (st.state === 'tight') return `<p class="plan-line warn">🟡 Plan knapp · ${esc(st.reasons[0])}${st.suggest ? `, besser ${f.price(st.suggest)}` : ''}</p>`;
+  const L = lossAtStop(p);
+  const sg = p.side === 'long' ? 1 : -1, mark = p.mark ?? p.entry;
+  const next = pp.path?.tps?.find((x) => !x.passed)?.price;
+  const exit = L?.exit ?? p.stop;
+  const dStop = exit != null ? (mark - exit) * sg : null, dTp = next != null ? (next - mark) * sg : null;
+  const pStop = stopFirstProb(dStop, dTp);
+  const perDay = { '1h': 24, '4h': 6, '1d': 1 }[pp.tf] || 6;
+  const p24 = touchProb(dStop, pp.atr, perDay);
+  const pc = (x) => (x == null ? '–' : Math.round(x * 100) + ' %');
+  const loss = L && L.pnl < 0 ? `Greift ${L.liqFirst ? 'die Liquidation' : 'der Stop'}: ca. ${f.usd(-L.pnl)}${equity > 0 ? ` (${f.pct(-L.pnl / equity * 100, 1)} vom Konto)` : ''}${L.fromNow < 0 ? `, gegenüber jetzt ${f.usd(-L.fromNow)} mehr` : ''}.` : '';
+  const odds = pStop != null ? ` Stop zuerst ca. ${pc(pStop)} · Ziel zuerst ca. ${pc(1 - pStop)}${p24 != null ? ` · Stop in 24 Std. ca. ${pc(p24)}` : ''}` : '';
+  return `<div class="plan-line bad"><b>🔴 Plan kaputt · besser schließen</b><span>Grund: ${esc(st.reasons.join(', '))}.</span>
+    ${loss || odds ? `<span class="plan-nums">${loss}${odds} ${tipInline('Orientierung, keine Vorhersage: gerechnet nur aus der Kursschwankung (ATR) ohne Trend. Märkte haben Trends und Schwung, die Zahlen sind ein grober Anhaltspunkt.', 'plan-odds')}</span>` : ''}</div>`;
 }
 
 function renderWatch(s, now) {
@@ -211,18 +246,3 @@ export function pathBar(path) {
 }
 
 // Stop-Check einer offenen Position gegen die normale Schwankung (nur wenn der Stop noch auf der Verlustseite liegt)
-function posNoise(p, equity) {
-  if (p.stop == null || (p.side === 'long' ? p.stop >= p.entry : p.stop <= p.entry)) return '';
-  const tf = setupTf(), n = stopNoise(p.mark || p.entry, p.stop, atrFor(p.coin, tf), undefined, p.liq);
-  if (!n || n.status === 'ok') return '';
-  const tip = n.suggest.beyondLiq
-    ? `Ein ATR-gerechter Stop (${f.price(n.suggest.stop)}) läge hinter der Liquidation (${f.price(n.suggest.liq)}). Bei diesem Hebel passt kein sinnvoller Stop: Position verkleinern oder schließen`
-    : `Sinnvoller: ${f.price(n.suggest.stop)}`;
-  // Was es kostet, wenn der Stop greift (Verlust gegenüber Einstieg, dazu wie viel davon noch dazukäme)
-  const L = lossAtStop(p);
-  const pctOf = equity > 0 && L ? ` (${f.pct(Math.abs(L.pnl) / equity * 100, 1)} vom Konto)` : '';
-  const cost = !L ? '' : L.pnl < 0
-    ? ` Greift ${L.liqFirst ? 'die Liquidation' : 'der Stop'}, beträgt der Verlust ca. ${f.usd(-L.pnl)}${pctOf}${L.fromNow < 0 ? `, gegenüber jetzt noch ${f.usd(-L.fromNow)} mehr` : ''}.`
-    : ` Greift der Stop, bleibt ein Gewinn von ca. ${f.usd(L.pnl)}.`;
-  return `<p class="warnline" style="margin:0;color:${n.status === 'bad' ? 'var(--bad)' : 'var(--warn)'}">Stop-Check (${tf.toUpperCase()}): ${n.text}. ${tip}.${cost}</p>`;
-}

@@ -1,4 +1,5 @@
 // Risiko-Modul: Regel-Check, manuelle Stop-Losses, Positionsgrößen-Rechner.
+import { esc } from './core-format.js';
 import { CONFIG } from './config.js';
 import { getWatchlist } from './core-watchlist.js';
 import { accountRisk } from './core-positions.js';
@@ -10,7 +11,6 @@ import { tradeHistory } from './core-trades.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LABEL = { ok: 'OK', warn: 'Achtung', bad: 'Verstoß' };
 // Versteht 2.534,1 (deutsch) und 2534.1 (englisch)
 const parse = (v) => {

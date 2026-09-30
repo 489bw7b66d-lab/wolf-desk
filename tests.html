@@ -16,98 +16,18 @@ li{padding:6px 0;border-top:1px solid #2A261C;list-style:none}ul{padding:0}
 <p id="sum" class="sum">Läuft …</p>
 <ul id="list"></ul>
 <!-- Version aller Dateien: bei jedem Update erhöhen, damit das iPhone keine alten Dateien nutzt -->
-<script type="importmap">
-{
- "imports": {
-  "./config.js": "./config.js?v=5g",
-  "./core-account.js": "./core-account.js?v=5g",
-  "./core-alerts.js": "./core-alerts.js?v=5g",
-  "./core-api.js": "./core-api.js?v=5g",
-  "./core-autoplan.js": "./core-autoplan.js?v=5g",
-  "./core-backtest.js": "./core-backtest.js?v=5g",
-  "./core-calc.js": "./core-calc.js?v=5g",
-  "./core-candlesticks.js": "./core-candlesticks.js?v=5g",
-  "./core-confirm.js": "./core-confirm.js?v=5g",
-  "./core-elliott.js": "./core-elliott.js?v=5g",
-  "./core-feedplan.js": "./core-feedplan.js?v=5g",
-  "./core-fees.js": "./core-fees.js?v=5g",
-  "./core-fib.js": "./core-fib.js?v=5g",
-  "./core-format.js": "./core-format.js?v=5g",
-  "./core-guard.js": "./core-guard.js?v=5g",
-  "./core-health.js": "./core-health.js?v=5g",
-  "./core-hotscan.js": "./core-hotscan.js?v=5g",
-  "./core-indicators.js": "./core-indicators.js?v=5g",
-  "./core-levpreview.js": "./core-levpreview.js?v=5g",
-  "./core-market.js": "./core-market.js?v=5g",
-  "./core-path.js": "./core-path.js?v=5g",
-  "./core-patience.js": "./core-patience.js?v=5g",
-  "./core-patterns.js": "./core-patterns.js?v=5g",
-  "./core-performance.js": "./core-performance.js?v=5g",
-  "./core-plans.js": "./core-plans.js?v=5g",
-  "./core-positions.js": "./core-positions.js?v=5g",
-  "./core-risk.js": "./core-risk.js?v=5g",
-  "./core-scanner.js": "./core-scanner.js?v=5g",
-  "./core-settings.js": "./core-settings.js?v=5g",
-  "./core-signals.js": "./core-signals.js?v=5g",
-  "./core-stops.js": "./core-stops.js?v=5g",
-  "./core-store.js": "./core-store.js?v=5g",
-  "./core-stream.js": "./core-stream.js?v=5g",
-  "./core-tradeable.js": "./core-tradeable.js?v=5g",
-  "./core-trades.js": "./core-trades.js?v=5g",
-  "./core-trail.js": "./core-trail.js?v=5g",
-  "./core-trendgate.js": "./core-trendgate.js?v=5g",
-  "./core-universe.js": "./core-universe.js?v=5g",
-  "./core-views.js": "./core-views.js?v=5g",
-  "./core-watchlist.js": "./core-watchlist.js?v=5g",
-  "./ledger-markets.js": "./ledger-markets.js?v=5g",
-  "./main.js": "./main.js?v=5g",
-  "./my-settings.js": "./my-settings.js?v=5g",
-  "./test-alerts.js": "./test-alerts.js?v=5g",
-  "./test-autoplan.js": "./test-autoplan.js?v=5g",
-  "./test-backtest.js": "./test-backtest.js?v=5g",
-  "./test-calc.js": "./test-calc.js?v=5g",
-  "./test-chart.js": "./test-chart.js?v=5g",
-  "./test-feedplan.js": "./test-feedplan.js?v=5g",
-  "./test-fees.js": "./test-fees.js?v=5g",
-  "./test-guard.js": "./test-guard.js?v=5g",
-  "./test-handling.js": "./test-handling.js?v=5g",
-  "./test-levpreview.js": "./test-levpreview.js?v=5g",
-  "./test-market.js": "./test-market.js?v=5g",
-  "./test-path.js": "./test-path.js?v=5g",
-  "./test-patience.js": "./test-patience.js?v=5g",
-  "./test-performance.js": "./test-performance.js?v=5g",
-  "./test-plans.js": "./test-plans.js?v=5g",
-  "./test-privacy.js": "./test-privacy.js?v=5g",
-  "./test-risk.js": "./test-risk.js?v=5g",
-  "./test-settings.js": "./test-settings.js?v=5g",
-  "./test-signal5f.js": "./test-signal5f.js?v=5g",
-  "./test-signals.js": "./test-signals.js?v=5g",
-  "./test-tradeable.js": "./test-tradeable.js?v=5g",
-  "./test-trades.js": "./test-trades.js?v=5g",
-  "./test-trail.js": "./test-trail.js?v=5g",
-  "./test-trendgate.js": "./test-trendgate.js?v=5g",
-  "./test-views.js": "./test-views.js?v=5g",
-  "./ui-backtest.js": "./ui-backtest.js?v=5g",
-  "./ui-chart.js": "./ui-chart.js?v=5g",
-  "./ui-chartview.js": "./ui-chartview.js?v=5g",
-  "./ui-coin.js": "./ui-coin.js?v=5g",
-  "./ui-export.js": "./ui-export.js?v=5g",
-  "./ui-feed.js": "./ui-feed.js?v=5g",
-  "./ui-home.js": "./ui-home.js?v=5g",
-  "./ui-market.js": "./ui-market.js?v=5g",
-  "./ui-parts.js": "./ui-parts.js?v=5g",
-  "./ui-performance.js": "./ui-performance.js?v=5g",
-  "./ui-risk.js": "./ui-risk.js?v=5g",
-  "./ui-settings.js": "./ui-settings.js?v=5g",
-  "./ui-signals.js": "./ui-signals.js?v=5g",
-  "./ui-testpage.js": "./ui-testpage.js?v=5g",
-  "./ui-trade.js": "./ui-trade.js?v=5g",
-  "./ui-tradeable.js": "./ui-tradeable.js?v=5g",
-  "./ui-views.js": "./ui-views.js?v=5g",
-  "./ui-watchlist-edit.js": "./ui-watchlist-edit.js?v=5g",
-  "./watcher.js": "./watcher.js?v=5g"
- }
-}
+<script>
+  // 6a: Die Import-Liste (mit Versionsnummer) kommt aus index.html, damit es nur EINE Liste gibt
+  (function () {
+    var x = new XMLHttpRequest();
+    x.open('GET', 'index.html?t=' + Date.now(), false);
+    x.send();
+    var m = x.responseText.match(/<script type="importmap">([\s\S]*?)<\/script>/);
+    var s = document.createElement('script');
+    s.type = 'importmap';
+    s.textContent = m ? m[1] : '{"imports":{}}';
+    document.currentScript.after(s);
+  })();
 </script>
 <script type="module">
 import { tests as calc } from './test-calc.js';
@@ -135,7 +55,9 @@ import { tests as tg } from './test-trendgate.js';
 import { tests as hd } from './test-handling.js';
 import { tests as pv } from './test-privacy.js';
 import { tests as s5 } from './test-signal5f.js';
-const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5];
+import { tests as ps } from './test-positions.js';
+import { tests as pst } from './test-planstate.js';
+const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst];
 let pass = 0;
 const list = document.getElementById('list');
 for (const [name, fn] of tests) {

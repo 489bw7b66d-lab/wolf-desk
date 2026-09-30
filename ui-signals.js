@@ -1,10 +1,9 @@
 // Signale-Bereich: Suche, Modus, Detail-Analyse, Watchlist-Scan.
 import { CONFIG } from './config.js';
-import { getWatchlist, addToWatchlist, removeFromWatchlist, onWatchlist, WATCHLIST_MAX } from './core-watchlist.js';
+import { getWatchlist } from './core-watchlist.js';
 import { analyzeMarket, analyzeAllModes, switchStyle } from './core-scanner.js';
 import { badge, ladder, esc, dn, TFL, styleRow, seal, confirmsFor, coinIcon } from './ui-parts.js';
 import * as f from './core-format.js';
-import { change24h, entryDistance } from './core-trades.js';
 import { accountSummary } from './core-calc.js';
 import { recommendedFor, levTagText } from './core-levpreview.js';
 import { drawChart, chartTools } from './ui-chartview.js';
@@ -147,7 +146,6 @@ export async function analyze(coin) {
     const r = await run(coin);
     results.set(mode + '|' + coin, r);
     if ($('sig-view')) showDetail(r); // Blatt inzwischen geschlossen? Dann nicht wieder öffnen
-    renderList();
   } catch (e) {
     if ($('sig-view')) $('sig-view').innerHTML += `<p class="empty" style="color:var(--bad)">Analyse fehlgeschlagen: ${esc(e.message)}</p>`;
   }
@@ -165,74 +163,10 @@ function renderSuggest() {
     : '<p class="empty">Kein Markt gefunden.</p>';
 }
 
-let editing = false;
-function renderQuick() {
-  if (!$('sig-quick')) return; // seit 5e ohne Schnellwahl (Watchlist wird unter ⚙️ gepflegt)
-  const wl = getWatchlist();
-  $('sig-quick').innerHTML = wl.map((c) => `<button type="button" class="chip-btn${editing ? ' edit' : ''}" data-coin="${esc(c)}" ${editing ? `aria-label="${esc(c)} entfernen"` : ''}>${esc(c.replace(/^xyz:/, ''))}${editing ? ' ✕' : ''}</button>`).join('')
-    + `<button type="button" class="chip-btn ghost-chip" id="wl-edit">${editing ? 'Fertig' : 'Bearbeiten'}</button>`;
-  $('wl-hint').textContent = editing ? `Tippe auf einen Coin zum Entfernen. Hinzufügen: oben suchen und „＋“ tippen. ${wl.length} von ${WATCHLIST_MAX}.` : '';
-}
-
-function renderList() {
-  if (!$('sig-list')) return;
-  $('sig-list').innerHTML = getWatchlist().map((c) => {
-    const r = results.get(mode + '|' + c);
-    return `<button type="button" class="sig-row" data-coin="${esc(c)}">
-      <span class="sym">${coinIcon(c)}${esc(dn(c))} ${r ? seal(r, true) : ''}
-        <span class="wl-live"><span data-px="${esc(c)}"></span> <b data-chg="${esc(c)}"></b></span></span>
-      <span class="wl-right">
-        ${r ? `<span class="meta">${r.styles ? (r.best ? CONFIG.signals.modes[r.best].label + ' · ' + r.total[r.dir] : 'kein Stil passt') : `L ${r.total.long} · S ${r.total.short}`}</span>${badge(r.dir)}` : `<span class="meta">${scanning ? 'wird geprüft …' : 'noch nicht geprüft'}</span>`}
-        ${r?.plan ? `<span class="wl-dist" data-dist="${esc(c)}"></span>` : ''}
-      </span>
-    </button>`;
-  }).join('');
-  renderWatchLive(getState());
-}
-
-// Live-Kurs, 24h und Abstand zum Einstieg: nur Texte aktualisieren, damit Tippen nicht gestört wird
-export function renderWatchLive(s) {
-  const box = $('sig-list');
-  if (!box) return;
-  box.querySelectorAll('[data-px]').forEach((el) => { el.textContent = f.price(s.prices?.[el.dataset.px]); });
-  box.querySelectorAll('[data-chg]').forEach((el) => {
-    const ch = change24h(s.prices?.[el.dataset.chg], s.prevDay?.[el.dataset.chg]);
-    el.textContent = ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2);
-    el.className = ch == null ? '' : ch >= 0 ? 'long' : 'short';
-  });
-  box.querySelectorAll('[data-dist]').forEach((el) => {
-    const r = results.get(mode + '|' + el.dataset.dist);
-    const d = entryDistance(r?.plan, s.prices?.[el.dataset.dist]);
-    el.textContent = d == null ? '' : d === 0 ? 'in der Einstiegszone' : `Entry ${d > 0 ? '+' : '−'}${f.pct(Math.abs(d), 2)}`;
-    el.className = 'wl-dist ' + (d === 0 ? 'long' : 'muted');
-  });
-}
-
-let scanning = false, lastScan = 0;
-// background = gedrosselt (automatischer Scan), sonst so schnell wie möglich (Knopf)
-async function scanWatchlist(background = false) {
-  if (scanning || !$('sig-scan')) return;
-  scanning = true;
-  renderList();
-  const btn = $('sig-scan');
-  btn.disabled = true;
-  const list = getWatchlist();
-  for (const [i, c] of list.entries()) {
-    btn.textContent = `${background ? 'Automatischer Scan' : 'Scanne'} ${i + 1} von ${list.length} …`;
-    try { results.set(mode + '|' + c, await run(c, background)); } catch { /* weiter */ }
-    renderList();
-  }
-  lastScan = Date.now();
-  scanning = false;
-  btn.disabled = false;
-  btn.textContent = 'Watchlist neu scannen';
-}
-
-// Beim Öffnen des Signale-Bereichs: automatisch scannen, wenn der letzte Scan älter als 15 Minuten ist
-export function autoScan() {
-  if (!$('sig-list')) return; // Watchlist-Liste ist nicht mehr im Signale-Tab
-  if (!scanning && Date.now() - lastScan > 15 * 60e3) scanWatchlist(true);
-}
+// Seit 6a entfernt: alte Schnellwahl und Watchlist-Liste im Signale-Tab (seit 5e unsichtbar).
+// Die Exporte bleiben als leere Hüllen, damit main.js unverändert weiterläuft.
+export function renderWatchLive() {}
+export function autoScan() {}
 
 export function initSignals(stateGetter, openTrade, openCoin) {
   getState = stateGetter;
@@ -253,21 +187,5 @@ export function initSignals(stateGetter, openTrade, openCoin) {
     const b = e.target.closest('button[data-coin]');
     if (b) analyze(b.dataset.coin);
   });
-  renderQuick();
-  onWatchlist(() => { renderQuick(); renderList(); });
-  $('sig-quick')?.addEventListener('click', (e) => {
-    if (e.target.closest('#wl-edit')) { editing = !editing; renderQuick(); renderSuggest(); return; }
-    const b = e.target.closest('button[data-coin]');
-    if (!b) return;
-    if (editing) removeFromWatchlist(b.dataset.coin); else analyze(b.dataset.coin);
-  });
-  $('sig-scan')?.addEventListener('click', () => scanWatchlist(false));
-  // Tipp auf einen Watchlist-Markt: mit Signal die Trade-Karte, sonst das Markt-Blatt mit Chart
-  $('sig-list')?.addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-coin]');
-    if (!b) return;
-    const r = results.get(mode + '|' + b.dataset.coin);
-    if (r?.plan || r?.best) onTrade(r); else onCoin(b.dataset.coin);
-  });
-  renderList();
+
 }

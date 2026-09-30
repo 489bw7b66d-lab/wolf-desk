@@ -5,6 +5,7 @@ import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
 import { BT, loadHistory, runBacktest, summarize, compareTrail } from './core-backtest.js';
 import { compareGate, GATE_LABEL } from './core-trendgate.js';
 import { saveBacktest, shareReport } from './ui-export.js';
+import { loadRun, saveRun, clearRun, remaining, saveResult, loadResult, savedList } from './core-btstore.js';
 import { esc, dn, tipHead, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -131,18 +132,25 @@ function renderResult() {
     <div class="empty" style="font-size:12.5px;margin-top:12px">So wurde gerechnet ${tipInline(`1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen (${f.pct(BT.feePct, 3)} je Seite), Slippage und Funding nicht. Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.`)}</div>`;
 }
 
-async function start() {
+// resume: gespeicherter Zwischenstand (6a) – macht beim nächsten fehlenden Coin weiter
+async function start(resume = null) {
   if (running) { stopFlag = true; return; }
-  const sel = $('bt-coin').value;
-  const coins = sel === ALL ? getWatchlist() : sel === TRADE ? getTradeable() : [sel];
-  running = true; stopFlag = false;
+  const sel = resume?.sel ?? $('bt-coin').value;
+  if (resume) style = resume.style;
+  const coins = resume?.coins ?? (sel === ALL ? getWatchlist() : sel === TRADE ? getTradeable() : [sel]);
+  running = true; stopFlag = false; globalThis.__wdBusy = true;
   $('bt-run').textContent = 'Abbrechen';
-  const runs = [];
+  $('bt-resume') && ($('bt-resume').innerHTML = '');
+  const runs = resume?.runs ? [...resume.runs] : [];
+  const todo = resume ? remaining(resume) : coins;
+  const cp = { style, sel, coins, runs, startedAt: resume?.startedAt ?? Date.now() };
+  await saveRun(cp);
   const status = (txt, frac) => {
     $('bt-status').innerHTML = `<p class="empty" style="font-size:13px;margin:10px 0 0">${esc(txt)}</p>${frac != null ? `<div class="bar" style="margin-top:6px"><span style="width:${(frac * 100).toFixed(0)}%;background:var(--gold)"></span></div>` : ''}`;
   };
-  for (const [i, coin] of coins.entries()) {
+  for (const coin of todo) {
     if (stopFlag) break;
+    const i = coins.indexOf(coin);
     const pre = coins.length > 1 ? `${i + 1}/${coins.length} ${coin}: ` : `${coin}: `;
     try {
       status(pre + 'lade Kursdaten …', (i) / coins.length);
@@ -152,19 +160,39 @@ async function start() {
         shouldStop: () => stopFlag,
       });
       res.trades.forEach((t) => { t.coin = coin; });
-      runs.push(res);
+      if (stopFlag) break; // halbfertigen Coin nicht speichern
+      runs.push({ ...res, coin });
     } catch (e) {
       runs.push({ coin, trades: [], missed: [], error: e.message });
     }
+    await saveRun({ ...cp, runs }); // Zwischenstand nach jedem Coin
   }
   const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage`;
-  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + r.missed.length, 0) };
+  const complete = !stopFlag && runs.length === coins.length;
+  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missed?.length || 0), 0), complete, done: runs.length, total: coins.length };
   saveBacktest(last, style); // für „Daten für Claude“
+  if (complete) { await saveResult(style, last); await clearRun(); } // nur vollständige Läufe ersetzen das gespeicherte Ergebnis
+  globalThis.__wdBusy = false;
+  renderSaved();
   const errs = runs.filter((r) => r.error);
   status(stopFlag ? 'Abgebrochen, Teilergebnis:' : errs.length ? `Fertig. Nicht geladen: ${errs.map((r) => r.coin).join(', ')}` : 'Fertig.', null);
   running = false;
   $('bt-run').textContent = 'Backtest starten';
   renderResult();
+}
+
+// Eine Zeile unter dem Start-Knopf: unterbrochener Lauf (Weitermachen) und gespeicherte Ergebnisse je Stil
+const BT_STYLES = ['swing', 'intraday', 'scalp'];
+async function renderSaved() {
+  const box = $('bt-resume');
+  if (!box) return;
+  const run = running ? null : await loadRun();
+  const saved = await savedList(BT_STYLES);
+  const time = (t) => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  box.innerHTML = (run && remaining(run).length
+    ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
+        <span><button type="button" id="bt-go" class="small-btn">Weitermachen</button><button type="button" id="bt-drop" class="small-btn ghost">Verwerfen</button></span></div>` : '')
+    + (saved.length ? `<div class="bt-saved">${saved.map((x) => `<button type="button" data-bt-show="${x.style}">${esc(CONFIG.signals.modes[x.style].label)} ✓ ${time(x.at)}</button>`).join('')}</div>` : '');
 }
 
 // Suche über alle Hyperliquid-Märkte (auch xyz: Rohstoffe, Aktien, Devisen)
@@ -196,6 +224,14 @@ export function initBacktest(getState = () => ({})) {
     style = b.dataset.bts;
     renderControls();
   });
-  $('bt-run').addEventListener('click', start);
+  $('bt-run').addEventListener('click', () => start());
+  // 6a: Unterbrochenen Lauf anbieten, letztes Ergebnis des Stils wieder anzeigen
+  $('bt-resume')?.addEventListener('click', async (e) => {
+    if (e.target.id === 'bt-go') { const r = await loadRun(); if (r) start(r); }
+    if (e.target.id === 'bt-drop') { await clearRun(); renderSaved(); }
+    const b = e.target.closest('button[data-bt-show]');
+    if (b) { const r = await loadResult(b.dataset.btShow); if (r) { style = r.style; last = r; renderControls(); renderResult(); } }
+  });
+  renderSaved().then(async () => { if (!last) { const r = await loadResult(style); if (r) { last = r; renderResult(); } } });
   $('bt-out').addEventListener('click', (e) => { if (e.target.closest('#bt-export')) shareReport(getState); });
 }

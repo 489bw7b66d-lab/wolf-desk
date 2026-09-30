@@ -1,13 +1,13 @@
 // Telegram-Wächter: Entscheidung, was gemeldet wird, und die Texte dazu.
 // Reine Funktionen ohne Netzwerk, Tests in test-alerts.js. Das Server-Skript ist watcher.mjs.
+import { esc } from './core-format.js';
 import { CONFIG } from './config.js';
 import { priceVsPlan, maxLeverageForStop } from './core-risk.js';
-import { topReasons } from './ui-parts.js';
+import { topReasons } from './core-reasons.js';
 import * as f from './core-format.js';
 import { tradeHistory } from './core-trades.js';
 
 const dn = (c) => String(c ?? '').replace(/^[a-z]+:/, '');
-const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const A = () => CONFIG.alerts;
 
 // Für Telegram nur erlaubte Stile (kein Scalp): bester erlaubter Stil oder null
@@ -323,4 +323,20 @@ export function blockReason(coin, openCoins = [], journal = []) {
   if (openCoins.includes(coin)) return 'Position offen';
   if (journal.some((e) => e.coin === coin && e.status === 'offen')) return 'Signal läuft noch';
   return null;
+}
+
+// Tagebuch-Archiv (6a): Das Tagebuch im Wächter-Gedächtnis wird nach 60 Tagen gekürzt. Abgeschlossene Signale
+// wandern deshalb zusätzlich in ein dauerhaftes Archiv in signals.json. Nur öffentlich unbedenkliche Felder
+// (die Signale sind ohnehin öffentlich), keine Verknüpfung mit deinen echten Trades.
+export const archiveKey = (e) => `${e.coin}|${e.dir}|${e.at}`;
+export function archiveEntries(journal = []) {
+  return journal.filter((e) => e.status && e.status !== 'offen').map((e) => ({
+    key: archiveKey(e), id: e.id ?? null, coin: e.coin, dir: e.dir, style: e.style, score: e.score, seal: !!e.seal,
+    at: e.at, status: e.status, r: e.r ?? null, doneAt: e.doneAt ?? null, sf: e.sf || 'aus',
+  }));
+}
+export function mergeArchive(old = [], add = []) {
+  const m = new Map((old || []).map((e) => [e.key || archiveKey(e), e]));
+  for (const e of add) m.set(e.key, { ...(m.get(e.key) || {}), ...e });
+  return [...m.values()].sort((a, b) => a.at - b.at);
 }

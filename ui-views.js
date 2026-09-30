@@ -1,9 +1,9 @@
 // Karte "Meine Einschätzung" im Signale-Tab: Liste der Einschätzungen und Formular zum Anlegen/Bearbeiten.
+import { esc } from './core-format.js';
 import { getViews, saveView, isActive, validateView, cleanView, BIAS_TXT } from './core-views.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const dn = (c) => String(c ?? '').replace(/^[a-z]+:/, '');
 const dt = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 const priceTxt = (v) => (v == null ? '' : f.price(v));

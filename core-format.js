@@ -33,3 +33,6 @@ export const usdShort = (v) => {
   const d = Math.abs(v) >= 100 ? 0 : 2;
   return sign + new Intl.NumberFormat('de-DE', { maximumFractionDigits: d, minimumFractionDigits: d }).format(Math.abs(v)) + ' $';
 };
+
+// Schutz vor eingeschleustem HTML in Texten (zentral seit 6a, vorher in 6 Dateien einzeln)
+export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

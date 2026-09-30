@@ -30,6 +30,7 @@ const ADDR_KEY = 'wolfdesk.address';
 // (über eine neue Adresse, damit das iPhone nicht die zwischengespeicherte Startseite nimmt).
 const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content || '';
 async function checkUpdate() {
+  if (globalThis.__wdBusy) return; // 6a: nicht mitten im Backtest neu laden
   try {
     const res = await fetch('index.html?check=' + Date.now(), { cache: 'no-store' });
     const live = (await res.text()).match(/name="app-version" content="([^"]+)"/)?.[1];

@@ -46,7 +46,7 @@ export const FIELDS = [
   n('signal', 'signals.modes.swing.minTp1Pct', 'TP1 mindestens entfernt (Swing)', 0.1, 20, 0.1, '%'),
   n('signal', 'signals.modes.intraday.minTp1Pct', 'TP1 mindestens entfernt (Daytrade)', 0.1, 20, 0.1, '%'),
   n('signal', 'signals.modes.scalp.minTp1Pct', 'TP1 mindestens entfernt (Scalp)', 0.1, 20, 0.1, '%'),
-  n('signal', 'signals.hot.topN', 'Heiße Coins: Top … nach Market Cap', 20, 250, 10),
+  n('signal', 'signals.hot.topN', 'Heiße Coins: Top … nach Market Cap', 20, 250, 10, '', { hint: 'Gilt nur, wenn keine handelbaren Märkte eingetragen sind' }),
   n('signal', 'signals.hot.maxPicks', 'Heiße Coins: so viele anzeigen', 1, 15, 1),
 
   n('markt', 'market.biasWeights.btc', 'Gewicht BTC-Trend', 0, 100, 5, '%'),

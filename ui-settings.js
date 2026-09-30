@@ -1,4 +1,5 @@
 // Einstellungs-Seite (Zahnrad oben). Liest und schreibt nur über core-settings.js.
+import { esc } from './core-format.js';
 import { CONFIG, SETTINGS_KEY } from './config.js';
 import { getViews } from './core-views.js';
 import { getPlans } from './core-plans.js';
@@ -6,12 +7,13 @@ import { getWatchlist } from './core-watchlist.js';
 import { getTradeable } from './core-tradeable.js';
 import { tradeableBlock, bindTradeable } from './ui-tradeable.js';
 import { watchlistBlock, bindWatchlist } from './ui-watchlist-edit.js';
+import { storageBlock, bindStorage, refreshSize } from './ui-storage.js';
 import { shareReport } from './ui-export.js';
+import { tipInline } from './ui-parts.js';
 import { MY_SETTINGS } from './config.js';
 import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile, listsForExport, privatePart, publicLeak } from './core-settings.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const num = (v) => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 6 }).format(v);
 let values = null;   // Arbeitskopie Pfad → Wert
 let dirty = false;
@@ -41,9 +43,12 @@ function input(f) {
 function row(f, errs) {
   const changed = isChanged(f.path, values[f.path]);
   const err = errs.find((e) => e.path === f.path);
-  return `<div class="set-row${changed ? ' changed' : ''}${err ? ' error' : ''}">
+  // 6a: Hinweise hinter ⓘ; Auswahl mit vielen Knöpfen bekommt die ganze Breite (kein Quetschen)
+  const wide = f.type === 'choice' && (f.options?.length || 0) > 2;
+  const inactive = f.path === 'signals.hot.topN' && getTradeable().length ? 'nicht aktiv: gescannt werden deine handelbaren Märkte' : '';
+  return `<div class="set-row${changed ? ' changed' : ''}${err ? ' error' : ''}${wide ? ' wide' : ''}${inactive ? ' inactive' : ''}">
     <div class="set-label"><span>${esc(f.label)}</span>
-      <small>empfohlen: ${esc(shownRec(f))}${f.hint ? ' · ' + esc(f.hint) : ''}</small></div>
+      <small>empfohlen: ${esc(shownRec(f))}${inactive ? ' · ' + inactive : ''}${f.hint ? ' ' + tipInline(f.hint, 'set|' + f.path) : ''}</small></div>
     <div class="set-ctrl">${input(f)}
       ${changed ? `<button type="button" class="set-reset" data-reset="${f.path}" aria-label="${esc(f.label)} auf Empfehlung zurücksetzen">↺</button>` : '<span class="set-reset-ph"></span>'}</div>
   </div>`;
@@ -70,6 +75,7 @@ export function renderSettings() {
     }).join('')}
     ${watchlistBlock(open.has('watchlist'))}
     ${tradeableBlock(open.has('tradeable'))}
+    ${storageBlock(open.has('storage'))}
     ${errs.length ? `<div class="set-errors" role="alert">${errs.map((e) => `<p>${esc(e.text)}</p>`).join('')}</div>` : ''}
     <div class="set-actions">
       <button type="button" id="set-save" ${errs.length || !dirty ? 'disabled' : ''}>Speichern und anwenden</button>
@@ -81,6 +87,7 @@ export function renderSettings() {
     <p class="set-hint" id="set-private-msg" hidden></p>
     ${publicLeak(MY_SETTINGS) ? '<p class="warnline" style="margin-top:10px">In deiner my-settings.js bei GitHub stehen noch Einschätzungen oder Ziele (öffentlich lesbar). „Für den Wächter übernehmen“ und die neue Datei hochladen, dazu die privaten Daten ins Secret.</p>' : ''}
     <p class="empty" style="font-size:12px;margin-top:10px">„Speichern“ gilt sofort für die App auf diesem iPhone. „Für den Wächter übernehmen“ erzeugt die Datei <b>my-settings.js</b>. Die lädst du wie gewohnt bei GitHub hoch, dann rechnet auch der Telegram-Wächter mit deinen Werten.</p>`;
+  if (open.has('storage')) refreshSize();
 }
 
 function parse(str) {
@@ -126,6 +133,7 @@ export function initSettings(getState = () => ({})) {
   const box = $('settings');
   bindTradeable(box, () => Object.values(getState().markets || {}).flat());
   bindWatchlist(box, () => Object.values(getState().markets || {}).flat());
+  bindStorage(box);
   box.addEventListener('click', (e) => { if (e.target.id === 'set-claude') shareReport(getState); });
   box.addEventListener('click', (e) => { if (e.target.id === 'set-private') copyPrivate(); });
   // Zahl eingegeben: erst beim Verlassen des Feldes übernehmen (sonst springt der Cursor)
