@@ -48,9 +48,9 @@
     2903.0650177133807,
     2962.8409063181034
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790749799999,
    "events": [
     "EMA 8/21 Kreuzung aufwärts",
     "MACD-Kreuzung aufwärts",
