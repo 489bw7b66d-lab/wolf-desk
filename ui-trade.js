@@ -6,7 +6,7 @@ import { drawChart, chartTools } from './ui-chartview.js';
 import { switchStyle, getCandles } from './core-scanner.js';
 import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.js';
 import { estimateFees, DEFAULT_RATES } from './core-fees.js';
-import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText } from './core-guard.js';
+import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText, planWithStop, planOrigStop } from './core-guard.js';
 import { tradeHistory } from './core-trades.js';
 import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut, tipInline, coinIcon } from './ui-parts.js';
 import { ago } from './ui-feed.js';
@@ -15,7 +15,8 @@ import * as f from './core-format.js';
 const $ = (id) => document.getElementById(id);
 let getState = () => ({});
 let current = null, riskPct = null, lastFocus = null, liveTimer = null, basePlan = null;
-let signalBase = null; // Trade-Karte aus einem gemeldeten Signal: zum Zurückschalten auf dessen Stil
+let signalBase = null;
+let adoptStop = null; // übernommener Stop-Vorschlag (5f) // Trade-Karte aus einem gemeldeten Signal: zum Zurückschalten auf dessen Stil
 let manualLev = null, chartTf = null; // manueller Hebel (null = Empfehlung), gewählter Chart-Timeframe
 const RISKS = () => CONFIG.rules.riskSteps; // Risiko-Stufen aus den Einstellungen
 const extraCandles = new Map(); // "coin|tf" -> Kerzen für Zeitebenen außerhalb des Stils (werden bei Bedarf geladen)
@@ -148,6 +149,7 @@ export function openTrade(result) {
   if (!result?.plan) return;
   current = result;
   basePlan = result.plan;
+  adoptStop = null;
   signalBase = result.fromSignal ? result : null;
   manualLev = null;
   chartTf = result.tfs?.[1] || null;
@@ -206,12 +208,25 @@ export function initTrade(stateGetter, onFull, onCalc) {
       $('sheet-body').querySelectorAll('button[data-ctf]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.ctf === chartTf)));
       renderLive(); return;
     }
+    // Stop wählen: Plan-Stop oder Vorschlag (ATR); gilt auch nach „Live-Kurs als Einstieg“
+    const sp = e.target.closest('button[data-stop]');
+    if (sp) {
+      const p = current.plan;
+      if (sp.dataset.stop === 'sug' && !p.stopAdjusted) {
+        const n = stopNoise(p.entry, p.stop, current.analyses?.[1]?.atr);
+        if (n?.suggest) { adoptStop = n.suggest.stop; current = { ...current, plan: planWithStop(p, adoptStop) }; }
+      } else if (sp.dataset.stop === 'orig' && p.stopAdjusted) {
+        adoptStop = null; current = { ...current, plan: planOrigStop(p) };
+      }
+      render(); renderLive(); return;
+    }
     if (e.target.id === 'live-take') {
-      const np = withEntry(basePlan, getState().prices?.[current.coin]);
+      let np = withEntry(adoptStop ? planWithStop(basePlan, adoptStop) : basePlan, getState().prices?.[current.coin]);
+      if (np && adoptStop) np = { ...np, stopAdjusted: true };
       if (np) { current = { ...current, plan: np }; render(); renderLive(); }
       return;
     }
-    if (e.target.id === 'live-reset') { current = { ...current, plan: basePlan }; render(); renderLive(); return; }
+    if (e.target.id === 'live-reset') { current = { ...current, plan: adoptStop ? planWithStop(basePlan, adoptStop) : basePlan }; render(); renderLive(); return; }
     const sb = e.target.closest('button[data-style]');
     if (sb) {
       // Zurück auf den Stil des gemeldeten Signals = wieder dessen Plan
@@ -261,10 +276,18 @@ export function coolBox() {
 // Stop-Check gegen die normale Schwankung (ATR der Setup-Zeitebene)
 export function stopBox(r, p, sum, size) {
   const a = r.analyses?.[1]?.atr;
-  const n = stopNoise(p.entry, p.stop, a);
+  // Prüfung immer gegen den ursprünglichen Stop, damit die Wahl zwischen beiden sichtbar bleibt (5f)
+  const orig = p.stopAdjusted ? p.origStop : p.stop;
+  const n = stopNoise(p.entry, orig, a);
   if (!n) return '';
-  if (n.status === 'ok') return `<p class="stop-check ok">✓ ${esc(n.text)}</p>`;
-  const imp = n.suggest && sum ? suggestImpact(sum.equity, riskPct, p.entry, p.stop, n.suggest.stop) : null;
-  return `<div class="stop-check ${n.status}"><b>${n.status === 'bad' ? '⚠️ ' : ''}${esc(n.text)}</b>
-    ${n.suggest ? `<span>Sinnvoller: Stop bei <b>${f.price(n.suggest.stop)}</b> (${String(n.suggest.atrMult).replace('.', ',')}× ATR, ${f.pct(n.suggest.distPct, 1)} Abstand)${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, du brauchst also weniger Hebel.` : ''}</span>` : ''}</div>`;
+  if (n.status === 'ok' && !p.stopAdjusted) return `<p class="stop-check ok">✓ ${esc(n.text)}</p>`;
+  const sug = n.suggest?.stop ?? p.stop;
+  const imp = n.suggest && sum ? suggestImpact(sum.equity, riskPct, p.entry, orig, sug) : null;
+  const pick = `<div class="stop-pick" role="group" aria-label="Stop wählen">
+      <button type="button" data-stop="orig" aria-pressed="${!p.stopAdjusted}">${!p.stopAdjusted ? '✓ ' : ''}Plan-Stop<b>${f.price(orig)}</b></button>
+      <button type="button" data-stop="sug" aria-pressed="${!!p.stopAdjusted}">${p.stopAdjusted ? '✓ ' : ''}Vorschlag<b>${f.price(sug)}</b></button>
+    </div>`;
+  return `<div class="stop-check ${p.stopAdjusted ? 'ok' : n.status}"><b>${p.stopAdjusted ? '✓ Vorgeschlagener Stop übernommen' : (n.status === 'bad' ? '⚠️ ' : '') + esc(n.text)}</b>
+    ${n.suggest ? `<span>Vorschlag: ${String(n.suggest.atrMult).replace('.', ',')}× ATR, ${f.pct(n.suggest.distPct, 1)} Abstand${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, du brauchst also weniger Hebel.` : ''}</span>` : ''}
+    ${n.suggest ? pick : ''}</div>`;
 }

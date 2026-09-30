@@ -90,7 +90,7 @@ async function scan() {
   for (const c of deep) {
     try { results.push(await analyzeAllModes(c, true)); } catch { /* weiter */ }
   }
-  return { results, prices: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.price])), volumes: ctx.map || {} };
+  return { results, prices: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.price])), volumes: ctx.map || {}, maxLevs: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.maxLev])) };
 }
 
 // Ohne hinterlegte Chat-ID: beim Bot nachsehen, wer ihm zuletzt geschrieben hat, und die ID dorthin schicken
@@ -205,7 +205,7 @@ async function main() {
 
   await updateJournal(state, now);
 
-  const { results, prices, volumes } = await scan();
+  const { results, prices, volumes, maxLevs } = await scan();
   const openCoins = (risk?.positions || []).map((p) => p.coin);
   const alerts = results
     .map((r0) => telegramView(r0))
@@ -217,10 +217,11 @@ async function main() {
     .slice(0, CONFIG.alerts.maxPerRun);
   for (const { r, a } of alerts) {
     const al = alignment(viewFor(CONFIG.views, r.coin, now), r.dir);
-    await send(signalText(r, a, { noCapital, star: al === 'mit' }), CHANNEL || CHAT);
+    state.sigNo = (state.sigNo || 0) + 1; // fortlaufende Signal-Nummer (#WD-0001 …)
+    await send(signalText(r, a, { noCapital, star: al === 'mit', id: state.sigNo, exchangeMax: maxLevs?.[r.coin] }), CHANNEL || CHAT);
     state.sent[a.key] = now;
     state.lastDir[r.coin] = { dir: r.dir, at: now };
-    state.journal.push(journalEntry(r, a, now, al));
+    state.journal.push({ ...journalEntry(r, a, now, al), id: state.sigNo });
     log('Signal gemeldet:', a.key, a.score);
   }
   // Deine Trades der letzten 60 Tage (für Abkühlphase, Ziele und Geduld)

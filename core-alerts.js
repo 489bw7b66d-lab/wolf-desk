@@ -1,7 +1,7 @@
 // Telegram-Wächter: Entscheidung, was gemeldet wird, und die Texte dazu.
 // Reine Funktionen ohne Netzwerk, Tests in test-alerts.js. Das Server-Skript ist watcher.mjs.
 import { CONFIG } from './config.js';
-import { priceVsPlan } from './core-risk.js';
+import { priceVsPlan, maxLeverageForStop } from './core-risk.js';
 import { topReasons } from './ui-parts.js';
 import * as f from './core-format.js';
 import { tradeHistory } from './core-trades.js';
@@ -60,19 +60,47 @@ export function badChecks(risk, status = 'bad') {
 const stateTxt = (state, dir) => (state === 'zone' ? 'in der Einstiegszone'
   : state === 'early' ? (dir === 'long' ? 'knapp unter der Zone, noch über dem Stop' : 'knapp über der Zone, noch unter dem Stop') : state);
 
-export function signalText(r, alert, { noCapital = false, appUrl = A().appUrl, star = false } = {}) {
+// Telegram-Signal (5f): klar gegliedert – Kopf mit Nummer, Richtung/Stil, Hebel-Spanne, Einstieg, Ziele, Stop,
+// kurze Begründung aus Trend und Ereignissen, wann es ungültig wird. Hebel-Spanne: bis zum sicheren Höchsthebel
+// (Liquidation hinter dem Stop, Stil-Obergrenze, Höchsthebel des Marktes), untere Grenze die Hälfte davon.
+export function signalLeverage(p, style, exchangeMax = null) {
+  const stopDist = (Math.abs(p.entry - p.stop) / p.entry) * 100;
+  const cap = Math.min(CONFIG.rules.maxLeverage, CONFIG.signals.modes[style]?.maxLeverage ?? CONFIG.rules.maxLeverage, exchangeMax || Infinity);
+  const hi = maxLeverageForStop(stopDist, CONFIG.rules.liqBufferPct, cap, exchangeMax) || 1;
+  const lo = Math.max(1, Math.floor(hi / 2));
+  return lo === hi ? `${hi}×` : `${lo}–${hi}×`;
+}
+const TREND = { bull: 'bullisch', bear: 'bärisch', mixed: 'gemischt' };
+const STRUCT = { up: 'höhere Hochs', down: 'tiefere Tiefs', range: 'seitwärts' };
+export function signalWhy(r) {
+  const t = r.analyses?.[0], tfl = (r.tfs?.[0] || '').toUpperCase();
+  const parts = [];
+  if (t) parts.push(`Trend ${tfl} ${TREND[t.stack] || t.stack}, Struktur ${STRUCT[t.structure] || t.structure}.`);
+  const why = topReasons(r, 3);
+  if (why.length) parts.push(`Auslöser: ${why.join(', ')}.`);
+  return parts.join(' ');
+}
+
+export function signalText(r, alert, { noCapital = false, appUrl = A().appUrl, star = false, id = null, exchangeMax = null } = {}) {
   const p = r.plan, long = p.dir === 'long';
   const stopPct = ((p.stop - p.entry) / p.entry) * 100;
   const shield = (r.confirms || []).some((c) => c.dir === p.dir) ? ' 🛡' : '';
+  const style = r.best || r.mode;
+  const line = '━━━━━━━━━━━━';
   const lines = [
-    `${long ? '🟢' : '🔴'} <b>${long ? 'LONG' : 'SHORT'} · ${esc(dn(r.coin))}</b> · ${esc(CONFIG.signals.modes[r.best].label)} · Score ${alert.score}${shield}${star ? ' ⭐' : ''}`,
-    `Kurs ${f.price(alert.price ?? p.entry)} · ${stateTxt(alert.pos.state, p.dir)}`,
-    `Einstieg ${f.price(p.zone[0])} – ${f.price(p.zone[1])}`,
-    `TP1 ${f.price(p.tps[0])} · TP2 ${f.price(p.tps[1])}`,
-    `Stop ${f.price(p.stop)} (${stopPct >= 0 ? '+' : '−'}${f.pct(Math.abs(stopPct), 1)})`,
+    `📌 <b>WOLF DESK${id ? ` #WD-${String(id).padStart(4, '0')}` : ''}</b>`,
+    `${long ? '🟢 <b>LONG' : '🔴 <b>SHORT'} · ${esc(dn(r.coin))}</b> · ${esc(CONFIG.signals.modes[style]?.label || style)}`,
+    `Hebel: ${signalLeverage(p, style, exchangeMax)}`,
+    line,
+    `<b>Einstieg:</b> ${f.price(p.zone[0])} – ${f.price(p.zone[1])}`,
+    `<b>Ziele:</b> ${p.tps.slice(0, 4).map((t, i) => `TP${i + 1} ${f.price(t)}`).join(' · ')}`,
+    `<b>Stop:</b> ${f.price(p.stop)} (${stopPct >= 0 ? '+' : '−'}${f.pct(Math.abs(stopPct), 1)})`,
+    line,
   ];
-  const why = topReasons(r, 2);
-  if (why.length) lines.push(esc(why.join(' · ')));
+  const why = signalWhy(r);
+  if (why) lines.push(esc(why));
+  lines.push(`Ungültig bei ${long ? 'Schluss unter' : 'Schluss über'} ${f.price(p.stop)}.`);
+  lines.push(`Score ${alert.score}${shield}${star ? ' ⭐' : ''} · Kurs ${f.price(alert.price ?? p.entry)}, ${stateTxt(alert.pos.state, p.dir)}`);
   if (noCapital) lines.push('⚠️ Kein Kapital frei, nur zur Beobachtung');
   lines.push(`<a href="${appUrl}">In Wolf Desk öffnen</a>`);
   return lines.join('\n');
@@ -244,7 +272,7 @@ export function publicSignals(journal, max = 20) {
   return [...(journal || [])].sort((a, b) => b.at - a.at).slice(0, max).map((e) => ({
     coin: e.coin, dir: e.dir, style: e.style, score: e.score, seal: !!e.seal, at: e.at,
     px: e.px, zone: e.zone || null, stop: e.stop, tps: e.tps, status: e.status, r: e.r ?? null, doneAt: e.doneAt ?? null,
-    events: (e.events || []).slice(0, 3),
+    events: (e.events || []).slice(0, 3), id: e.id ?? null,
   }));
 }
 

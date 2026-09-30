@@ -53,7 +53,7 @@ export async function getMarketCtx() {
       const name = dex && !u.name.startsWith(dex + ':') ? `${dex}:${u.name}` : u.name;
       const c = ctxs?.[j] || {};
       map[name] = Number(c.dayNtlVlm);
-      ctx[name] = { volume: Number(c.dayNtlVlm), oi: Number(c.openInterest) * Number(c.markPx), price: Number(c.markPx), prevDay: Number(c.prevDayPx), delisted: !!u.isDelisted };
+      ctx[name] = { volume: Number(c.dayNtlVlm), oi: Number(c.openInterest) * Number(c.markPx), price: Number(c.markPx), prevDay: Number(c.prevDayPx), delisted: !!u.isDelisted, maxLev: Number(u.maxLeverage) || null };
     });
   });
   volumes = { at: Date.now(), map, ctx };

@@ -78,3 +78,18 @@ export function atrFor(coin, tf) {
 
 // Setup-Zeitebene des gewählten Stils (Swing 4H, Daytrade 1H)
 export const setupTf = (style = CONFIG.positions?.autoStyle || 'swing') => (CONFIG.signals.modes[style] || CONFIG.signals.modes.swing).tfs[1];
+
+// Trade-Karte (5f): Stop durch den Vorschlag ersetzen oder zurück. Ziele bleiben, R und Abstand werden neu gerechnet.
+export function planWithStop(p, stop, label = 'Vorschlag (ATR)') {
+  if (!p || !(stop > 0)) return p;
+  const long = p.dir === 'long';
+  if (long ? stop >= p.entry : stop <= p.entry) return p;
+  const R = Math.abs(p.entry - stop);
+  return { ...p, stop, R, stopDistPct: (R / p.entry) * 100, stopLabel: label, origStop: p.origStop ?? p.stop, origStopLabel: p.origStopLabel ?? p.stopLabel, stopAdjusted: true };
+}
+export function planOrigStop(p) {
+  if (!p?.stopAdjusted) return p;
+  const R = Math.abs(p.entry - p.origStop);
+  const { origStop, origStopLabel, stopAdjusted, ...rest } = p;
+  return { ...rest, stop: origStop, stopLabel: origStopLabel, R, stopDistPct: (R / p.entry) * 100 };
+}
