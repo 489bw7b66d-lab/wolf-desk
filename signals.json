@@ -193,9 +193,9 @@
     18.176065066072237,
     19.208793912921262
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.598978522826431,
+   "doneAt": 1790881773662,
    "events": [
     "Volumen-Spike",
     "Bullish Engulfing",
@@ -402,6 +402,20 @@
    "status": "tp1",
    "r": 0.8955834095018127,
    "doneAt": 1790874783231,
+   "sf": "aus"
+  },
+  {
+   "key": "LINK|long|1790622516553",
+   "id": "LINK|long|1790622516553",
+   "coin": "LINK",
+   "dir": "long",
+   "style": "intraday",
+   "score": 81,
+   "seal": true,
+   "at": 1790622516553,
+   "status": "abgelaufen",
+   "r": -0.598978522826431,
+   "doneAt": 1790881773662,
    "sf": "aus"
   },
   {
