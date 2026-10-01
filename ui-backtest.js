@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { getWatchlist, onWatchlist } from './core-watchlist.js';
 import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
-import { BT, loadHistory, runBacktest, summarize, compareTrail, splitPeriods } from './core-backtest.js';
+import { BT, loadHistory, runBacktest, summarize, compareTrail, splitPeriods, byRegime } from './core-backtest.js';
 import { compareGate, GATE_LABEL } from './core-trendgate.js';
 import { saveBacktest, shareReport } from './ui-export.js';
 import { loadRun, saveRun, clearRun, remaining, saveResult, loadResult, savedList } from './core-btstore.js';
@@ -10,14 +10,16 @@ import { esc, dn, tipHead, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
 const $ = (id) => document.getElementById(id);
-const ALL = '__alle__', TRADE = '__handelbar__';
+const ALL = '__alle__', TRADE = '__handelbar__', SAMPLE = '__stichprobe__';
+// 7c: feste Stichprobe – jeder zweite handelbare Markt (alphabetisch), immer dieselben, damit Läufe vergleichbar bleiben
+const sample = () => [...getTradeable()].sort().filter((_, i) => i % 2 === 0);
 let extra = null; // über die Suche gewählter Markt außerhalb der Watchlist
 let getNames = () => [];
 const STYLES = ['swing', 'intraday', 'scalp'];
 let style = 'swing', running = false, stopFlag = false, last = null;
 let engine = 1; // 7a: 1 = bisherige Engine, 2 = Engine 2 (Bauplan des Nutzers)
-const keyOf = (st, en) => st + (en === 2 ? ':e2' : '');
-const ENG = { 1: 'Alte Engine', 2: 'Engine 2' };
+const keyOf = (st, en) => st + (en === 2 ? ':e2' : en === 3 ? ':bm' : '');
+const ENG = { 1: 'Alte Engine', 2: 'Engine 2', 3: 'Maßstab' };
 
 const R = (v, d = 2) => (v == null || !Number.isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + new Intl.NumberFormat('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }).format(Math.abs(v)) + 'R');
 const P = (v) => (v == null ? '–' : f.pct(v, 0));
@@ -30,11 +32,11 @@ function renderControls(prefer = null) {
   const sel = $('bt-coin'), cur = prefer || sel.value;
   const single = extra && !wl.includes(extra) ? [extra, ...wl] : wl;
   sel.innerHTML = `<option value="${ALL}">Ganze Watchlist (${wl.length})</option>`
-    + (tr.length ? `<option value="${TRADE}">Alle handelbaren Märkte (${tr.length})</option>` : '')
+    + (tr.length ? `<option value="${TRADE}">Alle handelbaren Märkte (${tr.length})</option><option value="${SAMPLE}">Stichprobe: ${sample().length} Märkte (halbe Zeit)</option>` : '')
     + single.map((c) => `<option value="${esc(c)}">${esc(dn(c))}${c === extra && !wl.includes(c) ? ' (Suche)' : ''}</option>`).join('');
-  const ok = [ALL, ...(tr.length ? [TRADE] : []), ...single];
+  const ok = [ALL, ...(tr.length ? [TRADE, SAMPLE] : []), ...single];
   sel.value = ok.includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
-  $('bt-engine') && ($('bt-engine').innerHTML = [1, 2].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${e === 2 ? 'neu · dein Bauplan' : 'bisher · Telegram'}</small></button>`).join(''));
+  $('bt-engine') && ($('bt-engine').innerHTML = [1, 2, 3].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${e === 3 ? 'stumpfe Trendfolge' : e === 2 ? 'dein Bauplan' : 'bisher · Telegram'}</small></button>`).join(''));
   $('bt-styles').innerHTML = STYLES.map((k) => `<button type="button" data-bts="${k}" aria-pressed="${k === style}">${CONFIG.signals.modes[k].label}<small>${BT.days[k]} Tage</small></button>`).join('');
 }
 
@@ -67,6 +69,15 @@ function table(head, rows) {
   return `<div class="bt-table" role="table"><div class="bt-row head" role="row">${head.map((h) => `<span>${h}</span>`).join('')}</div>${rows.join('')}</div>`;
 }
 
+// Marktphase (7c): Trend oder Seitwärts beim Einstieg (Tages-ADX) – erst messen, dann filtern
+function regimeBlock(trades) {
+  const g = byRegime(trades);
+  if (!g.side.n && !g.mid.n && !g.trend.n) return '';
+  const row = (name, x) => `<div class="bt-row" role="row"><span><b>${name}</b></span><span>${x.n}</span><span class="${cls(x.avgR)}">${x.avgR == null ? '–' : R(x.avgR)}</span><span class="${cls(x.sum)}">${R(x.sum, 1)}</span></div>`;
+  return `${tipHead('Trend oder Seitwärts?', 'Jeder Trade wird beim Einstieg nach dem ADX (14) des Tagescharts eingeordnet: unter 20 seitwärts, 20 bis 25 Übergang, über 25 Trend. Darunter: was gewesen wäre, wenn nur bei ADX ab 20 bzw. ab 25 gehandelt worden wäre.')}
+    ${table(['Phase', 'Trades', 'Ø R', 'Summe'], [row('Seitwärts (&lt; 20)', g.side), row('Übergang (20–25)', g.mid), row('Trend (&gt; 25)', g.trend), row('Nur ab ADX 20', g.min20), row('Nur ab ADX 25', g.min25)])}`;
+}
+
 // Entwicklung / Bestätigung (7a): hält das Ergebnis auch im letzten Drittel, das man vorher nicht angeschaut hat?
 function periodBlock(trades, from, to) {
   const sp = splitPeriods(trades, from, to);
@@ -82,13 +93,13 @@ function periodBlock(trades, from, to) {
 async function fillCompare() {
   const box = $('bt-cmp');
   if (!box || !last) return;
-  const st = style, a = await loadResult(keyOf(st, 1)), b = await loadResult(keyOf(st, 2));
+  const st = style, a = await loadResult(keyOf(st, 1)), b = await loadResult(keyOf(st, 2)), c = await loadResult(keyOf(st, 3));
   if (!a || !b) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich alt gegen Engine 2: rechne ${CONFIG.signals.modes[st].label} mit ${a ? 'Engine 2' : 'der alten Engine'} auf denselben Märkten, dann erscheint er hier.</p>`; return; }
   const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
   const sa = summarize(a.trades), sb = summarize(b.trades), spb = splitPeriods(b.trades, b.from, b.to);
   const better = sb.avgR > sa.avgR && spb?.dev.avgR > 0 && spb?.conf.avgR > 0;
   box.innerHTML = `${tipHead('Alte Engine gegen Engine 2', 'Jeweils der letzte vollständige Lauf dieses Stils. „Bestätigung“ ist das letzte Drittel des Zeitraums. Engine 2 gilt erst als besser, wenn sie im Schnitt besser ist UND in beiden Zeiträumen im Plus liegt. Erst dann kommt sie in den Telegram-Wächter.')}
-    ${table(['Engine', 'Trades', 'Ø R', 'Ø Bestätigung'], [row('Alt', a), row('Engine 2', b)])}
+    ${table(['Engine', 'Trades', 'Ø R', 'Ø Bestätigung'], [row('Alt', a), row('Engine 2', b), ...(c ? [row('Maßstab', c)] : [])])}
     <p class="bt-verdict ${better ? 'ok' : 'warn'}">${better ? 'Engine 2 ist hier besser und hält in beiden Zeiträumen.' : 'Engine 2 hat es hier noch nicht bewiesen.'}</p>`;
 }
 
@@ -143,6 +154,7 @@ function renderResult() {
     <h3 class="sub-h">Verlauf in R</h3>
     ${curve(sm.curve)}
     ${periodBlock(trades, last.from, last.to)}
+    ${regimeBlock(trades)}
     <div id="bt-cmp"></div>
     <button type="button" class="wide ghost" id="bt-export" style="margin:4px 0 14px">📤 Daten für Claude exportieren</button>
     ${gateBlock(compareGate(trades))}
@@ -169,7 +181,7 @@ async function start(resume = null) {
   if (running) { stopFlag = true; return; }
   const sel = resume?.sel ?? $('bt-coin').value;
   if (resume) { style = resume.style; engine = resume.engine || 1; }
-  const coins = resume?.coins ?? (sel === ALL ? getWatchlist() : sel === TRADE ? getTradeable() : [sel]);
+  const coins = resume?.coins ?? (sel === ALL ? getWatchlist() : sel === TRADE ? getTradeable() : sel === SAMPLE ? sample() : [sel]);
   running = true; stopFlag = false; globalThis.__wdBusy = true;
   $('bt-run').textContent = 'Abbrechen';
   $('bt-resume') && ($('bt-resume').innerHTML = '');
@@ -202,7 +214,7 @@ async function start(resume = null) {
     }
     persist({ ...cp, runs }); // Zwischenstand nach jedem Coin (im Hintergrund)
   }
-  const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage${engine === 2 ? ' · Engine 2' : ''}`;
+  const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : sel === SAMPLE ? 'Stichprobe' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage${engine === 2 ? ' · Engine 2' : engine === 3 ? ' · Maßstab' : ''}`;
   const complete = !stopFlag && runs.length === coins.length;
   last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missedN ?? r.missed?.length ?? 0), 0), complete, done: runs.length, total: coins.length, engine,
     from: Math.min(...runs.map((r) => r.from).filter(Boolean)), to: Math.max(...runs.map((r) => r.to).filter(Boolean)) };
@@ -219,8 +231,8 @@ async function start(resume = null) {
 }
 
 // Eine Zeile unter dem Start-Knopf: unterbrochener Lauf (Weitermachen) und gespeicherte Ergebnisse je Stil
-const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2'];
-const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : '');
+const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm'];
+const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : '');
 async function renderSaved() {
   const box = $('bt-resume');
   if (!box) return;
@@ -228,7 +240,7 @@ async function renderSaved() {
   const saved = await savedList(BT_STYLES);
   const time = (t) => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   box.innerHTML = (run && remaining(run).length
-    ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)}${run.engine === 2 ? ' E2' : ''} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
+    ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)}${run.engine === 2 ? ' E2' : run.engine === 3 ? ' Maßstab' : ''} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : run.sel === SAMPLE ? 'Stichprobe' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
         <span><button type="button" id="bt-go" class="small-btn">Weitermachen</button><button type="button" id="bt-drop" class="small-btn ghost">Verwerfen</button></span></div>` : '')
     + (saved.length ? `<div class="bt-saved">${saved.map((x) => `<button type="button" data-bt-show="${x.style}">${esc(keyLabel(x.style))} ✓ ${time(x.at)}</button>`).join('')}</div>` : '');
 }

@@ -6,7 +6,7 @@ import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { INTERVAL_MS, closedCandles } from './core-signals.js';
 import { signalFromSeries, modeTfs } from './core-scanner.js';
-import { atr } from './core-indicators.js';
+import { atr, adx, ema } from './core-indicators.js';
 import { trailStop } from './core-trail.js';
 
 export const BT = {
@@ -155,7 +155,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       return list.slice(Math.max(0, ptr[k] + 1 - BT.lookback), ptr[k] + 1);
     });
     let r;
-    try { r = engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
+    try { r = engine === 3 ? benchmarkFromSlices(allTfs, slices) : engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
     const p = r.plan;
     if (!p) continue;
     if (p.impulseKey) { if (usedImpulses.has(p.impulseKey)) continue; usedImpulses.add(p.impulseKey); }
@@ -169,8 +169,10 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       validUntil: t + BT.entryBars * setupMs,
       maxUntil: t + BT.maxBars * setupMs,
     });
+    const dIdx = allTfs.indexOf('1d');
     const meta = {
       time: t, dir: p.dir, score: r.total[p.dir], method: p.method,
+      adx: dIdx >= 0 ? adx(slices[dIdx], 14) : null, // 7c: Marktphase beim Einstieg (Tages-ADX)
       events: [...new Set(r.events.filter((e) => e.dir === p.dir).map((e) => eventName(e.name)))],
       seal: (r.confirms || []).some((c) => c.dir === p.dir),
       gate: r.gate ? { known: r.gate.known, mild: r.gate.mild, mittel: r.gate.mittel, streng: r.gate.streng } : null,
@@ -216,4 +218,27 @@ export function splitPeriods(trades, from, to) {
   const cut = from + (to - from) * 2 / 3;
   const part = (list) => ({ n: list.length, avgR: list.length ? list.reduce((a, t) => a + t.r, 0) / list.length : null, sum: list.reduce((a, t) => a + t.r, 0) });
   return { cut, dev: part(trades.filter((t) => t.time < cut)), conf: part(trades.filter((t) => t.time >= cut)) };
+}
+
+// Maßstab (7c): stumpfe Trendfolge zum Vergleich – Long, solange Tages-EMA 20 über EMA 100 und Kurs darüber.
+// Stop 2 ATR (Tag), Ziele 2R/3R/4R/6R. Schlagen unsere Engines das nicht, haben wir uns verkünstelt.
+export function benchmarkFromSlices(tfs, slices) {
+  const D = slices[tfs.indexOf('1d')], G = slices[1];
+  if (!D || D.length < 110 || !G?.length) return { plan: null };
+  const closes = D.map((c) => c.c), e20 = ema(closes, 20).at(-1), e100 = ema(closes, 100).at(-1), px = G.at(-1).c;
+  const a = atr(D, 14).at(-1);
+  if (!(e20 > e100) || !(px > e20) || !(a > 0)) return { plan: null };
+  const R = 2 * a, stop = px - R;
+  const plan = { dir: 'long', entry: px, stop, zone: [px, px], tps: [px + 2 * R, px + 3 * R, px + 4 * R, px + 6 * R], R, stopDistPct: (R / px) * 100, method: 'benchmark', warnings: [] };
+  return { plan, dir: 'long', total: { long: 50, short: 0 }, events: [{ name: 'Trendfolge EMA 20/100', dir: 'long' }], confirms: [], gate: null, analyses: [null, { close: px }] };
+}
+
+// Marktphase (7c): Ergebnis je Tages-ADX beim Einstieg, dazu „was wäre mit Filter“
+export function byRegime(trades) {
+  const part = (list) => ({ n: list.length, avgR: list.length ? list.reduce((s, t) => s + t.r, 0) / list.length : null, sum: list.reduce((s, t) => s + t.r, 0) });
+  const known = trades.filter((t) => t.adx != null);
+  return {
+    side: part(known.filter((t) => t.adx < 20)), mid: part(known.filter((t) => t.adx >= 20 && t.adx < 25)), trend: part(known.filter((t) => t.adx >= 25)),
+    min20: part(known.filter((t) => t.adx >= 20)), min25: part(known.filter((t) => t.adx >= 25)), all: part(trades),
+  };
 }

@@ -1,5 +1,6 @@
 import { toWeekly, reversalCandle, reversalPoint, liquiditySweep, fibZone, impulse, engine2, e2ShortGate } from './core-engine2.js';
-import { splitPeriods } from './core-backtest.js';
+import { splitPeriods, byRegime, benchmarkFromSlices } from './core-backtest.js';
+import { adx } from './core-indicators.js';
 import { compactTrade } from './core-btstore.js';
 
 const DAY = 864e5, T0 = Date.UTC(2026, 0, 5); // ein Montag
@@ -60,4 +61,14 @@ export const tests = [
     return a.known && !a.mild && !a.mittel && b.mild && b.mittel;
   }],
   ['Engine 2 (A2): Wochen-Struktur Pflicht, sonst kein Signal', () => { const flat = daily([[0, 100], [100, 110], [200, 100], [300, 110]]); const e = engine2({ '1d': flat, '4h': G }, 'swing'); return !e.ok && e.reason === 'Struktur passt nicht'; }],
+  ['Backtest (7c): ADX misst Trend (hoch) und Seitwärts (niedrig)', () => {
+    const trend = daily([[0, 50], [120, 150]]), side = Array.from({ length: 120 }, (_, i) => { const c = 100 + (i % 2 ? 1 : -1); return { t: i, T: i, o: 100, h: c + 1, l: c - 1, c }; });
+    return adx(trend) > 25 && adx(side) < 20;
+  }],
+  ['Backtest (7c): Auswertung nach Marktphase', () => { const g = byRegime([{ r: 1, adx: 30 }, { r: -1, adx: 10 }, { r: 0.5, adx: 22 }]); return g.trend.n === 1 && g.side.n === 1 && g.mid.n === 1 && g.min20.sum === 1.5 && g.min25.sum === 1; }],
+  ['Backtest (7c): Maßstab Trendfolge nur im Aufwärtstrend', () => {
+    const up = daily([[0, 50], [200, 150]]), dn = daily([[0, 150], [200, 50]]);
+    const a = benchmarkFromSlices(['1d', '4h'], [up, up.slice(-30)]), b = benchmarkFromSlices(['1d', '4h'], [dn, dn.slice(-30)]);
+    return a.plan && a.plan.dir === 'long' && a.plan.tps.length === 4 && !b.plan;
+  }],
 ];

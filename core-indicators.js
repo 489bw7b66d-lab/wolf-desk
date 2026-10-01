@@ -123,3 +123,24 @@ export function rsiZoneExit(rsiArr, lookback = 3, low = 30, high = 70) {
   }
   return null;
 }
+
+// ADX (Wilder, 7c): Trendstärke ohne Richtung. Unter 20 seitwärts, über 25 Trend.
+export function adx(candles, period = 14) {
+  const n = candles?.length || 0;
+  if (n < period * 2 + 1) return null;
+  let tr = 0, pdm = 0, ndm = 0;
+  const dx = [];
+  for (let i = 1; i < n; i++) {
+    const c = candles[i], p = candles[i - 1];
+    const up = c.h - p.h, dn = p.l - c.l;
+    const t = Math.max(c.h - c.l, Math.abs(c.h - p.c), Math.abs(c.l - p.c));
+    const pd = up > dn && up > 0 ? up : 0, nd = dn > up && dn > 0 ? dn : 0;
+    if (i <= period) { tr += t; pdm += pd; ndm += nd; if (i < period) continue; }
+    else { tr = tr - tr / period + t; pdm = pdm - pdm / period + pd; ndm = ndm - ndm / period + nd; }
+    const pdi = tr ? (100 * pdm) / tr : 0, ndi = tr ? (100 * ndm) / tr : 0;
+    dx.push(pdi + ndi ? (100 * Math.abs(pdi - ndi)) / (pdi + ndi) : 0);
+  }
+  let a = dx.slice(0, period).reduce((s, x) => s + x, 0) / period;
+  for (let i = period; i < dx.length; i++) a = (a * (period - 1) + dx[i]) / period;
+  return a;
+}
