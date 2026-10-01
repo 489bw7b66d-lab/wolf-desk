@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "ETH",
+   "dir": "long",
+   "style": "intraday",
+   "score": 88,
+   "seal": true,
+   "at": 1790827715934,
+   "px": 2696.3,
+   "zone": [
+    2688.8184,
+    2698.4
+   ],
+   "stop": 2653.881440743773,
+   "tps": [
+    2739,
+    2761.0864,
+    2789.1816,
+    2820.2
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "EMA 8/21 Kreuzung aufwärts",
+    "MACD-Kreuzung aufwärts",
+    "EMA 21/55 Kreuzung aufwärts"
+   ],
+   "id": 2
+  },
+  {
    "coin": "WLD",
    "dir": "long",
    "style": "swing",
