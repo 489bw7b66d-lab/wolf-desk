@@ -222,9 +222,9 @@
     0.007313812386478596,
     0.007994922640529865
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "tp1",
+   "r": 0.8955834095018127,
+   "doneAt": 1790874783231,
    "events": [
     "Volumen-Spike",
     "MACD-Kreuzung aufwärts",
@@ -388,6 +388,20 @@
    "status": "stop",
    "r": -1,
    "doneAt": 1790607599999,
+   "sf": "aus"
+  },
+  {
+   "key": "PUMP|long|1790615281666",
+   "id": "PUMP|long|1790615281666",
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 80,
+   "seal": true,
+   "at": 1790615281666,
+   "status": "tp1",
+   "r": 0.8955834095018127,
+   "doneAt": 1790874783231,
    "sf": "aus"
   },
   {
