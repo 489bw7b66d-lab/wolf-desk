@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 82,
+   "seal": true,
+   "at": 1790885268677,
+   "px": 0.005856,
+   "zone": [
+    0.005699448403194361,
+    0.005874
+   ],
+   "stop": 0.005290724201597181,
+   "tps": [
+    0.006282724201597179,
+    0.006778724201597178,
+    0.007274724201597177,
+    0.007770724201597176
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Bullish Engulfing",
+    "EMA 8/21 Kreuzung aufwärts",
+    "MACD-Kreuzung aufwärts"
+   ],
+   "id": 3
+  },
+  {
    "coin": "ETH",
    "dir": "long",
    "style": "intraday",
