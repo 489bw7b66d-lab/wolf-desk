@@ -19,9 +19,9 @@
     90858.00852195636,
     92351.30564735272
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790962199999,
    "events": [
     "Doppelboden bestätigt",
     "Starkes Momentum",
@@ -516,6 +516,20 @@
    "status": "tp2",
    "r": 1.527312599389834,
    "doneAt": 1790929799999,
+   "sf": "mittel"
+  },
+  {
+   "key": "BTC|long|1790917632301",
+   "id": 4,
+   "coin": "BTC",
+   "dir": "long",
+   "style": "intraday",
+   "score": 83,
+   "seal": false,
+   "at": 1790917632301,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1790962199999,
    "sf": "mittel"
   }
  ]
