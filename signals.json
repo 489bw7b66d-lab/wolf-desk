@@ -77,9 +77,9 @@
     2789.1816,
     2820.2
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "tp2",
+   "r": 1.527312599389834,
+   "doneAt": 1790929799999,
    "events": [
     "EMA 8/21 Kreuzung aufwärts",
     "MACD-Kreuzung aufwärts",
@@ -503,6 +503,20 @@
    "r": -1,
    "doneAt": 1790749799999,
    "sf": "aus"
+  },
+  {
+   "key": "ETH|long|1790827715934",
+   "id": 2,
+   "coin": "ETH",
+   "dir": "long",
+   "style": "intraday",
+   "score": 88,
+   "seal": true,
+   "at": 1790827715934,
+   "status": "tp2",
+   "r": 1.527312599389834,
+   "doneAt": 1790929799999,
+   "sf": "mittel"
   }
  ]
 }
