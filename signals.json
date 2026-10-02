@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "BTC",
+   "dir": "long",
+   "style": "intraday",
+   "score": 83,
+   "seal": false,
+   "at": 1790917632301,
+   "px": 86546,
+   "zone": [
+    86129.23429153455,
+    86627
+   ],
+   "stop": 84884.82002037091,
+   "tps": [
+    87871.41427116364,
+    89364.71139656,
+    90858.00852195636,
+    92351.30564735272
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Doppelboden bestätigt",
+    "Starkes Momentum",
+    "Volumen-Spike"
+   ],
+   "id": 4
+  },
+  {
    "coin": "PUMP",
    "dir": "long",
    "style": "intraday",
