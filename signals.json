@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 82,
+   "seal": true,
+   "at": 1791051449120,
+   "px": 0.006052,
+   "zone": [
+    0.0058784050463879306,
+    0.006061
+   ],
+   "stop": 0.0054219176623577555,
+   "tps": [
+    0.006517487384030176,
+    0.007065272244866387,
+    0.007613057105702597,
+    0.008160841966538808
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "EMA 21/55 Kreuzung aufwärts",
+    "Starkes Momentum",
+    "Volumen-Spike"
+   ],
+   "id": 6
+  },
+  {
    "coin": "SAND",
    "dir": "long",
    "style": "swing",
