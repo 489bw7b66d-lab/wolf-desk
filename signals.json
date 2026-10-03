@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "SAND",
+   "dir": "long",
+   "style": "swing",
+   "score": 80,
+   "seal": true,
+   "at": 1790988989547,
+   "px": 0.065747,
+   "zone": [
+    0.06419264581542761,
+    0.0682
+   ],
+   "stop": 0.054174260353996626,
+   "tps": [
+    0.07821838546143096,
+    0.09024044801514813,
+    0.1022625105688653,
+    0.11428457312258247
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "EMA 21/55 Kreuzung aufwärts",
+    "Starkes Momentum",
+    "Volumen-Spike"
+   ],
+   "id": 5
+  },
+  {
    "coin": "BTC",
    "dir": "long",
    "style": "intraday",
