@@ -48,9 +48,9 @@
     1.5791967091925805,
     1.5997014300840795
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791212399999,
    "events": [
     "EMA 8/21 Kreuzung aufwärts",
     "EMA 21/55 Kreuzung aufwärts",
@@ -710,6 +710,23 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.41,
+   "mae": 1
+  },
+  {
+   "key": "XRP|long|1791159029049",
+   "id": 7,
+   "coin": "XRP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 81,
+   "seal": false,
+   "at": 1791159029049,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791212399999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.67,
    "mae": 1
   },
   {
