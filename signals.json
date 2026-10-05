@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "XRP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 81,
+   "seal": false,
+   "at": 1791159029049,
+   "px": 1.518,
+   "zone": [
+    1.514265093036167,
+    1.5211
+   ],
+   "stop": 1.4971778256265844,
+   "tps": [
+    1.5381872674095824,
+    1.5586919883010815,
+    1.5791967091925805,
+    1.5997014300840795
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "EMA 8/21 Kreuzung aufwärts",
+    "EMA 21/55 Kreuzung aufwärts",
+    "Volumen-Spike"
+   ],
+   "id": 7
+  },
+  {
    "coin": "PUMP",
    "dir": "long",
    "style": "intraday",
