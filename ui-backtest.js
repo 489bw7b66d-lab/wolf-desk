@@ -4,6 +4,10 @@ import { getWatchlist, onWatchlist } from './core-watchlist.js';
 import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
 import { BT, loadHistory, runBacktest, summarize, compareTrail, splitPeriods, byRegime } from './core-backtest.js';
 import { compareGate, GATE_LABEL } from './core-trendgate.js';
+import { regimeIndex, regimeAt, compareRegime, regimeHolds, REGIME_ROWS } from './core-regime.js';
+import { compareExits, EXIT_ROWS } from './core-exitcompare.js';
+import { hl } from './core-api.js';
+import { closedCandles } from './core-signals.js';
 import { saveBacktest, shareReport } from './ui-export.js';
 import { loadRun, saveRun, clearRun, remaining, saveResult, loadResultWait, savedList, rebuildIndex } from './core-btstore.js';
 import { esc, dn, tipHead, tipInline } from './ui-parts.js';
@@ -81,6 +85,35 @@ function regimeBlock(trades) {
     ${table(['Phase', 'Trades', 'Ø R', 'Summe'], [row('Seitwärts (&lt; 20)', g.side), row('Übergang (20–25)', g.mid), row('Trend (&gt; 25)', g.trend), row('Nur ab ADX 20', g.min20), row('Nur ab ADX 25', g.min25)])}`;
 }
 
+// 8c: Marktphasen-Schalter (nur Messung): dieselben Trades, einmal alle, einmal nur wenn BTC beim Einstieg im Trend war
+function regimeSwitchBlock(trades, from, to) {
+  const g = compareRegime(trades, from, to);
+  if (!g) return '';
+  const line = (x) => `<span>${x.n}</span><span class="${cls(x.avgR)}">${R(x.avgR)}</span><span class="${cls(x.dev?.avgR)}">${R(x.dev?.avgR)}</span><span class="${cls(x.conf?.avgR)}">${R(x.conf?.avgR)}</span>`;
+  const name = Object.fromEntries(REGIME_ROWS);
+  const trend = g.rows[1], above = g.rows[2];
+  const ok = [trend, above].filter((x) => regimeHolds(x));
+  const text = ok.length
+    ? `„${name[ok[0].key]}“ liegt im Schnitt und in beiden Zeiträumen im Plus (${ok[0].n} Trades).`
+    : 'Kein Schalter liegt im Schnitt und in beiden Zeiträumen im Plus bei mindestens 300 Trades.';
+  return `${tipHead('Mit Marktphasen-Schalter?', 'Dieselben Trades, nur gefiltert nach der Lage von Bitcoin beim Einstieg. „BTC im Trend“: Tages-EMA 20 über EMA 100 und BTC-Tagesschluss über der EMA 20. „BTC über EMA 100“: BTC-Tagesschluss über der Tages-EMA 100. Es zählt die letzte Tageskerze, die beim Einstieg schon abgeschlossen war. Nur eine Messung: Signale und Telegram ändern sich dadurch nicht. Vereinfacht: freiwerdende Zeit für andere Trades ist nicht eingerechnet.')}
+    <div class="bt-cmp5">${table(['Schalter', 'Trades', 'Ø R', 'Entw.', 'Best.'], g.rows.map((x) => `<div class="bt-row" role="row"><span><b>${name[x.key]}</b></span>${line(x)}</div>`))}</div>
+    <p class="bt-verdict ${ok.length ? 'ok' : 'warn'}">${text} Ausgesiebt bei „BTC im Trend“: ${g.out.trend.n} Trades mit Ø ${R(g.out.trend.avgR)}.${g.unknown ? ` ${g.unknown} Trades ohne BTC-Daten sind nicht dabei.` : ''}</p>`;
+}
+
+// 8c: Ausstiegs-Vergleich (nur Messung): dieselben Einstiege, drei Ausstiege
+function exitBlock(trades, from, to) {
+  const g = compareExits(trades, from, to);
+  if (!g) return '';
+  const name = Object.fromEntries(EXIT_ROWS);
+  const best = [...g.rows].sort((a, b) => b.avgR - a.avgR)[0];
+  const holds = best.avgR > 0 && best.dev?.avgR > 0 && best.conf?.avgR > 0;
+  const thin = g.n < 300;
+  return `${tipHead('Welcher Ausstieg?', 'Dieselben Einstiege, drei Ausstiege. Heutiger Plan: Teilverkäufe an den Zielen, ab TP2 Stop auf Einstieg. Zweite Zeile: schon nach TP1 Stop auf Einstieg. Dritte Zeile: TP1 liegt bei 1R (Abstand Einstieg bis Stop), danach Stop auf Einstieg. Treffer = Trades mit Gewinn nach Gebühren. Gerechnet mit den Anteilen aus deinem Ausstiegsplan. Der Stop wandert erst nach Kerzenschluss auf den Einstieg. Nur eine Messung.')}
+    <div class="bt-cmp5">${table(['Ausstieg', 'Treffer', 'Ø R', 'Entw.', 'Best.'], g.rows.map((x) => `<div class="bt-row" role="row"><span><b>${name[x.key]}</b></span><span>${P(x.winRate)}</span><span class="${cls(x.avgR)}">${R(x.avgR)}</span><span class="${cls(x.dev?.avgR)}">${R(x.dev?.avgR)}</span><span class="${cls(x.conf?.avgR)}">${R(x.conf?.avgR)}</span></div>`))}</div>
+    <p class="bt-verdict ${holds && !thin ? 'ok' : 'warn'}">Höchster Schnitt: „${name[best.key]}“ (${R(best.avgR)} über ${g.n} Trades)${holds ? ', in beiden Zeiträumen im Plus.' : ', aber nicht in beiden Zeiträumen im Plus.'}${thin ? ' Für ein Urteil zu wenig Trades (mindestens ca. 300).' : ''}${g.skipped ? ` ${g.skipped} Trades fehlen, weil sie nicht in allen drei Varianten zum Einstieg kamen oder vor 8c gerechnet wurden.` : ''}</p>`;
+}
+
 // Entwicklung / Bestätigung (7a): hält das Ergebnis auch im letzten Drittel, das man vorher nicht angeschaut hat?
 function periodBlock(trades, from, to) {
   const sp = splitPeriods(trades, from, to);
@@ -96,21 +129,27 @@ function periodBlock(trades, from, to) {
 async function fillCompare() {
   const box = $('bt-cmp');
   if (!box || !last) return;
-  const st = style, get = (en) => loadResultWait(keyOf(st, en), 8000), a = await get(1), b = await get(2), c = await get(3), d = await get(4); // 8b1: mit Geduld laden, sonst fehlen auf dem iPhone Zeilen
-  const have = [['Neu im Trend', d], ['Maßstab', c], ['Alt', a], ['Engine 2', b]].filter((x) => x[1]);
-  if (have.length < 2) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich der Engines: rechne ${CONFIG.signals.modes[st].label} mit einer zweiten Engine auf denselben Märkten, dann erscheint er hier.</p>`; return; }
+  const st = style, get = (en) => loadResultWait(keyOf(st, en), 8000), a = await get(1), b = await get(2), c = await get(3); let d = await get(4); // 8b1: mit Geduld laden, sonst fehlen auf dem iPhone Zeilen
+  // 8c: nur Läufe über dieselben Märkte nebeneinanderstellen (sonst steht ein BTC-Einzellauf neben 175 Märkten)
+  const mk = (r) => `${r.label.split(' · ')[0]}|${r.total ?? r.runs?.length ?? ''}`;
+  const found = [['Neu im Trend', d], ['Maßstab', c], ['Alt', a], ['Engine 2', b]].filter((x) => x[1]);
+  const have = found.filter((x) => mk(x[1]) === mk(last));
+  const other = found.filter((x) => mk(x[1]) !== mk(last));
+  const otherNote = other.length ? `<p class="empty" style="font-size:12.5px;margin:6px 0 0">Nicht im Vergleich, weil mit anderen Märkten gerechnet: ${other.map(([n, r]) => `${n} (${esc(r.label.split(' · ')[0])})`).join(', ')}.</p>` : '';
+  if (d && !have.some((x) => x[1] === d)) d = null;
+  if (have.length < 2) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich der Engines: rechne ${CONFIG.signals.modes[st].label} mit einer zweiten Engine auf denselben Märkten, dann erscheint er hier.</p>${otherNote}`; return; }
   const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.dev.avgR)}">${R(sp?.dev.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
   // 8b: Urteil über die Regel, nach der Telegram jetzt meldet („neu im Trend“): im Schnitt im Plus UND in beiden Zeiträumen
   let verdict = '';
   if (d) {
     const sd = summarize(d.trades), spd = splitPeriods(d.trades, d.from, d.to);
     const holds = sd.avgR > 0 && spd?.dev.avgR > 0 && spd?.conf.avgR > 0;
-    const thin = sd.n < 200;
-    verdict = `<p class="bt-verdict ${holds && !thin ? 'ok' : 'warn'}">${holds ? '„Neu im Trend“ liegt im Schnitt und in beiden Zeiträumen im Plus.' : sd.avgR > 0 ? '„Neu im Trend“ liegt im Schnitt im Plus, aber nicht in beiden Zeiträumen.' : '„Neu im Trend“ liegt hier im Minus.'}${thin ? ` Nur ${sd.n} Trades: für ein Urteil zu wenig (ab ca. 500 belastbar).` : ''}</p>`;
-  } else verdict = '<p class="bt-verdict warn">„Neu im Trend“ (die Regel hinter den Telegram-Signalen seit 8b) ist für diesen Stil noch nicht gerechnet.</p>';
+    const thin = sd.n < 300;
+    verdict = `<p class="bt-verdict ${holds && !thin ? 'ok' : 'warn'}">${holds ? '„Neu im Trend“ liegt im Schnitt und in beiden Zeiträumen im Plus.' : sd.avgR > 0 ? '„Neu im Trend“ liegt im Schnitt im Plus, aber nicht in beiden Zeiträumen.' : '„Neu im Trend“ liegt hier im Minus.'}${thin ? ` Nur ${sd.n} Trades: für ein Urteil zu wenig (mindestens ca. 300, belastbar ab 500).` : ''}</p>`;
+  } else verdict = '<p class="bt-verdict warn">„Neu im Trend“ (die Regel hinter den Telegram-Signalen seit 8b) ist für diesen Stil auf diesen Märkten noch nicht gerechnet.</p>';
   box.innerHTML = `${tipHead('Vergleich der Engines', 'Jeweils der letzte vollständige Lauf dieses Stils. „Entwicklung“ sind die ersten zwei Drittel des Zeitraums, „Bestätigung“ das letzte Drittel. Eine Regel gilt erst als belegt, wenn sie im Schnitt UND in beiden Zeiträumen im Plus liegt und genug Trades hat. „Neu im Trend“ ist der Maßstab mit Einstieg nur beim Wechsel in den Trend: danach meldet Telegram seit 8b.')}
     <div class="bt-cmp5">${table(['Engine', 'Trades', 'Ø R', 'Entw.', 'Best.'], have.map(([n, r]) => row(n, r)))}</div>
-    ${verdict}`;
+    ${verdict}${otherNote}`;
 }
 
 // Short-Filter: dieselben Signale, Shorts je Stufe nur mit bärischem Tagestrend
@@ -166,6 +205,8 @@ function renderResult() {
     <h3 class="sub-h">Verlauf in R</h3>
     ${curve(sm.curve)}
     ${periodBlock(trades, last.from, last.to)}
+    ${regimeSwitchBlock(trades, last.from, last.to)}
+    ${exitBlock(trades, last.from, last.to)}
     ${regimeBlock(trades)}
     <div id="bt-cmp"></div>
     <button type="button" class="wide ghost" id="bt-export" style="margin:4px 0 14px">📤 Daten für Claude exportieren</button>
@@ -207,6 +248,14 @@ async function start(resume = null) {
   const status = (txt, frac) => {
     $('bt-status').innerHTML = `<p class="empty" style="font-size:13px;margin:10px 0 0">${esc(txt)}</p>${frac != null ? `<div class="bar" style="margin-top:6px"><span style="width:${(frac * 100).toFixed(0)}%;background:var(--gold)"></span></div>` : ''}`;
   };
+  // 8c: BTC-Tageskerzen einmal je Lauf für den Marktphasen-Schalter (Fehlschlag = Tabelle bleibt weg, der Lauf geht weiter)
+  let regime = null;
+  try {
+    status('lade BTC-Tageskerzen für die Marktphase …', 0);
+    const nowMs = Date.now();
+    const idx = regimeIndex(closedCandles(await hl.candles('BTC', '1d', nowMs - (BT.days[style] + 260) * 864e5, nowMs), nowMs));
+    if (idx) regime = (t) => regimeAt(idx, t);
+  } catch { regime = null; }
   for (const coin of todo) {
     if (stopFlag) break;
     const i = coins.indexOf(coin);
@@ -214,7 +263,7 @@ async function start(resume = null) {
     try {
       status(pre + 'lade Kursdaten …', (i) / coins.length);
       const series = await loadHistory(coin, style);
-      const res = await runBacktest(coin, style, series, { engine,
+      const res = await runBacktest(coin, style, series, { engine, regime,
         onProgress: (x) => status(pre + 'spiele Signale nach …', (i + x) / coins.length),
         shouldStop: () => stopFlag,
       });

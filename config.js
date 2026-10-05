@@ -59,7 +59,7 @@ export const CONFIG = {
 
   // TELEGRAM-WÄCHTER (läuft alle 15 Minuten bei GitHub)
   // 8b: Maßstab als Signalgeber (core-benchmark.js). Long, wenn Tages-EMA fast über slow und Kurs über der schnellen EMA.
-  benchmark: { emaFast: 20, emaSlow: 100, atrPeriod: 14, atrMult: 2, tps: [2, 3, 4, 6], minDays: 110, style: 'swing', setupTf: '4h', chaseR: 0.5 },
+  benchmark: { emaFast: 20, emaSlow: 100, atrPeriod: 14, atrMult: 2, tps: [2, 3, 4, 6], minDays: 110, style: 'swing', setupTf: '4h', chaseR: 0.5, holdDays: 10 }, // holdDays (8c): Ausstieg spätestens nach so vielen Tagen = Zeit-Ausstieg des Backtests (60 × 4H)
 
   alerts: {
     minScore: 75,               // Signal melden ab diesem Score

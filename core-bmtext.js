@@ -1,7 +1,7 @@
 // Telegram-Text für Maßstab-Signale (8b): gleiche Gliederung wie die bisherigen Signale (5f), ohne Score.
 import { CONFIG } from './config.js';
 import { signalLeverage } from './core-alerts.js';
-import { BM, BM_LABEL } from './core-benchmark.js';
+import { BM, BM_LABEL, bmHoldDays } from './core-benchmark.js';
 import * as f from './core-format.js';
 
 const dn = (c) => String(c ?? '').replace(/^[a-z]+:/, '');
@@ -22,6 +22,7 @@ export function bmSignalText(r, alert, { noCapital = false, appUrl = CONFIG.aler
     `Neu im Aufwärtstrend: Tages-EMA ${cfg.emaFast} über EMA ${cfg.emaSlow}, Kurs zurück über der EMA ${cfg.emaFast} (${cfg.setupTf.toUpperCase()}-Schluss).`,
     `Stop ${String(cfg.atrMult).replace('.', ',')}× ATR (Tag), Ziele bei ${cfg.tps.map((k) => String(k).replace('.', ',')).join(' / ')}R.`,
     `Ungültig bei Schluss unter ${f.price(p.stop)}.`,
+    `⏳ Ausstieg spätestens nach ${bmHoldDays(cfg)} Tagen, auch ohne Ziel.`,
     `Maßstab${star ? ' ⭐' : ''} · Kurs ${f.price(alert.price ?? p.entry)}`,
   ];
   if (noCapital) lines.push('⚠️ Kein Kapital frei, nur zur Beobachtung');

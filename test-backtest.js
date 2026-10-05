@@ -29,8 +29,8 @@ export const tests = [
   ['Backtest: Nachziehen nach Struktur hebt den Stop und sichert Gewinn', () => {
     const plan = { dir: 'long', zone: [99, 101], entry: 100, stop: 95, tps: [105, 110, 115, 120] };
     const path = [{ t: 1, T: 2, o: 100, h: 106, l: 99.5, c: 105.5 }, { t: 3, T: 4, o: 105.5, h: 106, l: 104, c: 105 }, { t: 5, T: 6, o: 105, h: 105, l: 101, c: 101 }];
-    const plain = simulateTrade(plan, path, { fillNow: true, nowPx: 100 });
-    const trailed = simulateTrade(plan, path, { fillNow: true, nowPx: 100, stepTrail: false, trailFn: (c, hits) => (hits >= 1 ? 103 : null) });
+    const plain = simulateTrade(plan, path, { fillNow: true, nowPx: 100, splits: SPLITS });
+    const trailed = simulateTrade(plan, path, { fillNow: true, nowPx: 100, splits: SPLITS, stepTrail: false, trailFn: (c, hits) => (hits >= 1 ? 103 : null) });
     return plain.outcome === 'offen' && trailed.outcome === 'stop' && trailed.r > plain.r;
   }],
   ['Backtest: Vergleich Plan gegen Struktur über dieselben Trades', () => {

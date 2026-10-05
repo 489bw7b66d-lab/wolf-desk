@@ -10,7 +10,7 @@ import { hl } from './core-api.js';
 import { getCandles, getMarketCtx, analyzeAllModes, heat } from './core-scanner.js';
 import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.js';
 import { measureSignal, measureDue, withMeasure } from './core-journalmeasure.js';
-import { BM, bmState, bmResult, bmAlert, bmStrength, splitByEngine } from './core-benchmark.js';
+import { BM, bmState, bmResult, bmAlert, bmStrength, splitByEngine, journalWindow } from './core-benchmark.js';
 import { bmSignalText } from './core-bmtext.js';
 import { scanUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
@@ -135,7 +135,7 @@ async function updateJournal(state, now) {
     if (!open && !measureDue(e, now)) continue;
     try {
       const tf = e.style === 'swing' ? '1h' : '15m';
-      const days = CONFIG.alerts.journalDays?.[e.style] || 7;
+      const days = journalWindow(e); // 8c: Maßstab-Signale 10 Tage (Zeit-Ausstieg des Backtests), alte Engine wie bisher
       const raw = await hl.candles(e.coin, tf, e.at - 36e5, open ? now : Math.min(now, e.at + days * 864e5 + 36e5));
       const candles = closedCandles(raw, Infinity);
       const judged = open ? judgeSignal(e, candles, now, days) : e;

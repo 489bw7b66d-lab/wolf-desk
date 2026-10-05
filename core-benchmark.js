@@ -6,7 +6,7 @@
 import { CONFIG } from './config.js';
 import { ema, atr } from './core-indicators.js';
 
-const DEF = { emaFast: 20, emaSlow: 100, atrPeriod: 14, atrMult: 2, tps: [2, 3, 4, 6], minDays: 110, style: 'swing', chaseR: 0.5, setupTf: '4h' };
+const DEF = { emaFast: 20, emaSlow: 100, atrPeriod: 14, atrMult: 2, tps: [2, 3, 4, 6], minDays: 110, style: 'swing', chaseR: 0.5, setupTf: '4h', holdDays: 10 };
 export const BM = () => ({ ...DEF, ...(CONFIG.benchmark || {}) });
 export const BM_LABEL = 'Trendfolge';
 export const BM_EVENT = 'Neu im Aufwärtstrend';
@@ -82,3 +82,8 @@ export const bmStrength = (r) => (r?.state?.atr > 0 ? (r.state.fast - r.state.sl
 // Kennzeichen im Tagebuch (Versionsschnitt): 'bm' = Maßstab, sonst alte Engine
 export const engineOf = (e) => (e?.eng === 'bm' ? 'bm' : 'alt');
 export const splitByEngine = (list = []) => ({ bm: list.filter((e) => engineOf(e) === 'bm'), alt: list.filter((e) => engineOf(e) === 'alt') });
+
+// 8c: So lange läuft ein Maßstab-Signal höchstens (Telegram-Hinweis und Tagebuch-Fenster). Der Backtest-Gewinn kommt aus diesem Zeit-Ausstieg.
+export const bmHoldDays = (cfg = BM()) => (cfg.holdDays > 0 ? cfg.holdDays : 10);
+// Tagebuch-Fenster in Tagen: Maßstab-Signale nach holdDays, alle anderen wie bisher nach Stil
+export const journalWindow = (e, alerts = CONFIG.alerts, cfg = BM()) => (engineOf(e) === 'bm' ? bmHoldDays(cfg) : alerts.journalDays?.[e?.style] || 7);

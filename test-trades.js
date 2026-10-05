@@ -38,7 +38,7 @@ export const tests = [
   ['Entry-Abstand: in der Zone = 0', () => entryDistance(plan, 100) === 0],
   ['Entry-Abstand: über der Zone positiv', () => near(entryDistance(plan, 102.01), 1)],
   ['Entry-Abstand: unter der Zone negativ', () => near(entryDistance(plan, 98.01), -1)],
-  ['Privatmodus: Beträge und Stückzahlen verborgen', () => { f.setPrivate(true); const ok = !/\d/.test(f.usd(2423.86) + f.signedUsd(-40) + f.usdShort(150) + f.size(2.26)); f.setPrivate(false); return ok; }],
+  ['Privatmodus: Beträge und Stückzahlen verborgen', () => { f.setPrivate(true); const ok = !/\d/.test(f.usd(2000.5) + f.signedUsd(-40) + f.usdShort(150) + f.size(2.26)); f.setPrivate(false); return ok; }],
   ['Privatmodus: Prozente und Kurse bleiben', () => { f.setPrivate(true); const ok = f.pct(61.6) === '61,6 %' && f.price(2697.6) === '2.697,6'; f.setPrivate(false); return ok; }],
   ['Privatmodus: Plan kopieren nutzt echte Zahlen', () => { f.setPrivate(true); const ok = f.raw(() => f.usd(5)) === '5,00 $' && f.usd(5).includes('••'); f.setPrivate(false); return ok; }],
   ['Privatmodus aus: normale Anzeige', () => f.usd(5) === '5,00 $'],

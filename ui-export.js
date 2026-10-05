@@ -9,7 +9,9 @@ import { measureStats } from './core-journalmeasure.js';
 import { currentValues, diffFromRecommended } from './core-settings.js';
 import { getTradeable } from './core-tradeable.js';
 import { getWatchlist } from './core-watchlist.js';
-import { summarize, compareTrail, splitPeriods } from './core-backtest.js';
+import { summarize, compareTrail, splitPeriods, byRegime } from './core-backtest.js';
+import { compareRegime } from './core-regime.js';
+import { compareExits } from './core-exitcompare.js';
 import { compareGate } from './core-trendgate.js';
 import { getFeedSignals, getArchive } from './ui-feed.js';
 
@@ -30,7 +32,14 @@ export function btDigest(last, style) {
   // 8b1: beide Zeiträume (Entwicklung = erste zwei Drittel, Bestätigung = letztes Drittel) gehören in den Export
   const sp = last?.from != null && last?.to != null ? splitPeriods(t, last.from, last.to) : null;
   const periods = sp ? { dev: { n: sp.dev.n, avgR: sp.dev.avgR, sum: sp.dev.sum }, conf: { n: sp.conf.n, avgR: sp.conf.avgR, sum: sp.conf.sum } } : null;
-  return { style, label: last?.label, at: last?.at || Date.now(), periods, summary: rest, gate: t.length ? compareGate(t) : [], trail: compareTrail(t), perMarket, missed: last?.missed ?? 0,
+  // 8c: Marktphasen-Schalter, Ausstiegs-Vergleich und die ADX-Tabelle gehören auch in den Export
+  const slim = (x) => (x ? { n: x.n, avgR: x.avgR, sum: x.sum, winRate: x.winRate } : null);
+  const rows = (g) => (g ? g.rows.map((x) => ({ key: x.key, ...slim(x), dev: slim(x.dev), conf: slim(x.conf) })) : null);
+  const rg = sp ? compareRegime(t, last.from, last.to) : null, exg = sp ? compareExits(t, last.from, last.to) : null;
+  const adxT = t.length ? byRegime(t) : null;
+  return { style, label: last?.label, at: last?.at || Date.now(), periods,
+    regime: rg ? { rows: rows(rg), unknown: rg.unknown } : null, exits: exg ? { rows: rows(exg), n: exg.n, skipped: exg.skipped } : null,
+    adx: adxT && (adxT.side.n || adxT.mid.n || adxT.trend.n) ? { side: slim(adxT.side), mid: slim(adxT.mid), trend: slim(adxT.trend) } : null, summary: rest, gate: t.length ? compareGate(t) : [], trail: compareTrail(t), perMarket, missed: last?.missed ?? 0,
     complete: last?.complete !== false, done: last?.done ?? null, total: last?.total ?? null };
 }
 export function saveBacktest(last, style, store = globalThis.localStorage) {
@@ -48,6 +57,10 @@ function btText(d) {
   L.push(`### ${d.label || d.style} (gerechnet ${new Date(d.at).toLocaleString('de-DE')}${d.total ? ` · ${d.complete ? 'vollständig' : 'abgebrochen bei'} ${d.done}/${d.total}` : ''})`);
   L.push(`Trades ${s.n ?? 0} · Gewinn-Trades ${pc(s.winRate)} · TP1 erreicht ${pc(s.tp1Rate)} · Ø ${r2(s.avgR)} · Summe ${r2(s.totalR)} · Profit-Faktor ${n2(s.profitFactor)} · größter Rückgang ${n2(s.maxDdR, 1)}R · ohne Einstieg ${d.missed}`);
   if (d.periods) L.push(`Zeiträume: Entwicklung ${d.periods.dev.n} Trades, Ø ${r2(d.periods.dev.avgR)}, Summe ${r2(d.periods.dev.sum)} · Bestätigung ${d.periods.conf.n} Trades, Ø ${r2(d.periods.conf.avgR)}, Summe ${r2(d.periods.conf.sum)}`);
+  const RN = { all: 'alle', trend: 'nur BTC im Trend', above: 'nur BTC über EMA 100' }, EN = { plan: 'heutiger Plan', be: 'nach TP1 Stop auf Einstieg', r1: 'TP1 bei 1R, dann Einstieg' };
+  if (d.regime?.rows) L.push('Marktphasen-Schalter (Trades, Ø R, Entwicklung, Bestätigung): ' + d.regime.rows.map((x) => `${RN[x.key]} ${x.n}, ${r2(x.avgR)}, ${r2(x.dev?.avgR)} (${x.dev?.n ?? 0}), ${r2(x.conf?.avgR)} (${x.conf?.n ?? 0})`).join(' · ') + (d.regime.unknown ? ` · ohne BTC-Daten ${d.regime.unknown}` : ''));
+  if (d.exits?.rows) L.push(`Ausstiegs-Vergleich über ${d.exits.n} Trades (Treffer, Ø R, Entwicklung, Bestätigung): ` + d.exits.rows.map((x) => `${EN[x.key]} ${pc(x.winRate)}, ${r2(x.avgR)}, ${r2(x.dev?.avgR)}, ${r2(x.conf?.avgR)}`).join(' · ') + (d.exits.skipped ? ` · nicht vergleichbar ${d.exits.skipped}` : ''));
+  if (d.adx) L.push(`Tages-ADX beim Einstieg: seitwärts <20 ${d.adx.side.n} (Ø ${r2(d.adx.side.avgR)}) · Übergang ${d.adx.mid.n} (Ø ${r2(d.adx.mid.avgR)}) · Trend >25 ${d.adx.trend.n} (Ø ${r2(d.adx.trend.avgR)})`);
   if (s.long) L.push(`Long ${s.long.n} (${pc(s.long.winRate)}, Ø ${r2(s.long.avgR)}) · Short ${s.short.n} (${pc(s.short.winRate)}, Ø ${r2(s.short.avgR)})`);
   if (s.seal) L.push(`Mit Siegel ${s.seal.with.n} (Ø ${r2(s.seal.with.avgR)}) · ohne Siegel ${s.seal.without.n} (Ø ${r2(s.seal.without.avgR)})`);
   if (s.byScore?.length) L.push('Score: ' + s.byScore.map((b) => `${b.label} ${b.n} (${pc(b.winRate)}, Ø ${r2(b.avgR)})`).join(' · '));

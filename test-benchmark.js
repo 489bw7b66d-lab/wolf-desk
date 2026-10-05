@@ -1,5 +1,5 @@
 // Tests für den Maßstab als Signalgeber (8b): core-benchmark.js, core-bmtext.js, Backtest-Variante „neu im Trend“
-import { BM, bmState, bmPlan, bmFlip, bmSince, bmResult, bmAlert, bmStrength, engineOf, splitByEngine, BM_EVENT } from './core-benchmark.js';
+import { BM, bmState, bmPlan, bmFlip, bmSince, bmResult, bmAlert, bmStrength, engineOf, splitByEngine, BM_EVENT, bmHoldDays, journalWindow } from './core-benchmark.js';
 import { bmSignalText } from './core-bmtext.js';
 import { benchmarkFlipFromSlices, benchmarkFromSlices } from './core-backtest.js';
 import { journalEntry, judgeSignal } from './core-alerts.js';
@@ -50,4 +50,9 @@ export const tests = [
   ['Backtest „neu im Trend“: Einstieg nur beim Wechsel', () => { const tfs = ['1d', '4h', '1h']; return benchmarkFlipFromSlices(tfs, [up, [bar(1, fastUp * 0.98), bar(0, fastUp * 1.02)], []]).plan?.dir === 'long' && benchmarkFlipFromSlices(tfs, [up, [bar(1, fastUp * 1.02), bar(0, fastUp * 1.03)], []]).plan === null; }],
   ['Backtest „neu im Trend“: gleicher Plan wie der Maßstab an derselben Kerze', () => { const tfs = ['1d', '4h', '1h'], sl = [up, [bar(1, fastUp * 0.98), bar(0, fastUp * 1.02)], []]; const a = benchmarkFlipFromSlices(tfs, sl).plan, b = benchmarkFromSlices(tfs, sl).plan; return near(a.entry, b.entry) && near(a.stop, b.stop) && a.tps.every((x, i) => near(x, b.tps[i])); }],
   ['Einstellung: Schalter für den Wächter ist da und steht auf Maßstab', () => CONFIG.alerts.benchmark === true || CONFIG.alerts.benchmark === false],
+  // 8c: Zeit-Ausstieg im Signal und im Tagebuch
+  ['Telegram-Text: Hinweis „Ausstieg spätestens nach 10 Tagen“', () => { const r = bmResult('SOL', up, [bar(1, fastUp * 0.98), bar(0, fastUp * 1.02)]); return bmSignalText(r, { price: r.plan.entry, pos: { state: 'zone' } }, { id: 1 }).includes(`Ausstieg spätestens nach ${bmHoldDays()} Tagen`); }],
+  ['Haltedauer: 10 Tage als Standard, eigener Wert wird übernommen, Unsinn fällt auf 10 zurück', () => bmHoldDays({ holdDays: 10 }) === 10 && bmHoldDays({ holdDays: 7 }) === 7 && bmHoldDays({ holdDays: 0 }) === 10 && bmHoldDays({}) === 10],
+  ['Tagebuch-Fenster: Maßstab-Signal 10 Tage, alte Engine wie bisher nach Stil', () => { const al = { journalDays: { swing: 14, intraday: 3 } }; return journalWindow({ eng: 'bm', style: 'swing' }, al, { holdDays: 10 }) === 10 && journalWindow({ style: 'swing' }, al) === 14 && journalWindow({ style: 'intraday' }, al) === 3 && journalWindow({ style: 'scalp' }, al) === 7; }],
+  ['Tagebuch: Maßstab-Signal läuft nach 10 Tagen ab, nicht früher', () => { const e = { coin: 'SOL', dir: 'long', at: 0, status: 'offen', px: 100, stop: 90, tps: [120, 130, 140, 160], eng: 'bm', style: 'swing' }; const c = [{ t: 0, T: 1, o: 100, h: 101, l: 99, c: 100 }]; return judgeSignal(e, c, 9.5 * 864e5, journalWindow(e, undefined, { holdDays: 10 })).status === 'offen' && judgeSignal(e, c, 10.5 * 864e5, journalWindow(e, undefined, { holdDays: 10 })).status === 'abgelaufen'; }],
 ];

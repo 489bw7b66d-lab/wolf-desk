@@ -14,10 +14,10 @@ export const tests = [
   ['PnL Short: −2 Stk. von 100 auf 110 = −20', () => near(unrealizedPnl(-2, 100, 110), -20)],
   ['Mark aus Positionswert: 6300 / 0,1 = 63000', () => near(markFromPosition(6300, 0.1), 63000)],
   ['Mark bei Short (negative Größe) positiv', () => near(markFromPosition(6300, -0.1), 63000)],
-  // Echte Werte aus Buddys Konto, abgeglichen mit der Ledger-Anzeige
-  ['Unified: Kontowert = Spot 2.423,86', () => near(accountSummary({ accountValue: 1270.15, spotUsdc: 2423.86, notional: 10000 }).equity, 2423.86)],
-  ['Unified: Verfügbar = 1.153,71 (wie bei Ledger)', () => near(accountSummary({ accountValue: 1270.15, spotUsdc: 2423.86, notional: 10000 }).available, 1153.71, 1e-6)],
-  ['Unified: Auslastung ≈ 52,4 %', () => near(accountSummary({ accountValue: 1270.15, spotUsdc: 2423.86, notional: 10000 }).usagePct, 1270.15 / 2423.86 * 100)],
+  // Erfundene Beispielwerte (8c: keine echten Kontobeträge im öffentlichen Repository)
+  ['Unified: Kontowert = Spot 2.000', () => near(accountSummary({ accountValue: 1000, spotUsdc: 2000, notional: 8000 }).equity, 2000)],
+  ['Unified: Verfügbar = Spot minus Perps = 1.000', () => near(accountSummary({ accountValue: 1000, spotUsdc: 2000, notional: 8000 }).available, 1000, 1e-6)],
+  ['Unified: Auslastung = 50 %', () => near(accountSummary({ accountValue: 1000, spotUsdc: 2000, notional: 8000 }).usagePct, 50)],
   ['Classic: Perps + Spot addiert', () => near(accountSummary({ accountValue: 1000, spotUsdc: 200, withdrawable: 600, notional: 0 }, 'classic').equity, 1200)],
   ['Ohne Kontodaten = null', () => accountSummary(null) === null],
 ];

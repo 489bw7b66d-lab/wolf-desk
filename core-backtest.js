@@ -9,6 +9,7 @@ import { signalFromSeries, modeTfs } from './core-scanner.js';
 import { bmFlip, bmPlan, BM_EVENT } from './core-benchmark.js';
 import { atr, adx, ema } from './core-indicators.js';
 import { trailStop } from './core-trail.js';
+import { exitVariants } from './core-exitcompare.js';
 
 export const BT = {
   days: { swing: 180, intraday: 45, scalp: 14 }, // Testzeitraum je Stil (Hyperliquid liefert max. 5000 Kerzen)
@@ -130,7 +131,7 @@ function advance(list, idx, t) {
 }
 
 // Backtest für einen Markt und Stil. series in der Reihenfolge von modeTfs(modeKey).
-export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKey], onProgress, shouldStop, engine = 1 } = {}) {
+export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKey], onProgress, shouldStop, engine = 1, regime = null } = {}) {
   const allTfs = modeTfs(modeKey); // Reihenfolge der Kerzenreihen (Engine 2 braucht sie beim Namen)
   const tfs = CONFIG.signals.modes[modeKey].tfs;
   const setup = series[1], fine = series[2];
@@ -181,7 +182,9 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
     if (sim.filled) {
       // Dieselben Einstiege noch einmal mit „Nachziehen nach Struktur“ (Vergleich der Ausstiegsregel, 4d)
       const alt = simulateTrade(p, path, { fillNow, nowPx: close, validUntil: t + BT.entryBars * setupMs, maxUntil: t + BT.maxBars * setupMs, stepTrail: false, trailFn: structureTrail(p, setup, setupAtr) });
-      trades.push({ ...meta, ...sim, alt: alt.filled ? { r: alt.r, outcome: alt.outcome, hits: alt.hits } : null });
+      // 8c (nur Messung): dieselben Einstiege mit zwei weiteren Ausstiegen, dazu die Marktphase von BTC beim Einstieg
+      const ex = exitVariants(simulateTrade, p, path, { fillNow, nowPx: close, validUntil: t + BT.entryBars * setupMs, maxUntil: t + BT.maxBars * setupMs });
+      trades.push({ ...meta, ...sim, alt: alt.filled ? { r: alt.r, outcome: alt.outcome, hits: alt.hits } : null, ex, btc: regime ? regime(sim.fillTime ?? t) : null });
       busyUntil = sim.exitTime;
     }
     else { missed.push({ ...meta, reason: sim.reason }); busyUntil = sim.end || t + BT.entryBars * setupMs; }
