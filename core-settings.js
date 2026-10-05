@@ -66,6 +66,7 @@ export const FIELDS = [
   n('telegram', 'alerts.flipHours', 'Richtungswechsel gesperrt für', 0, 168, 1, 'Std.'),
   n('telegram', 'alerts.maxPerRun', 'Höchstens Meldungen pro Lauf', 1, 10, 1),
   n('telegram', 'alerts.reportDays', 'Tagebuch-Auswertung alle', 1, 60, 1, 'Tage'),
+  { group: 'telegram', path: 'alerts.benchmark', label: 'Signale nach Maßstab (Trendfolge) statt alter Engine', type: 'bool' },
   { group: 'telegram', path: 'alerts.risk', label: 'Regelverstöße melden', type: 'bool' },
 
   n('ind', 'indicators.emaFast', 'EMA schnell', 2, 50, 1),

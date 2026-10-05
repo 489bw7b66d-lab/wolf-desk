@@ -10,6 +10,8 @@ import { hl } from './core-api.js';
 import { getCandles, getMarketCtx, analyzeAllModes, heat } from './core-scanner.js';
 import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.js';
 import { measureSignal, measureDue, withMeasure } from './core-journalmeasure.js';
+import { BM, bmState, bmResult, bmAlert, bmStrength, splitByEngine } from './core-benchmark.js';
+import { bmSignalText } from './core-bmtext.js';
 import { scanUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
@@ -72,10 +74,18 @@ async function scan() {
   const uni = await scanUniverse(names, ctx.ctx, CONFIG.tradeable);
   const coins = uni.coins.filter((c) => !(ctx.map[c] < CONFIG.signals.minDayVolumeUsd));
   log(`Stufe 1: ${coins.length} Märkte (${uni.source})`);
-  const prelim = [];
+  const prelim = [], bm = [];
+  const useBm = !!CONFIG.alerts.benchmark; // 8b: Signale nach dem Maßstab („neu im Trend“) statt nach der alten Engine
   for (const c of coins) {
     try {
       const candles = await getCandles(c, '1d', true);
+      if (useBm) {
+        // Nur Märkte, die jetzt die Bedingung erfüllen (Aufwärtstrend und Kurs über der Tages-EMA 20), brauchen die
+        // 4H-Kerzen für den Wechsel. Das hält die Zahl der Abrufe je Lauf klein.
+        const st = bmState(candles, ctx.ctx?.[c]?.price || candles.at(-1)?.c);
+        if (st?.ok) { const r = bmResult(c, candles, await getCandles(c, BM().setupTf, true)); if (r.flip) bm.push(r); }
+        continue;
+      }
       if (candles.length >= 60) {
         const a = analyzeTimeframe(candles, '1d'), s = scoreTimeframe(a);
         prelim.push({ c, strength: Math.max(s.long, s.short) + a.events.filter((e) => e.strong).length * 10 });
@@ -85,13 +95,14 @@ async function scan() {
   const deep = [...new Set([
     ...prelim.sort((a, b) => b.strength - a.strength).slice(0, CONFIG.signals.hot.deepScan).map((p) => p.c),
     ...CONFIG.watchlist.filter((c) => names.includes(c)),
-  ])];
-  log(`Stufe 2: ${deep.length} Märkte in allen Stilen`);
+  ])].filter(() => !useBm);
+  if (useBm) log(`Maßstab: ${bm.length} Märkte neu im Trend`);
+  else log(`Stufe 2: ${deep.length} Märkte in allen Stilen`);
   const results = [];
   for (const c of deep) {
     try { results.push(await analyzeAllModes(c, true)); } catch { /* weiter */ }
   }
-  return { results, prices: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.price])), volumes: ctx.map || {}, maxLevs: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.maxLev])) };
+  return { results, bm, prices: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.price])), volumes: ctx.map || {}, maxLevs: Object.fromEntries(Object.entries(ctx.ctx || {}).map(([k, v]) => [k, v.maxLev])) };
 }
 
 // Ohne hinterlegte Chat-ID: beim Bot nachsehen, wer ihm zuletzt geschrieben hat, und die ID dorthin schicken
@@ -160,7 +171,9 @@ async function loadArchive() {
 async function publish(state) {
   if (!state.archiveLoaded) { state.archive = mergeArchive(await loadArchive(), state.archive || []); state.archiveLoaded = true; }
   state.archive = mergeArchive(state.archive, withMeasure(archiveEntries(state.journal), state.journal));
-  await writeFile('signals.json', JSON.stringify({ signals: publicSignals(state.journal), archive: state.archive }, null, 1));
+  const engOf = new Map(state.journal.filter((e) => e.eng).map((e) => [`${e.coin}|${e.dir}|${e.at}`, e.eng]));
+  const signals = publicSignals(state.journal).map((x) => (engOf.has(`${x.coin}|${x.dir}|${x.at}`) ? { ...x, eng: engOf.get(`${x.coin}|${x.dir}|${x.at}`) } : x));
+  await writeFile('signals.json', JSON.stringify({ signals, archive: state.archive }, null, 1));
 }
 
 // Ziele eines abgeschlossenen Trades für die Geduld-Auswertung: eigener Plan oder zugehöriges Signal
@@ -200,7 +213,8 @@ async function main() {
     await send(['✅ <b>Wolf Desk Wächter ist verbunden</b>',
       CHANNEL ? 'Signale gehen in deinen Kanal, Regelverstöße bleiben hier privat.' : 'Signale und Regelverstöße kommen hierher.',
       WALLET ? (risk ? `Konto gelesen: ${risk.positions.length} Positionen, ${Object.keys(bad).length} Regelverstöße.` : 'Konto konnte nicht gelesen werden.') : 'Keine Wallet hinterlegt, nur Signale.',
-      `Signale ab Score ${CONFIG.alerts.minScore} (${CONFIG.alerts.styles.map((k) => CONFIG.signals.modes[k].label).join(' und ')}), alle 15 Minuten.`].join('\n'));
+      CONFIG.alerts.benchmark ? 'Signale nach dem Maßstab (Trendfolge, „neu im Trend“ auf 4H), nur Long, alle 15 Minuten.'
+        : `Signale ab Score ${CONFIG.alerts.minScore} (${CONFIG.alerts.styles.map((k) => CONFIG.signals.modes[k].label).join(' und ')}), alle 15 Minuten.`].join('\n'));
     if (state.journal.length) {
       await updateJournal(state, now);
       await send(reportText(state.journal, 'bisher') + executionText(executionStats(state.journal, state.own || [])));
@@ -225,9 +239,16 @@ async function main() {
 
   await updateJournal(state, now);
 
-  const { results, prices, volumes, maxLevs } = await scan();
+  const { results, bm = [], prices, volumes, maxLevs } = await scan();
+  const useBm = !!CONFIG.alerts.benchmark;
   const openCoins = (risk?.positions || []).map((p) => p.coin);
-  const alerts = results
+  const alerts = useBm ? bm
+    .map((r) => ({ r, a: bmAlert(r, prices[r.coin], state.sent, now, CONFIG.alerts, { volume: volumes[r.coin] }) }))
+    .filter((x) => x.a)
+    .filter((x) => { const why = blockReason(x.r.coin, openCoins, state.journal); if (why) log('Kein Signal für', x.r.coin + ':', why); return !why; })
+    .sort((x, y) => bmStrength(y.r) - bmStrength(x.r))
+    .slice(0, CONFIG.alerts.maxPerRun)
+  : results
     .map((r0) => telegramView(r0))
     .filter(Boolean)
     .map((r) => ({ r, a: signalAlert(r, prices[r.coin], state.sent, now, CONFIG.alerts, { volume: volumes[r.coin], lastDir: state.lastDir }) }))
@@ -238,11 +259,12 @@ async function main() {
   for (const { r, a } of alerts) {
     const al = alignment(viewFor(CONFIG.views, r.coin, now), r.dir);
     state.sigNo = (state.sigNo || 0) + 1; // fortlaufende Signal-Nummer (#WD-0001 …)
-    await send(signalText(r, a, { noCapital, star: al === 'mit', id: state.sigNo, exchangeMax: maxLevs?.[r.coin] }), CHANNEL || CHAT);
+    await send((useBm ? bmSignalText : signalText)(r, a, { noCapital, star: al === 'mit', id: state.sigNo, exchangeMax: maxLevs?.[r.coin] }), CHANNEL || CHAT);
     state.sent[a.key] = now;
     state.lastDir[r.coin] = { dir: r.dir, at: now };
-    state.journal.push({ ...journalEntry(r, a, now, al), id: state.sigNo });
-    log('Signal gemeldet:', a.key, a.score);
+    // Versionsschnitt im Tagebuch: eng = 'bm' kennzeichnet Maßstab-Signale, alles ohne Kennzeichen ist die alte Engine
+    state.journal.push({ ...journalEntry(r, a, now, al), id: state.sigNo, ...(useBm ? { eng: 'bm' } : {}) });
+    log('Signal gemeldet:', a.key, useBm ? 'Maßstab' : a.score);
   }
   // Deine Trades der letzten 60 Tage (für Abkühlphase, Ziele und Geduld)
   let myTrades = [];
@@ -323,7 +345,12 @@ async function main() {
     const period = state.journal.filter((e) => e.status === 'offen' || (e.doneAt || e.at) >= state.lastReport);
     const ownPeriod = (state.own || []).filter((t) => t.closedAt >= state.lastReport);
     const pat = await evaluatePatience(myTrades, { cache: state.patience, getTargets: patTargets(state), now }).catch(() => []);
-    await send(reportText(period, `letzte ${CONFIG.alerts.reportDays || 7} Tage`) + executionText(executionStats(period, ownPeriod)) + patienceText(patienceStats(pat)));
+    // 8b: Maßstab-Signale und Signale der alten Engine getrennt auswerten (Versionsschnitt)
+    const days = `letzte ${CONFIG.alerts.reportDays || 7} Tage`, parts = splitByEngine(period);
+    const head = parts.bm.length && parts.alt.length
+      ? reportText(parts.bm, `${days} · Maßstab`) + '\n\n' + reportText(parts.alt, `${days} · alte Engine`)
+      : reportText(period, parts.bm.length ? `${days} · Maßstab` : days);
+    await send(head + executionText(executionStats(period, ownPeriod)) + patienceText(patienceStats(pat)));
     state.lastReport = now;
   }
   Object.keys(state.lastDir).forEach((k) => { if (now - state.lastDir[k].at > 3 * 864e5) delete state.lastDir[k]; });
@@ -332,7 +359,7 @@ async function main() {
   Object.keys(state.sent).forEach((k) => { if (now - state.sent[k] > 3 * 864e5) delete state.sent[k]; });
   await writeFile(STATE_FILE, JSON.stringify(state));
   await publish(state);
-  log(`Fertig: ${results.length} geprüft, ${alerts.length} Signale gemeldet, Tagebuch: ${journalStats(state.journal).open} offen`);
+  log(`Fertig: ${useBm ? bm.length + " neu im Trend" : results.length + " geprüft"}, ${alerts.length} Signale gemeldet, Tagebuch: ${journalStats(state.journal).open} offen`);
 }
 
 main().catch(async (e) => {

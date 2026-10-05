@@ -2,7 +2,9 @@ import { engine2 } from './core-engine2.js';
 // Signale-Bereich: Suche, Modus, Detail-Analyse, Watchlist-Scan.
 import { CONFIG } from './config.js';
 import { getWatchlist } from './core-watchlist.js';
-import { analyzeMarket, analyzeAllModes, switchStyle } from './core-scanner.js';
+import { analyzeMarket, analyzeAllModes, switchStyle, getCandles } from './core-scanner.js';
+import { BM, bmState, bmPlan, bmFlip, bmSince } from './core-benchmark.js';
+import { signalResult } from './core-feedplan.js';
 import { badge, ladder, esc, dn, TFL, styleRow, seal, confirmsFor, coinIcon, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 import { accountSummary } from './core-calc.js';
@@ -80,7 +82,7 @@ function e2Line(r) {
   const txt = e.ok
     ? `<b class="${e.dir}">${e.dir === 'long' ? 'LONG' : 'SHORT'}</b> · Score ${e.score} · Auslöser ${esc(e.trigger)} · Chance/Risiko ${crv(e.crv)}`
     : `${esc(e.reason || 'kein Setup')}${e.watch ? ` · Zone ${f.price(e.watch.from)}–${f.price(e.watch.to)}` : ''}`;
-  return `<p class="e2-line">🧭 Engine 2 (Test): ${txt} ${tipInline('Die neue Engine nach deinem Bauplan: Struktur, Fib-Zone, Umkehrpunkt-Regel und Chance/Risiko mind. 1 : 2 sind Pflicht. Sie läuft nur zum Vergleich mit. Telegram meldet weiter die alte Engine, bis Engine 2 im Backtest besser ist.', 'e2')}</p>`;
+  return `<p class="e2-line">🧭 Engine 2 (Test): ${txt} ${tipInline('Die neue Engine nach deinem Bauplan: Struktur, Fib-Zone, Umkehrpunkt-Regel und Chance/Risiko mind. 1 : 2 sind Pflicht. Sie läuft nur zum Vergleich mit. Telegram meldet seit 8b nach dem Maßstab (Trendfolge); Engine-2-Bausteine kommen erst dazu, wenn sie ihn im Backtest in beiden Zeiträumen schlagen.', 'e2')}</p>`;
 }
 
 export function showDetail(r) {
@@ -98,6 +100,7 @@ export function showDetail(r) {
     ${r.candles ? `<div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${r.tfs.filter((t) => r.candles[t]).map((t) => `<button type="button" data-stf="${t}" aria-pressed="${t === sigTfFor(r)}">${TFL[t]}</button>`).join('')}</div>
     <div id="sig-chart" class="chart-box"></div>
     ${chartTools('sig-chart', r.coin)}` : ''}
+    <div id="bm-line" class="bm-line">📈 Maßstab: wird geprüft …</div>
     ${styleRow(r, CONFIG.signals.modes)}
     ${e2Line(r)}
     ${hasPos ? `<p class="sig-note">Position in ${esc(dn(r.coin))} ist schon offen. Kein neues Signal (Ledger: eine Position pro Coin).</p>`
@@ -120,6 +123,7 @@ export function showDetail(r) {
     <p class="empty" style="margin-top:14px">Regelbasierte Auswertung abgeschlossener Kerzen, keine Anlageberatung.</p>
     </details>`);
   drawSigChart(r);
+  fillBm(r);
   view.querySelectorAll('button[data-stf]').forEach((b) => b.addEventListener('click', () => {
     sigTf = b.dataset.stf;
     view.querySelectorAll('button[data-stf]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.stf === sigTf)));
@@ -131,6 +135,36 @@ export function showDetail(r) {
     if (next) showDetail(next);
   }));
   $('sig-search').value = r.coin;
+}
+
+// Maßstab (8b): die Regel hinter den Telegram-Signalen. Zeigt, ob der Markt im Aufwärtstrend ist, und den Plan dazu.
+// Der Plan rechnet mit dem Kurs von jetzt (Einstieg zum Kurs, Stop 2 ATR Tag, Ziele in R).
+async function fillBm(r) {
+  const coin = r.coin, cfg = BM();
+  let daily, setup;
+  try { daily = await getCandles(coin, '1d'); setup = await getCandles(coin, cfg.setupTf); } catch { daily = null; }
+  const box = $('bm-line');
+  if (!box || shown?.coin !== coin) return; // Blatt inzwischen geschlossen oder anderer Markt
+  const px = getState?.()?.prices?.[coin] || setup?.at(-1)?.c;
+  const st = daily ? bmState(daily, px, cfg) : null;
+  const tip = tipInline(`Die Regel hinter den Telegram-Signalen seit 8b: Long, wenn die Tages-EMA ${cfg.emaFast} über der EMA ${cfg.emaSlow} liegt und der Kurs über der EMA ${cfg.emaFast}. Gemeldet wird der Moment, in dem das neu erfüllt ist (${cfg.setupTf.toUpperCase()}-Schluss). Stop ${cfg.atrMult}× ATR vom Tag, Ziele bei ${cfg.tps.join(' / ')}R. Im Backtest kam der Gewinn vom Laufenlassen und vor allem aus Rallyes; in Seitwärtsphasen gibt es Serien kleiner Verlierer.`, 'bm-line');
+  if (!st) { box.className = 'bm-line'; box.innerHTML = `📈 Maßstab: zu wenig Tageskerzen für diesen Markt (mind. ${cfg.minDays}). ${tip}`; return; }
+  if (!st.ok) {
+    box.className = 'bm-line';
+    box.innerHTML = `📈 Maßstab: <b>kein Trend</b> · ${!st.trend ? `Tages-EMA ${cfg.emaFast} liegt unter der EMA ${cfg.emaSlow}` : `Kurs unter der Tages-EMA ${cfg.emaFast} (${f.price(st.fast)})`}. ${tip}`;
+    return;
+  }
+  const p = bmPlan(st, cfg), n = bmSince(daily, setup || [], cfg), fresh = bmFlip(daily, setup || [], cfg).flip;
+  const hasPos = (getState?.()?.account?.positions || []).some((x) => x.coin === coin);
+  box.className = 'bm-line on';
+  box.innerHTML = `📈 Maßstab: <b class="long">im Aufwärtstrend</b> · ${fresh ? 'gerade neu (Signal)' : n ? `seit ${n} × ${cfg.setupTf.toUpperCase()}` : 'seit Kurzem'} ${tip}
+    <span class="bm-plan">Einstieg zum Kurs ${f.price(p.entry)} · Stop ${f.price(p.stop)} (−${f.pct(p.stopDistPct, 1)}) · TP1 ${f.price(p.tps[0])} (${cfg.tps[0]}R)</span>
+    ${hasPos ? '' : '<button type="button" class="small-btn ghost" id="bm-trade">Trade-Karte nach Maßstab</button>'}`;
+  $('bm-trade')?.addEventListener('click', () => {
+    const now = bmPlan(bmState(daily, getState?.()?.prices?.[coin] || px, cfg), cfg) || p;
+    const res = signalResult({ coin, dir: 'long', style: cfg.style, px: now.entry, zone: now.zone, stop: now.stop, tps: now.tps, score: null, at: Date.now() }, r, switchStyle);
+    if (res) onTrade({ ...res, fromSignal: null, plan: { ...res.plan, method: 'benchmark', entryMode: 'Trendfolge: Einstieg zum Kurs', stopLabel: `${cfg.atrMult}× ATR (Tag)`, tpLabels: cfg.tps.map((k) => `${k}R`) } });
+  });
 }
 
 // Chart im Signalgeber: Setup-Zeitebene des Stils, Plan eingezeichnet, empfohlener Hebel unten links

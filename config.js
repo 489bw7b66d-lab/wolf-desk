@@ -58,6 +58,9 @@ export const CONFIG = {
   },
 
   // TELEGRAM-WÄCHTER (läuft alle 15 Minuten bei GitHub)
+  // 8b: Maßstab als Signalgeber (core-benchmark.js). Long, wenn Tages-EMA fast über slow und Kurs über der schnellen EMA.
+  benchmark: { emaFast: 20, emaSlow: 100, atrPeriod: 14, atrMult: 2, tps: [2, 3, 4, 6], minDays: 110, style: 'swing', setupTf: '4h', chaseR: 0.5 },
+
   alerts: {
     minScore: 75,               // Signal melden ab diesem Score
     styles: ['swing', 'intraday'], // Scalp nicht per Telegram: der Wächter läuft nur alle 15 Minuten
@@ -69,6 +72,7 @@ export const CONFIG = {
     states: ['zone', 'early'],  // nur melden, wenn der Kurs noch nicht davongelaufen ist
     maxPerRun: 3,               // höchstens so viele Signal-Meldungen pro Durchlauf
     risk: true,                 // Regelverstöße deiner Positionen melden (und Entwarnung)
+    benchmark: true,            // 8b: Signale nach dem Maßstab (Trendfolge, „neu im Trend“) statt nach der alten Engine
     appUrl: 'https://489bw7b66d-lab.github.io/wolf-desk/',
   },
 

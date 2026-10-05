@@ -40,10 +40,12 @@ export function measureDue(e, now = Date.now(), everyMs = 6 * 36e5) {
 
 // Messwerte an die Archiv-Einträge hängen (öffentlich unbedenklich: nur aus Marktdaten)
 export function withMeasure(archive = [], journal = []) {
-  const byKey = new Map((journal || []).filter((e) => e.m).map((e) => [`${e.coin}|${e.dir}|${e.at}`, e.m]));
+  const byKey = new Map((journal || []).filter((e) => e.m || e.eng).map((e) => [`${e.coin}|${e.dir}|${e.at}`, e]));
   return (archive || []).map((a) => {
-    const m = byKey.get(a.key || `${a.coin}|${a.dir}|${a.at}`);
-    return m ? { ...a, zoneH: m.zoneH, mfe: m.mfe, mae: m.mae } : a;
+    const e = byKey.get(a.key || `${a.coin}|${a.dir}|${a.at}`);
+    if (!e) return a;
+    // 8b: Kennzeichen der Engine (eng = 'bm' für Maßstab-Signale) wandert mit ins Archiv
+    return { ...a, ...(e.m ? { zoneH: e.m.zoneH, mfe: e.m.mfe, mae: e.m.mae } : {}), ...(e.eng ? { eng: e.eng } : {}) };
   });
 }
 

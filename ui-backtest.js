@@ -18,8 +18,11 @@ let getNames = () => [];
 const STYLES = ['swing', 'intraday', 'scalp'];
 let style = 'swing', running = false, stopFlag = false, last = null;
 let engine = 1; // 7a: 1 = bisherige Engine, 2 = Engine 2 (Bauplan des Nutzers)
-const keyOf = (st, en) => st + (en === 2 ? ':e2' : en === 3 ? ':bm' : '');
-const ENG = { 1: 'Alte Engine', 2: 'Engine 2', 3: 'Maßstab' };
+const keyOf = (st, en) => st + (en === 2 ? ':e2' : en === 3 ? ':bm' : en === 4 ? ':bf' : '');
+const ENG = { 1: 'Alte Engine', 2: 'Engine 2', 3: 'Maßstab', 4: 'Neu im Trend' };
+const ENG_SUB = { 1: 'bis 8a Telegram', 2: 'dein Bauplan', 3: 'stumpfe Trendfolge', 4: 'Maßstab · jetzt Telegram' };
+const ENG_TAG = { 2: ' · Engine 2', 3: ' · Maßstab', 4: ' · Maßstab neu im Trend' };
+const ENG_SHORT = { 2: ' E2', 3: ' Maßstab', 4: ' Neu im Trend' };
 
 const R = (v, d = 2) => (v == null || !Number.isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + new Intl.NumberFormat('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }).format(Math.abs(v)) + 'R');
 const P = (v) => (v == null ? '–' : f.pct(v, 0));
@@ -36,7 +39,7 @@ function renderControls(prefer = null) {
     + single.map((c) => `<option value="${esc(c)}">${esc(dn(c))}${c === extra && !wl.includes(c) ? ' (Suche)' : ''}</option>`).join('');
   const ok = [ALL, ...(tr.length ? [TRADE, SAMPLE] : []), ...single];
   sel.value = ok.includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
-  $('bt-engine') && ($('bt-engine').innerHTML = [1, 2, 3].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${e === 3 ? 'stumpfe Trendfolge' : e === 2 ? 'dein Bauplan' : 'bisher · Telegram'}</small></button>`).join(''));
+  $('bt-engine') && ($('bt-engine').innerHTML = [4, 3, 1, 2].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${ENG_SUB[e]}</small></button>`).join(''));
   $('bt-styles').innerHTML = STYLES.map((k) => `<button type="button" data-bts="${k}" aria-pressed="${k === style}">${CONFIG.signals.modes[k].label}<small>${BT.days[k]} Tage</small></button>`).join('');
 }
 
@@ -93,14 +96,21 @@ function periodBlock(trades, from, to) {
 async function fillCompare() {
   const box = $('bt-cmp');
   if (!box || !last) return;
-  const st = style, a = await loadResult(keyOf(st, 1)), b = await loadResult(keyOf(st, 2)), c = await loadResult(keyOf(st, 3));
-  if (!a || !b) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich alt gegen Engine 2: rechne ${CONFIG.signals.modes[st].label} mit ${a ? 'Engine 2' : 'der alten Engine'} auf denselben Märkten, dann erscheint er hier.</p>`; return; }
-  const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
-  const sa = summarize(a.trades), sb = summarize(b.trades), spb = splitPeriods(b.trades, b.from, b.to);
-  const better = sb.avgR > sa.avgR && spb?.dev.avgR > 0 && spb?.conf.avgR > 0;
-  box.innerHTML = `${tipHead('Alte Engine gegen Engine 2', 'Jeweils der letzte vollständige Lauf dieses Stils. „Bestätigung“ ist das letzte Drittel des Zeitraums. Engine 2 gilt erst als besser, wenn sie im Schnitt besser ist UND in beiden Zeiträumen im Plus liegt. Erst dann kommt sie in den Telegram-Wächter.')}
-    ${table(['Engine', 'Trades', 'Ø R', 'Ø Bestätigung'], [row('Alt', a), row('Engine 2', b), ...(c ? [row('Maßstab', c)] : [])])}
-    <p class="bt-verdict ${better ? 'ok' : 'warn'}">${better ? 'Engine 2 ist hier besser und hält in beiden Zeiträumen.' : 'Engine 2 hat es hier noch nicht bewiesen.'}</p>`;
+  const st = style, a = await loadResult(keyOf(st, 1)), b = await loadResult(keyOf(st, 2)), c = await loadResult(keyOf(st, 3)), d = await loadResult(keyOf(st, 4));
+  const have = [['Neu im Trend', d], ['Maßstab', c], ['Alt', a], ['Engine 2', b]].filter((x) => x[1]);
+  if (have.length < 2) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich der Engines: rechne ${CONFIG.signals.modes[st].label} mit einer zweiten Engine auf denselben Märkten, dann erscheint er hier.</p>`; return; }
+  const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.dev.avgR)}">${R(sp?.dev.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
+  // 8b: Urteil über die Regel, nach der Telegram jetzt meldet („neu im Trend“): im Schnitt im Plus UND in beiden Zeiträumen
+  let verdict = '';
+  if (d) {
+    const sd = summarize(d.trades), spd = splitPeriods(d.trades, d.from, d.to);
+    const holds = sd.avgR > 0 && spd?.dev.avgR > 0 && spd?.conf.avgR > 0;
+    const thin = sd.n < 200;
+    verdict = `<p class="bt-verdict ${holds && !thin ? 'ok' : 'warn'}">${holds ? '„Neu im Trend“ liegt im Schnitt und in beiden Zeiträumen im Plus.' : sd.avgR > 0 ? '„Neu im Trend“ liegt im Schnitt im Plus, aber nicht in beiden Zeiträumen.' : '„Neu im Trend“ liegt hier im Minus.'}${thin ? ` Nur ${sd.n} Trades: für ein Urteil zu wenig (ab ca. 500 belastbar).` : ''}</p>`;
+  } else verdict = '<p class="bt-verdict warn">„Neu im Trend“ (die Regel hinter den Telegram-Signalen seit 8b) ist für diesen Stil noch nicht gerechnet.</p>';
+  box.innerHTML = `${tipHead('Vergleich der Engines', 'Jeweils der letzte vollständige Lauf dieses Stils. „Entwicklung“ sind die ersten zwei Drittel des Zeitraums, „Bestätigung“ das letzte Drittel. Eine Regel gilt erst als belegt, wenn sie im Schnitt UND in beiden Zeiträumen im Plus liegt und genug Trades hat. „Neu im Trend“ ist der Maßstab mit Einstieg nur beim Wechsel in den Trend: danach meldet Telegram seit 8b.')}
+    <div class="bt-cmp5">${table(['Engine', 'Trades', 'Ø R', 'Entw.', 'Best.'], have.map(([n, r]) => row(n, r)))}</div>
+    ${verdict}`;
 }
 
 // Short-Filter: dieselben Signale, Shorts je Stufe nur mit bärischem Tagestrend
@@ -214,7 +224,7 @@ async function start(resume = null) {
     }
     persist({ ...cp, runs }); // Zwischenstand nach jedem Coin (im Hintergrund)
   }
-  const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : sel === SAMPLE ? 'Stichprobe' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage${engine === 2 ? ' · Engine 2' : engine === 3 ? ' · Maßstab' : ''}`;
+  const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : sel === SAMPLE ? 'Stichprobe' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage${ENG_TAG[engine] || ''}`;
   const complete = !stopFlag && runs.length === coins.length;
   last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missedN ?? r.missed?.length ?? 0), 0), complete, done: runs.length, total: coins.length, engine,
     from: Math.min(...runs.map((r) => r.from).filter(Boolean)), to: Math.max(...runs.map((r) => r.to).filter(Boolean)) };
@@ -231,8 +241,8 @@ async function start(resume = null) {
 }
 
 // Eine Zeile unter dem Start-Knopf: unterbrochener Lauf (Weitermachen) und gespeicherte Ergebnisse je Stil
-const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm'];
-const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : '');
+const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm', 'swing:bf', 'intraday:bf', 'scalp:bf'];
+const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : k.endsWith(':bf') ? ' Neu im Trend' : '');
 async function renderSaved() {
   const box = $('bt-resume');
   if (!box) return;
@@ -240,7 +250,7 @@ async function renderSaved() {
   const saved = await savedList(BT_STYLES);
   const time = (t) => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   box.innerHTML = (run && remaining(run).length
-    ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)}${run.engine === 2 ? ' E2' : run.engine === 3 ? ' Maßstab' : ''} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : run.sel === SAMPLE ? 'Stichprobe' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
+    ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)}${ENG_SHORT[run.engine] || ''} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : run.sel === SAMPLE ? 'Stichprobe' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
         <span><button type="button" id="bt-go" class="small-btn">Weitermachen</button><button type="button" id="bt-drop" class="small-btn ghost">Verwerfen</button></span></div>` : '')
     + (saved.length ? `<div class="bt-saved">${saved.map((x) => `<button type="button" data-bt-show="${x.style}">${esc(keyLabel(x.style))} ✓ ${time(x.at)}</button>`).join('')}</div>` : '');
 }

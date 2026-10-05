@@ -58,7 +58,7 @@ function render() {
         <span class="feed-status ${cls}">${icon} ${label}${x.r != null && x.status !== 'offen' ? ` ${x.r >= 0 ? '+' : '−'}${Math.abs(x.r).toFixed(1).replace('.', ',')}R` : ''}</span>
       </div>
       <div class="feed-mid">
-        <span class="meta">${esc(CONFIG.signals.modes[x.style]?.label || x.style)} · Score ${x.score} · ${ago(x.at)}</span>
+        <span class="meta">${x.eng === 'bm' || x.score == null ? 'Trendfolge · Maßstab' : `${esc(CONFIG.signals.modes[x.style]?.label || x.style)} · Score ${x.score}`} · ${ago(x.at)}</span>
         <span class="feed-live" data-live="${i}"></span>
       </div>
       <div class="feed-plan meta">Einstieg ${zone} · Stop ${f.price(x.stop)} · TP1 ${f.price(x.tps?.[0])}</div>

@@ -6,6 +6,7 @@ import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { INTERVAL_MS, closedCandles } from './core-signals.js';
 import { signalFromSeries, modeTfs } from './core-scanner.js';
+import { bmFlip, bmPlan, BM_EVENT } from './core-benchmark.js';
 import { atr, adx, ema } from './core-indicators.js';
 import { trailStop } from './core-trail.js';
 
@@ -155,7 +156,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       return list.slice(Math.max(0, ptr[k] + 1 - BT.lookback), ptr[k] + 1);
     });
     let r;
-    try { r = engine === 3 ? benchmarkFromSlices(allTfs, slices) : engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
+    try { r = engine === 4 ? benchmarkFlipFromSlices(allTfs, slices) : engine === 3 ? benchmarkFromSlices(allTfs, slices) : engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
     const p = r.plan;
     if (!p) continue;
     if (p.impulseKey) { if (usedImpulses.has(p.impulseKey)) continue; usedImpulses.add(p.impulseKey); }
@@ -231,6 +232,16 @@ export function benchmarkFromSlices(tfs, slices) {
   const R = 2 * a, stop = px - R;
   const plan = { dir: 'long', entry: px, stop, zone: [px, px], tps: [px + 2 * R, px + 3 * R, px + 4 * R, px + 6 * R], R, stopDistPct: (R / px) * 100, method: 'benchmark', warnings: [] };
   return { plan, dir: 'long', total: { long: 50, short: 0 }, events: [{ name: 'Trendfolge EMA 20/100', dir: 'long' }], confirms: [], gate: null, analyses: [null, { close: px }] };
+}
+
+// Maßstab · neu im Trend (8b): dieselbe Regel, aber Einstieg nur an der ersten Setup-Kerze, an der die Bedingung neu erfüllt ist.
+// Das ist die Regel, nach der der Wächter seit 8b meldet (core-benchmark.js).
+export function benchmarkFlipFromSlices(tfs, slices) {
+  const D = slices[tfs.indexOf('1d')], G = slices[1];
+  const fl = bmFlip(D, G);
+  const plan = fl.flip ? bmPlan(fl.now) : null;
+  if (!plan) return { plan: null };
+  return { plan, dir: 'long', total: { long: 50, short: 0 }, events: [{ name: BM_EVENT, dir: 'long' }], confirms: [], gate: null, analyses: [null, { close: fl.now.px }] };
 }
 
 // Marktphase (7c): Ergebnis je Tages-ADX beim Einstieg, dazu „was wäre mit Filter“

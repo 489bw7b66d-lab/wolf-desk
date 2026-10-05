@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 05.10.2026 · Etappe 8a · 601 Tests (Sammelliste für 8b ff. in Abschnitt 10)
+Stand: 05.10.2026 · Etappe 8b · 633 Tests (Sammelliste für 8c ff. in Abschnitt 10)
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -27,7 +27,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 - Nutzer heißt Jensen, Anrede **„Buddy“**, keine Programmierkenntnisse, arbeitet nur am iPhone (Brave, Dateien-App, GitHub im Browser).
 - **Ton:** locker und herzlich wie ein Werkstatt-Kumpel (✅, 🐺, „Klasse, Buddy!“), dabei ehrlich. Nicht nüchtern-gutachterlich.
 - **Modular:** jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert (Neues kommt in eigene Dateien).
-- **Etappen:** jedes Update ist ein Paket mit Nummer (zuletzt 8a) und muss einzeln stabil laufen.
+- **Etappen:** jedes Update ist ein Paket mit Nummer (zuletzt 8b) und muss einzeln stabil laufen.
 - **Vor jedem Paket:** alle Tests grün, **zusätzlich mit vielen verstellten Einstellungen**, und der **Wächter komplett durchgespielt** (Testlauf, normaler Lauf, keine doppelten Meldungen).
 - **Nur geänderte Dateien** als ZIP mit eigenem Ordner; Schritt-für-Schritt-Anleitung dazu.
 - **Vor größeren Änderungen:** erst Bestand prüfen (aktuellen Code von GitHub laden, Versionsnummer prüfen!) und Plan zeigen, dann bauen.
@@ -43,7 +43,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 | Wofür | Adresse |
 |---|---|
 | App | `489bw7b66d-lab.github.io/wolf-desk` |
-| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` (bei altem Stand `?v=8a` anhängen) |
+| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` (bei altem Stand `?v=8b` anhängen) |
 | Repository | `github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -79,7 +79,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 ---
 
-## 5. Aufbau der App (117 Dateien, fast alle im Hauptordner)
+## 5. Aufbau der App (120 Dateien, fast alle im Hauptordner)
 
 **Einstellungen:** `config.js` (Empfehlungen) · `ledger-markets.js` (deine Ledger-Märkte, Standard für „Handelbare Märkte“) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
 
@@ -97,11 +97,12 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 **Neu seit 8a:**
 - Kern: `core-exitcalc` (Ausstiegsrechner: Menge für X % der offenen Position, abgerundet auf die Nachkommastellen des Marktes, Plan-Hinweis) · `core-totalrisk` (Summe über alle Positionen, wenn alle Stops greifen) · `core-journalmeasure` (Tagebuch-Messwerte: Zone erreicht, größter Lauf ins Plus/Minus) · `core-gesture` (Entscheidung für Wisch-Gesten) · `core-privacy` (keine Beträge in `my-settings.js`)
 - Anzeige: `ui-position` (Positions-Übersicht fürs Blatt, Mini-Balken und Gesamt-Risiko-Zeile für die Startseite, Ausstiegsrechner, Stop von Hand) · `ui-sheet` (alle Blätter: nach unten wegwischen, Zurück-Pfeil, Zurück-Knopf nach Sprung in einen Tab) · `ui-swipe` (Tab-Wechsel durch Wischen)
+- **Neu seit 8b:** `core-benchmark` (Maßstab als Signalgeber: Zustand, Plan, Wechsel „neu im Trend“, Meldungs-Prüfung, Kennzeichen im Tagebuch) · `core-bmtext` (Telegram-Text der Maßstab-Signale)
 - Das **Positions-Blatt** ist das frühere Markt-Blatt (`ui-coin.js`) bei offener Position: Kurs → Trade-Weg → Plan-Ampel → Regeln → Werte → „Mehr Details“ → Ausstiegsrechner → (Stop von Hand) → Chart → Teilverkäufe → Ziele.
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8a">` und eine Import-Map mit `?v=8a` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8b">` und eine Import-Map mit `?v=8b` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -121,6 +122,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - **Short-Filter (5a):** `signals.shortFilter` = aus · mild (Tageskurs unter EMA 200) · mittel (+ tiefere Hochs/Tiefs oder EMA 8<21<55 im Tageschart) · streng (+ Retest der EMA 200 in 10 Tagen). Standard **aus**, bis der Backtest die Stufe bestimmt. Gilt für App, Wächter (über my-settings.js) und alle Stile; Tagebuch speichert die Stufe je Signal (`sf`)
 - **Hebel-Vorschau / Liquidation (5b):** Abstand ≈ min(90 / Hebel, 100 / Hebel − 50 / Höchsthebel des Marktes); Hyperliquids Wartungs-Margin ist die Hälfte der Anfangs-Margin beim Höchsthebel. Beispiel ALGO (max. 5×): bei 5× nur ~10 % statt ~18 %; Achse links bis 2× Stop-Abstand, weiter weg steht „← Liq“ am Rand
 - **Indikatoren:** EMA 8/21/55/200 · RSI 14 · ATR 14 · MACD 12/26/9
+- **Maßstab-Signale (8b, `CONFIG.benchmark`):** Tages-EMA 20 über EMA 100 und Kurs über der Tages-EMA 20 · Auslöser: an der letzten abgeschlossenen 4H-Kerze erfüllt, an der davor nicht · Einstieg zum Kurs · Stop 2 × ATR 14 (Tag) · Ziele 2R / 3R / 4R / 6R · nur Long · geführt als Stil Swing (Hebel-Obergrenze 5×, Tagebuch 14 Tage) · keine Meldung, wenn der Kurs seit Kerzenschluss mehr als 0,5R gelaufen ist · Schalter `alerts.benchmark` (⚙️ → Telegram → „Signale nach Maßstab“), aus = alte Engine wie bis 8a
 
 ---
 
@@ -145,7 +147,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 ## 8. Telegram-Wächter
 
 - Alle 15 Min. (GitHub teils später), kostenlos bei öffentlichem Repository.
-- **Je Lauf:** Konto prüfen (Alarm/Entwarnung mit Beruhigung) → Tagebuch auswerten und mit echten Trades verknüpfen → Trades 60 Tage laden → **Abkühlphase** melden → **handelbare Märkte bzw. Top 150** + Watchlist scannen → Signale melden (⭐ bei passender Einschätzung) → **Ziele offener Positionen** melden (🎯/🏁, eigener Plan → Signal → automatischer Plan) → Marken deiner Einschätzungen → Wochenbericht (mit Umsetzung, Einschätzung, **Geduld**) → `signals.json` veröffentlichen.
+- **Je Lauf:** Konto prüfen (Alarm/Entwarnung mit Beruhigung) → Tagebuch auswerten und mit echten Trades verknüpfen → Trades 60 Tage laden → **Abkühlphase** melden → **handelbare Märkte bzw. Top 150** scannen (seit 8b: Tageskerzen aller Märkte, 4H-Kerzen nur für Märkte im Aufwärtstrend, Wechsel „neu im Trend“ suchen; mit Schalter aus wie früher Stufe 1/Stufe 2 der alten Engine + Watchlist) → Signale melden (⭐ bei passender Einschätzung; bei mehreren zuerst die mit dem größten EMA-Abstand in ATR, höchstens `maxPerRun`) → **Ziele offener Positionen** melden (🎯/🏁, eigener Plan → Signal → automatischer Plan) → Marken deiner Einschätzungen → Wochenbericht (mit Umsetzung, Einschätzung, **Geduld**) → `signals.json` veröffentlichen.
 - **Watchlist:** Seit 4b nutzt der Wächter die in der App bearbeitete Watchlist (über `my-settings.js`). Vorher lief er mit der Standardliste aus `config.js`.
 - **Gedächtnis:** `.watch-state.json` im GitHub-Zwischenspeicher. **Veröffentlichung:** Zweig `signals`.
 
@@ -299,6 +301,9 @@ Etappe 7a–7c: siehe Abschnitt 10 (Engine 2 A/A2, Maßstab, „Trend oder Seitw
 
 Etappe 8a (Bedienung, keine Signal-Änderung): **Positionen nur noch auf der Startseite**, direkt unter dem Kontowert, je Zeile ein Mini-Trade-Weg · Zeile **„Greifen alle Stops: −X $ (Y %) · n long / m short“** (gelb ab der Hälfte des Tagesverlust-Limits, rot ab dem Limit, Erklärung hinter ⓘ) · **Positions-Blatt** beim Antippen (Trade-Weg oben, Plan-Ampel, alle Werte der früheren Konto-Karte, „Mehr Details“), Block „Offene Positionen“ im Konto entfernt · **Ausstiegsrechner** im Positions-Blatt (Prozent der noch offenen Position frei eintippen, Menge mit Kopier-Knopf, Gegenwert, Gewinn ca., Rest, Plan-Hinweis zum Übernehmen) · **Stop von Hand** im Positions-Blatt statt im Risiko-Tab · **Blätter** nach unten wegwischen, Zurück-Pfeil (Trade-Karte ⇄ Vollanalyse, Position → Analyse), Zurück-Knopf nach „Im Rechner anpassen“ · **Tab-Wechsel durch Wischen** (nicht auf Charts, in Blättern, in Eingaben, am Rand) · Suchfeld im Signale-Tab ganz oben · **Tagebuch-Messwerte** je Signal (Stunden bis zur Zone, größter Lauf ins Plus und ins Minus in R; im Archiv von `signals.json`, öffentlich unbedenklich) · **Export** mit Einzel-Trades und Messwerten · **Datenschutz:** Startkapital nicht mehr in `my-settings.js` · 104 neue Tests (601).
 
+Etappe 8b (Signalgeber auf Maßstab, vom Nutzer am 05.10. entschieden: „alles auf Maßstab“, Telegram sofort, Backtest danach): **Telegram meldet nach dem Maßstab** statt nach der alten Engine (Regel in Abschnitt 6), ein Signal-Typ „Trendfolge“, nur Long, Text ohne Score · **Versionsschnitt:** Tagebuch-Einträge und Archiv tragen `eng: 'bm'`, alles ohne Kennzeichen ist die alte Engine; der Wochenbericht wertet getrennt aus · **Schalter** in ⚙️ zum Zurückdrehen · **Backtest:** vierte Wahl „Neu im Trend“ (Maßstab mit Einstieg nur beim Wechsel, also die Telegram-Regel), Vergleichstabelle aller Engines mit Entwicklung und Bestätigung und einem Urteil zur Telegram-Regel · **App:** Zeile „📈 Maßstab“ im Signalgeber-Blatt (im Trend seit …, Plan zum Kurs, Knopf „Trade-Karte nach Maßstab“), „Letzte Signale“ und Trade-Karte zeigen „Trendfolge · Maßstab“ statt Score · 32 neue Tests (633). **Bewusst offen:** Heiße Coins scannen noch mit der alten Engine; das Kopf-Etikett im Signalgeber („KEIN SIGNAL“) meint ebenfalls die alte Engine.
+**Ehrlicher Stand zu 8b:** Die Regel „neu im Trend“ ging ungetestet scharf. Belegt war nur der Maßstab mit Einstieg an jeder Kerze (Swing +0,14R, aber Entwicklung −0,20R / Bestätigung +0,35R; Daytrade +0,09R, TP1 nur bei 4 % der Trades erreicht). Der Stop liegt meist 8–17 % entfernt, TP1 entsprechend 16–34 %: wenige, weite Trades, Gewinn durch Laufenlassen. Der Daytrade-Maßstab unterscheidet sich im Backtest nur durch die Haltedauer, deshalb gibt es live einen Signal-Typ.
+
 **Experten-Analyse (30.09.2026, Rollenspiel):** Aufbau gut (Kern/Anzeige/Wächter getrennt, keine Kreis-Abhängigkeiten, App und Wächter teilen den Kern). Später: Backtest mit Entwicklungs-/Bestätigungszeitraum, Slippage und Funding, Überlebende-Verzerrung beachten (heutige Ledger-Liste), Korrelation offener Positionen, Regelbrüche im Wochenbericht, Markt-Bias als Kandidat. Bewusst nicht: neu schreiben, mehr Indikatoren.
 
 ---
@@ -326,8 +331,13 @@ Recherche-Ergebnis (01.10.): Trendfolge in Krypto am besten belegt, aber vor all
 **Eigene Trades (05.10., ohne Beträge):** 29 abgeschlossen, 31 % Treffer bei Verhältnis Ø Gewinn zu Ø Verlust 1,6 (Gewinnschwelle 39 %) · **in Teilen verkauft: 6 Trades, 83 % Treffer, klar im Plus · alles auf einmal: 23 Trades, 17 % Treffer, klar im Minus** → der Ausstieg in Teilen ist der größte Hebel, größer als jede Signal-Änderung · zum Zeitpunkt der Auswertung 10 Positionen, alle long, freies Kapital unter 1 %, Summe aller Stops über dem Tagesverlust-Limit → Anlass für die Gesamt-Risiko-Zeile (8a).
 **Wünsche des Nutzers vom 05.10. (ändern Signale, laufen über Backtest und Tagebuch-Messwerte, nicht über ein Anzeige-Paket):** Ziele beim Swing zu eng · TP-Auswahl je Stil (Scalp/Daytrade/Swing) überarbeiten · Chance/Risiko mind. 1 : 2, besser 1 : 3 (Vermutung des Nutzers: geht nur mit früheren Einstiegen; passt zum Befund vom 30.09. „Stop im Rauschen, Ziel weit weg“ → Kandidat Rücksetzer-Einstieg Golden Pocket) · Haltedauer zu lang, Signale müssten genauer kommen (Backtest-Zeile „Haltedauer bis TP1 / bis Stop“ ergänzen). Hinweis aus den Daten: TP1 liegt heute bei 1R ab Zonenmitte; weitere Ziele allein drücken die Trefferquote. Offen: „Diskrepanz bei SL“ (Nutzer schickt Beschreibung oder Screenshot; falls zwei Stellen verschiedene Stops zeigen, hat das Vorrang).
 
+**NACH 8b ZUERST (vom Nutzer am 05.10. so bestellt):**
+- **Backtest der Telegram-Regel:** in der App Backtest → „Neu im Trend“ → Handelbare Märkte → Swing (und danach Daytrade), dann „📤 Daten für Claude“ schicken. Entscheidung danach: bleibt die Regel, bekommt sie einen Filter, oder Schalter zurück. Maßgeblich: Ø R, Entwicklung und Bestätigung beide im Plus, mindestens einige hundert Trades.
+- **Danach das Kompass-Paket** (Punkte 1 und 2 unten: Binance als zweite Datenquelle, dann Zyklus-Kompass). Der Kompass ist zugleich der Marktphasen-Schutz, der dem Maßstab fehlt.
+- **Heiße Coins auf Maßstab umstellen** (Liste „neu im Trend / im Trend“ statt alter Engine) und das Kopf-Etikett im Signalgeber anpassen.
+
 **SAMMELLISTE für die nächsten Pakete (Stand 05.10.2026, mit dem Nutzer abgestimmt), Reihenfolge:**
-1. **Paket 8b – Binance als zweite Datenquelle** (öffentlich, ohne Anmeldung, CORS): lange Historie seit 2017/2019 für Woche/Monat und Zyklus-Tests, Volumen für VWAP; Namens-Übersetzung (kPEPE → 1000PEPE …), HL-eigene Coins nur aus Hyperliquid; Erreichbarkeit aus DE prüfen.
+1. **Paket 8c – Binance als zweite Datenquelle** (Marktdaten-Adresse `data-api.binance.vision`, `/api/v3/klines`, ohne Schlüssel; Spot-Namen, daher kPEPE → PEPEUSDT mal 1000) (öffentlich, ohne Anmeldung, CORS): lange Historie seit 2017/2019 für Woche/Monat und Zyklus-Tests, Volumen für VWAP; Namens-Übersetzung (kPEPE → 1000PEPE …), HL-eigene Coins nur aus Hyperliquid; Erreichbarkeit aus DE prüfen.
 2. **Zyklus-Kompass** (Woche/Monat, nicht scharf): BTC über/unter Bull Market Support Band (20W SMA + 21W EMA) · 🟢 Bulle (Wochenschluss über steigendem Band) · 🟡 Warnung (erster Wochenschluss darunter → Risiko halbieren, Hinweis „Teil der Zyklus-Gewinne sichern“) · 🔴 Bär (2 Wochenschlüsse darunter + Band dreht nach unten, Monatsschluss bestätigt → keine neuen Trendfolge-Longs, „Gewinne sichern“) · zurück auf 🟢 nach 2 Wochenschlüssen über steigendem Band · Halving-Uhr als Info (Hochs bisher 12–18 Monate nach Halving; Bärenmärkte ~1 Jahr). **Rotation** als zweite Anzeige: Stärke je Coin gegen BTC (COIN/BTC im Wochenchart), Rotations-Breite (Anteil Coins, die BTC über 4–12 Wochen schlagen), ETH/BTC; Altseason oft Spätphase (2018: Alts toppten nach BTC). **Bär-Modus bei 🔴:** gespiegelter Maßstab-Short + Setup „Rallye von unten ans Band bzw. 0,5–0,618, Abprall“, weitere Stops, halbes Risiko, große liquide Märkte, Coins schwach gegen BTC. Eigener Knopf „Rückzug jetzt“; keine scharfe Tages-Notbremse. Prüfung mit Binance-Historie an 2018 und 2022.
 3. **Markt-Phasen-Filter** für den Maßstab: BTC-Trend + Marktbreite (Anteil Coins über EMA 100), abgestuft voll/halb/Pause; Positionsgröße nach Volatilität.
 4. **Steuer-Bereich** (DE, keine Kirchensteuer): Perps = Termingeschäfte § 20 EStG, 25 % + 5,5 % Soli (26,375 %), Verluste voll verrechenbar (JStG 2024), Sparer-Pauschbetrag einstellbar (Rest nach Bank-Nutzung), Funding verrechnet oder getrennt (wählbar); Jahr wählbar; Gewinne, Verluste, Gebühren, Funding in USD und EUR (EZB-Tageskurs), Bemessungsgrundlage, Steuer, Gewinn nach Steuern, nach Monat und Coin; **PDF zum Teilen** (Übersicht + Trade-Liste); nur auf dem iPhone, nie ins Repository; Hinweis „keine Steuerberatung“.

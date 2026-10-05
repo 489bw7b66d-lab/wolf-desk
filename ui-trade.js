@@ -61,7 +61,7 @@ function render() {
   $('sheet-body').innerHTML = `
     <div class="sheet-head">
       <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${coinIcon(r.coin, 28)}${esc(dn(r.coin))}</h2>
-      <span class="meta">${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]} · ${r.fromSignal ? `Signal ${ago(r.fromSignal.at)}` : esc(p.entryMode)}</span></div>
+      <span class="meta">${r.total[p.dir] > 0 ? `${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]}` : 'Trendfolge · Maßstab'} · ${r.fromSignal ? `Signal ${ago(r.fromSignal.at)}` : esc(p.entryMode)}</span></div>
       ${badge(p.dir)}
     </div>
     ${sum && sum.equity > 0 && (sum.available / sum.equity) * 100 < (CONFIG.rules.freeCapitalMinPct ?? 2)

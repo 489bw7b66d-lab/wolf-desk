@@ -63,7 +63,8 @@ import { tests as tk } from './test-totalrisk.js';
 import { tests as jm } from './test-journalmeasure.js';
 import { tests as gs } from './test-gesture.js';
 import { tests as po } from './test-position.js';
-const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst, ...e2, ...xc, ...tk, ...jm, ...gs, ...po];
+import { tests as bm } from './test-benchmark.js';
+const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst, ...e2, ...xc, ...tk, ...jm, ...gs, ...po, ...bm];
 let pass = 0;
 const list = document.getElementById('list');
 for (const [name, fn] of tests) {
