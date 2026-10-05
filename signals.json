@@ -520,7 +520,10 @@
    "status": "stop",
    "r": -1,
    "doneAt": 1790558099999,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": null,
+   "mfe": 0.52,
+   "mae": 1
   },
   {
    "key": "ZEC|long|1790501901046",
@@ -534,7 +537,10 @@
    "status": "stop",
    "r": -1,
    "doneAt": 1790625599999,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": null,
+   "mfe": 0.08,
+   "mae": 1
   },
   {
    "key": "PUMP|long|1790510936619",
@@ -548,7 +554,10 @@
    "status": "tp2",
    "r": 1.5125471426003043,
    "doneAt": 1790524799999,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": null,
+   "mfe": 6.45,
+   "mae": 0.13
   },
   {
    "key": "WLD|long|1790540644842",
@@ -562,7 +571,10 @@
    "status": "stop",
    "r": -1,
    "doneAt": 1790607599999,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": 0,
+   "mfe": 0.12,
+   "mae": 1
   },
   {
    "key": "PUMP|long|1790615281666",
@@ -576,7 +588,10 @@
    "status": "tp1",
    "r": 0.8955834095018127,
    "doneAt": 1790874783231,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": 0,
+   "mfe": 1.1,
+   "mae": 0.87
   },
   {
    "key": "LINK|long|1790622516553",
@@ -590,7 +605,10 @@
    "status": "abgelaufen",
    "r": -0.598978522826431,
    "doneAt": 1790881773662,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": 0,
+   "mfe": 0.59,
+   "mae": 1
   },
   {
    "key": "CRV|long|1790640610315",
@@ -604,7 +622,10 @@
    "status": "tp1",
    "r": 0.7704978562708064,
    "doneAt": 1790704799999,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": 0,
+   "mfe": 0.81,
+   "mae": 0.2
   },
   {
    "key": "ETH|long|1790683820436",
@@ -618,7 +639,10 @@
    "status": "stop",
    "r": -1,
    "doneAt": 1790749799999,
-   "sf": "aus"
+   "sf": "aus",
+   "zoneH": 0,
+   "mfe": 0.28,
+   "mae": 1
   },
   {
    "key": "WLD|long|1790783915065",
@@ -632,7 +656,10 @@
    "status": "tp1",
    "r": 0.6320171988616491,
    "doneAt": 1790967599999,
-   "sf": "mittel"
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 1.16,
+   "mae": 0.76
   },
   {
    "key": "ETH|long|1790827715934",
@@ -646,7 +673,10 @@
    "status": "tp2",
    "r": 1.527312599389834,
    "doneAt": 1790929799999,
-   "sf": "mittel"
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 1.96,
+   "mae": 0.54
   },
   {
    "key": "PUMP|long|1790885268677",
@@ -660,7 +690,10 @@
    "status": "stop",
    "r": -1,
    "doneAt": 1790966699999,
-   "sf": "mittel"
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.62,
+   "mae": 1
   },
   {
    "key": "BTC|long|1790917632301",
@@ -674,7 +707,10 @@
    "status": "stop",
    "r": -1,
    "doneAt": 1790962199999,
-   "sf": "mittel"
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.41,
+   "mae": 1
   }
  ]
 }
