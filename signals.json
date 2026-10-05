@@ -19,9 +19,9 @@
     88786.12821486169,
     89591.5852318717
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791175499999,
    "events": [
     "MACD-Kreuzung aufwärts",
     "Starkes Momentum",
@@ -710,6 +710,23 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.41,
+   "mae": 1
+  },
+  {
+   "key": "BTC|long|1791160660133",
+   "id": 8,
+   "coin": "BTC",
+   "dir": "long",
+   "style": "intraday",
+   "score": 80,
+   "seal": true,
+   "at": 1791160660133,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791175499999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.99,
    "mae": 1
   }
  ]
