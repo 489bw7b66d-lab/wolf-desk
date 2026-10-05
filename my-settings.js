@@ -1,7 +1,6 @@
-// Deine Abweichungen von den empfohlenen Werten, erzeugt von der App am 29.9.2026, 22:47:47.
+// Deine Abweichungen von den empfohlenen Werten, erzeugt von der App am 5.10.2026, 11:34:03.
 // Hochladen zu GitHub, dann nutzt auch der Telegram-Wächter diese Werte.
 export const MY_SETTINGS = {
-  "startCapital": 2025.57,
   "rules.freeCapitalMinPct": 8,
   "exitPlan.1.pct": 30,
   "exitPlan.2.pct": 30,
@@ -32,7 +31,6 @@ export const MY_SETTINGS = {
     "LINK",
     "WLD",
     "XPL",
-    "UNI",
     "LIT",
     "TAO",
     "HBAR",
@@ -40,7 +38,6 @@ export const MY_SETTINGS = {
     "LTC",
     "PONS",
     "ARB",
-    "CASHCAT",
     "DOGE",
     "MON",
     "GRAM",
