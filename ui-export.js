@@ -5,6 +5,7 @@ import { accountSummary } from './core-calc.js';
 import { enrichPositions } from './core-positions.js';
 import { honestSplit, lifePnlOf, dayPnlOf } from './core-performance.js';
 import { tradeHistory, tradeStats } from './core-trades.js';
+import { measureStats } from './core-journalmeasure.js';
 import { currentValues, diffFromRecommended } from './core-settings.js';
 import { getTradeable } from './core-tradeable.js';
 import { getWatchlist } from './core-watchlist.js';
@@ -56,6 +57,22 @@ function btText(d) {
   return L.join('\n');
 }
 
+// ---- Einzel-Trades (8a): eine Zeile je Trade, neueste zuerst, höchstens 150 ----
+export function tradeList(trades, max = 150) {
+  const l = [...(trades || [])].sort((a, b) => (b.openedAt || 0) - (a.openedAt || 0)).slice(0, max);
+  if (!l.length) return '';
+  const iso = (t) => (t ? new Date(t).toISOString().slice(0, 16) : '');
+  const px = (v) => (v == null || !Number.isFinite(v) ? '' : String(Number(v.toPrecision(6))));
+  const rows = l.map((t) => {
+    const ex = t.exits || [];
+    const sz = ex.reduce((s, x) => s + (x.sz || 0), 0);
+    const exitAvg = sz > 0 ? ex.reduce((s, x) => s + x.px * x.sz, 0) / sz : null;
+    return [iso(t.openedAt), t.closedAt ? iso(t.closedAt) : 'offen', t.closedAt && t.openedAt ? ((t.closedAt - t.openedAt) / 36e5).toFixed(1) : '',
+      t.coin, t.side, px(t.entryAvg), px(exitAvg), ex.length, t.soldPct == null ? '' : Math.round(t.soldPct), n2(t.realized), n2(t.fees), t.partial ? 'ja' : ''].join(';');
+  });
+  return ['## Einzel-Trades', '```', 'Auf;Zu;Std;Coin;Richtung;Einstieg;AusstiegSchnitt;Teilverkäufe;VerkauftPct;Ergebnis$;Gebühren$;AnfangFehlt', ...rows, '```'].join('\n');
+}
+
 // ---- Der ganze Bericht ----
 export function buildReport(s = {}, now = Date.now(), store = globalThis.localStorage) {
   const L = [];
@@ -92,6 +109,8 @@ export function buildReport(s = {}, now = Date.now(), store = globalThis.localSt
     const st = tradeStats(tradeHistory(s.fills));
     if (st) L.push('## Eigene Trades', '```', JSON.stringify(st, (k, v) => (typeof v === 'number' ? Math.round(v * 100) / 100 : v)), '```', '');
   } catch { /* egal */ }
+  // 8a: jeder Trade einzeln, damit sich Signale und echte Trades Stück für Stück abgleichen lassen
+  try { const tl = tradeList(tradeHistory(s.fills)); if (tl) L.push(tl, ''); } catch { /* egal */ }
 
   // Letzte Telegram-Signale
   const feed = getFeedSignals();
@@ -110,7 +129,11 @@ export function buildReport(s = {}, now = Date.now(), store = globalThis.localSt
       const rs = l.filter((e) => e.r != null).map((e) => e.r);
       L.push(`- ${st}: ${l.length} Signale, Ø ${r2(rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null)}, TP1 oder besser ${pc(l.filter((e) => /^tp/.test(e.status)).length / l.length * 100)}`);
     });
-    L.push('```', 'Datum;Nr;Coin;Richtung;Stil;Score;Filter;Status;R', ...arc.map((e) => [new Date(e.at).toISOString().slice(0, 16), e.id ?? '', e.coin, e.dir, e.style, e.score, e.sf, e.status, e.r ?? ''].join(';')), '```', '');
+    // 8a: Messwerte je Signal (ZoneStd = Stunden bis zur Einstiegszone, MaxPlusR/MaxMinusR = größter Lauf in R)
+    const ms = measureStats(arc);
+    if (ms) L.push(`- Messwerte (${ms.n} Signale): Ø größter Lauf ins Plus ${n2(ms.avgMfe)}R · ins Minus ${n2(ms.avgMae)}R · lief mind. 1R ${pc(ms.reach1)} · 2R ${pc(ms.reach2)} · 3R ${pc(ms.reach3)} · Zone erreicht ${pc(ms.zoneShare)}${ms.avgZoneH == null ? '' : ` (Ø nach ${n2(ms.avgZoneH, 1)} Std.)`}${ms.deepWinners == null ? '' : ` · Gewinner mit mind. 0,5R Gegenlauf ${pc(ms.deepWinners)}`}`);
+    const hours = (e) => (e.doneAt ? ((e.doneAt - e.at) / 36e5).toFixed(1) : '');
+    L.push('```', 'Datum;Nr;Coin;Richtung;Stil;Score;Filter;Status;R;DauerStd;ZoneStd;MaxPlusR;MaxMinusR', ...arc.map((e) => [new Date(e.at).toISOString().slice(0, 16), e.id ?? '', e.coin, e.dir, e.style, e.score, e.sf, e.status, e.r ?? '', hours(e), e.zoneH ?? '', e.mfe ?? '', e.mae ?? ''].join(';')), '```', '');
   }
 
   // Backtests

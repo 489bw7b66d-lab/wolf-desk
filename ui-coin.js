@@ -1,5 +1,7 @@
 // Markt-Blatt: öffnet sich beim Tippen auf eine Position oder einen Watchlist-Markt.
 // Zeigt Live-Kurs, 24h, Chart in allen Zeitebenen und bei offener Position alle Positionsdaten inkl. Teilverkäufen.
+// Seit 8a ist es bei einer offenen Position das Positions-Blatt: Übersicht mit Trade-Weg oben (vorher Karte im Konto),
+// Ausstiegsrechner, Stop von Hand, darunter Chart, Teilverkäufe und Ziele.
 import { accountRisk } from './core-positions.js';
 import { getCandles } from './core-scanner.js';
 import { tradeHistory, openTradeFor, change24h } from './core-trades.js';
@@ -10,9 +12,9 @@ import { getFeedSignals } from './ui-feed.js';
 import { analyzeAllModes } from './core-scanner.js';
 import { CONFIG } from './config.js';
 import { drawChart, chartTools } from './ui-chartview.js';
-import { positionPlan, planLine } from './ui-testpage.js';
+import { positionPlan } from './ui-testpage.js';
+import { posOverview, exitBoxHtml, updateExit, stopBoxHtml, bindPosition } from './ui-position.js';
 import { accountSummary } from './core-calc.js';
-import { trailText } from './core-trail.js';
 import { esc, dn, TFL, CHART_TFS, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
 import * as f from './core-format.js';
@@ -21,6 +23,7 @@ const $ = (id) => document.getElementById(id);
 let getState = () => ({});
 let onAnalyze = () => {};
 let coin = null, tf = '4h', timer = null, lastFocus = null;
+let live = null; // { p, t, pp, szDecimals } der gerade gezeigten Position (für Ausstiegsrechner und Stop-Eingabe)
 const cache = new Map(); // "coin|tf" -> Kerzen
 
 const pctTxt = (v, d = 2) => (v == null ? '–' : (v >= 0 ? '+' : '−') + f.pct(Math.abs(v), d));
@@ -60,23 +63,16 @@ function renderLive() {
   const p = position(s);
   if (p) {
     const trade = openTradeFor(tradeHistory(s.fills), coin);
-    const roe = p.marginUsed > 0 ? (p.upnl / p.marginUsed) * 100 : null;
     const pp = positionPlan(s, p, trade);
-    $('coin-pos').innerHTML = `${ruleBox(p.evaluation)}
-    ${planLine(p, pp, s.account ? accountSummary(s.account, CONFIG.accountMode)?.equity : null)}
-    ${pp.trail ? `<p class="trail-hint" style="margin:0 0 12px">↗ ${esc(trailText(pp.trail, pp.trail.tf, f.price))}</p>` : ''}
-    <div class="kv">
-      <div><span class="k">Offener PnL</span><span class="v ${p.upnl >= 0 ? 'long' : 'short'}">${f.signedUsd(p.upnl)}</span></div>
-      <div><span class="k">Auf Margin</span><span class="v ${roe >= 0 ? 'long' : 'short'}">${pctTxt(roe, 1)}</span></div>
-      <div><span class="k">Einstieg</span><span class="v">${f.price(p.entry)}</span></div>
-      <div><span class="k">Größe</span><span class="v">${f.size(p.size)}</span></div>
-      <div><span class="k">Margin</span><span class="v">${f.usd(p.marginUsed)}</span></div>
-      <div><span class="k">Hebel</span><span class="v">${f.lev(p.leverage)} ${p.leverageType}</span></div>
-      <div><span class="k">Stop-Loss${p.stopSource ? ' (' + p.stopSource + ')' : ''}</span><span class="v short">${f.price(p.stop)}</span></div>
-      <div><span class="k">Liquidation</span><span class="v">${f.price(p.liq)} <small class="muted">${f.pct(p.liqDist)}</small></span></div>
-    </div>
-    ${partials(trade)}${costLine(trade, s)}`;
-  } else $('coin-pos').innerHTML = '';
+    live = { p, t: trade, pp, szDecimals: s.szDec?.[coin] };
+    const box = $('coin-pos');
+    // „Mehr Details“ bleibt offen, obwohl die Übersicht jede Sekunde neu gezeichnet wird
+    const moreOpen = !!box.querySelector('details.pos-more[open]');
+    box.innerHTML = posOverview(p, trade, pp, s.account ? accountSummary(s.account, CONFIG.accountMode)?.equity : null, ruleBox(p.evaluation), moreOpen);
+    if ($('coin-hist')) $('coin-hist').innerHTML = `${partials(trade)}${costLine(trade, s)}`;
+    // Ausstiegsrechner: nur die Zahlen laufen mit dem Kurs mit, die Eingabe bleibt stehen
+    if ($('ex-pct')) updateExit(p, trade, pp, live.szDecimals);
+  } else { live = null; $('coin-pos').innerHTML = ''; if ($('coin-hist')) $('coin-hist').innerHTML = ''; }
 
   const cs = cache.get(coin + '|' + tf);
   const box = $('coin-chart');
@@ -125,10 +121,11 @@ export function openCoin(name) {
     </div>
     ${viewSummary(coin)}
     <div id="coin-live" class="live-box" aria-live="polite"></div>
+    ${p ? `<div id="coin-pos"></div>${exitBoxHtml()}${stopBoxHtml(p)}<h3 class="sub-h">Chart</h3>` : ''}
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((t) => `<button type="button" data-ktf="${t}" aria-pressed="${t === tf}">${TFL[t]}</button>`).join('')}</div>
     <div id="coin-chart" class="chart-box"></div>
     ${chartTools('coin-chart', coin)}
-    <div id="coin-pos"></div>
+    ${p ? '<div id="coin-hist"></div>' : '<div id="coin-pos"></div>'}
     <div id="coin-plan"></div>
     <div class="sheet-actions"><button type="button" id="coin-analyze" class="span-2">Signal analysieren</button></div>
   </div>`;
@@ -150,6 +147,8 @@ export function initCoin(stateGetter, analyzeFn) {
   getState = stateGetter;
   planClicks();
   onAnalyze = analyzeFn;
+  // 8a: Ausstiegsrechner und Stop von Hand; nach dem Speichern eines Stops sofort neu zeichnen
+  bindPosition($('sheet-body'), () => ($('coin-view') ? live : null), () => { renderLive(); renderPlan(); });
   $('sheet-body').addEventListener('click', (e) => {
     if (!$('coin-view')) return;
     const b = e.target.closest('button[data-ktf]');

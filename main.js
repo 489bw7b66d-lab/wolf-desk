@@ -21,7 +21,9 @@ import { setFeeRate } from './core-backtest.js';
 import { initViews } from './ui-views.js';
 import { getMarketCtx } from './core-scanner.js';
 import { refreshMarket } from './core-market.js';
-import { refreshTrade } from './ui-trade.js';
+import { refreshTrade, closeTrade } from './ui-trade.js';
+import { initSheet, setBack, showReturn } from './ui-sheet.js';
+import { initTabSwipe } from './ui-swipe.js';
 import * as fmt from './core-format.js';
 
 const ADDR_KEY = 'wolfdesk.address';
@@ -131,7 +133,7 @@ async function refreshPrevDay() {
 
 async function loadMarkets() {
   const res = await Promise.allSettled(CONFIG.dexes.map((d) => hl.meta(d)));
-  const markets = {}, maxLev = {};
+  const markets = {}, maxLev = {}, szDec = {};
   res.forEach((r, i) => {
     const dex = CONFIG.dexes[i];
     if (r.status !== 'fulfilled') { logError(`Marktliste ${dex || 'Haupt'}`, r.reason); return; }
@@ -140,10 +142,11 @@ async function loadMarkets() {
       .map((u) => {
         const name = dex && !u.name.startsWith(dex + ':') ? `${dex}:${u.name}` : u.name;
         if (u.maxLeverage) maxLev[name] = Number(u.maxLeverage);
+        if (Number.isInteger(u.szDecimals)) szDec[name] = u.szDecimals; // Nachkommastellen der Stückzahl (Ausstiegsrechner)
         return name;
       });
   });
-  update({ markets, maxLev });
+  update({ markets, maxLev, szDec });
 }
 
 // Navigation zwischen den Bereichen
@@ -177,15 +180,24 @@ const renderAll = (s) => {
   render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderWatchLive(s); renderFeedLive(s); renderMiniHealth(s);
 };
 const openFull = (r) => showDetail(r); // öffnet die Analyse als Blatt (5e)
+// 8a: Wer aus einem Blatt in ein anderes springt, bekommt oben links einen Zurück-Pfeil (eine Stufe zurück)
+const backTo = (fn) => setBack(() => { closeTrade(); fn(); });
+const fullFromTrade = (r) => { showDetail(r); backTo(() => openTrade(r)); };
+const tradeFromDetail = (r) => { openTrade(r); backTo(() => showDetail(r)); };
 const openCalc = (r) => {
+  const from = location.hash.slice(1) || 'start';
   setCalc(r.coin, r.plan.entry, r.plan.stop, r.plan.tps, r.mode);
   location.hash = 'risiko';
   setTimeout(() => document.getElementById('calc').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  // Der Rechner liegt im Risiko-Tab: Knopf über der Menüleiste führt zurück zur Trade-Karte
+  showReturn('Zurück zur Trade-Karte', () => { location.hash = from; openTrade(r); }, 'risiko');
 };
-const openAnalyze = (coin) => analyze(coin);
-initTrade(getState, openFull, openCalc);
+const openAnalyze = (coin) => { analyze(coin); if ((getState().account?.positions || []).some((p) => p.coin === coin)) backTo(() => openCoin(coin)); };
+initSheet();
+initTabSwipe();
+initTrade(getState, fullFromTrade, openCalc);
 initCoin(getState, openAnalyze);
-initSignals(getState, openTrade, openCoin);
+initSignals(getState, tradeFromDetail, openCoin);
 initHome(getState, openTrade, openFull, openCoin);
 initMarket();
 initBacktest(getState);
@@ -254,10 +266,7 @@ if (standalone) {
     setTimeout(() => { ptr.classList.remove('show', 'busy'); busy = false; }, 600);
   }, { passive: true });
 }
-// Positionen im Konto: Tipp öffnet das Markt-Blatt mit Chart und Teilverkäufen
-const posBox = document.getElementById('positions');
-posBox.addEventListener('click', (e) => { if (e.target.closest('details')) return; const a = e.target.closest('[data-coin]'); if (a) openCoin(a.dataset.coin); });
-posBox.addEventListener('keydown', (e) => { const a = e.target.closest('[data-coin]'); if (a && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCoin(a.dataset.coin); } });
+// 8a: Die Positionen stehen nur noch auf der Startseite; ein Tipp dort öffnet das Positions-Blatt (ui-home.js)
 initRisk(getState);
 initPerformance(() => renderAll(getState()));
 setPrivacy(privOn);

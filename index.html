@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="7c">
+<meta name="app-version" content="8a">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,7 +14,7 @@
 <title>Wolf Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=7c">
+<link rel="stylesheet" href="styles.css?v=8a">
 </head>
 <body>
 <div id="ptr" class="ptr" aria-hidden="true"><span class="ptr-spin"></span><span id="ptr-text">Zum Aktualisieren ziehen</span></div>
@@ -42,6 +42,10 @@
   </section>
 
   <div data-tab="start" id="home-alerts"></div>
+  <section data-tab="start" class="card" aria-labelledby="h-hpos">
+    <h2 id="h-hpos">Positionen</h2>
+    <div id="home-pos"></div>
+  </section>
 
   <section data-tab="start" class="card" aria-labelledby="h-hot">
     <div class="card-head">
@@ -54,10 +58,6 @@
     <p class="empty" style="font-size:12px;margin-top:8px">Läuft, solange die App offen ist. Tipp auf einen Coin öffnet den fertigen Trade-Plan.</p>
   </section>
 
-  <section data-tab="start" class="card" aria-labelledby="h-hpos">
-    <div class="card-head"><h2 id="h-hpos">Positionen</h2><a href="#konto" class="link">Details</a></div>
-    <div id="home-pos"></div>
-  </section>
 
   <section data-tab="einstellungen" class="card" aria-label="Einstellungen">
     <div id="settings"></div>
@@ -107,28 +107,12 @@
     <div id="risk"></div>
   </section>
 
-  <section data-tab="konto" class="card" aria-labelledby="h-pos">
-    <h2 id="h-pos">Offene Positionen</h2>
-    <div id="positions"></div>
-  </section>
 
   <section data-tab="konto" class="card" aria-labelledby="h-trades">
     <h2 id="h-trades">Abgeschlossene Trades</h2>
     <div id="trades"></div>
   </section>
 
-  <section data-tab="risiko" class="card" id="stop-box" aria-labelledby="h-stop" hidden>
-    <h2 id="h-stop">Stop-Loss manuell eintragen</h2>
-    <form id="stop-form" class="addr">
-      <label for="stop-price">Nur für Positionen ohne Stop-Order bei Hyperliquid. Leer lassen und speichern löscht den Eintrag.</label>
-      <div class="row">
-        <select id="stop-coin" aria-label="Position"></select>
-        <input id="stop-price" inputmode="decimal" autocomplete="off" placeholder="Preis">
-        <button type="submit">Speichern</button>
-      </div>
-      <p id="stop-msg" class="msg" role="status"></p>
-    </form>
-  </section>
 
   <section data-tab="risiko" class="card" id="calc" aria-labelledby="h-calc">
     <h2 id="h-calc">Positionsgrößen-Rechner</h2>
@@ -141,6 +125,12 @@
     <div id="calc-out" style="margin-top:14px"></div>
   </section>
 
+  <section data-tab="signale" class="card" id="sig-card" aria-labelledby="h-sig">
+    <h2 id="h-sig">Signalgeber</h2>
+    <label for="sig-search" class="visually-hidden">Markt suchen</label>
+    <input id="sig-search" type="search" enterkeyhint="search" placeholder="Coin eingeben, z. B. SOL, dann Enter" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:100%">
+    <div id="sig-suggest" class="suggest-list"></div>
+  </section>
   <section data-tab="signale" class="card" aria-labelledby="h-feed">
     <div class="card-head"><h2 id="h-feed">Letzte Signale</h2><span id="feed-meta" class="meta"></span></div>
     <div id="feed" class="feed"></div>
@@ -151,12 +141,6 @@
     <div id="views"></div>
   </section>
 
-  <section data-tab="signale" class="card" id="sig-card" aria-labelledby="h-sig">
-    <h2 id="h-sig">Signalgeber</h2>
-    <label for="sig-search" class="visually-hidden">Markt suchen</label>
-    <input id="sig-search" type="search" enterkeyhint="search" placeholder="Coin eingeben, z. B. SOL, dann Enter" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:100%">
-    <div id="sig-suggest" class="suggest-list"></div>
-  </section>
 
   <section data-tab="backtest" class="card" id="bt-card" aria-labelledby="h-bt">
     <h2 id="h-bt">Backtest</h2>
@@ -210,105 +194,118 @@
 <script type="importmap">
 {
  "imports": {
-  "./config.js": "./config.js?v=7c",
-  "./core-account.js": "./core-account.js?v=7c",
-  "./core-alerts.js": "./core-alerts.js?v=7c",
-  "./core-api.js": "./core-api.js?v=7c",
-  "./core-autoplan.js": "./core-autoplan.js?v=7c",
-  "./core-backtest.js": "./core-backtest.js?v=7c",
-  "./core-btstore.js": "./core-btstore.js?v=7c",
-  "./core-calc.js": "./core-calc.js?v=7c",
-  "./core-candlesticks.js": "./core-candlesticks.js?v=7c",
-  "./core-confirm.js": "./core-confirm.js?v=7c",
-  "./core-elliott.js": "./core-elliott.js?v=7c",
-  "./core-engine2.js": "./core-engine2.js?v=7c",
-  "./core-feedplan.js": "./core-feedplan.js?v=7c",
-  "./core-fees.js": "./core-fees.js?v=7c",
-  "./core-fib.js": "./core-fib.js?v=7c",
-  "./core-format.js": "./core-format.js?v=7c",
-  "./core-guard.js": "./core-guard.js?v=7c",
-  "./core-health.js": "./core-health.js?v=7c",
-  "./core-hotscan.js": "./core-hotscan.js?v=7c",
-  "./core-indicators.js": "./core-indicators.js?v=7c",
-  "./core-levpreview.js": "./core-levpreview.js?v=7c",
-  "./core-market.js": "./core-market.js?v=7c",
-  "./core-path.js": "./core-path.js?v=7c",
-  "./core-patience.js": "./core-patience.js?v=7c",
-  "./core-patterns.js": "./core-patterns.js?v=7c",
-  "./core-performance.js": "./core-performance.js?v=7c",
-  "./core-plans.js": "./core-plans.js?v=7c",
-  "./core-planstate.js": "./core-planstate.js?v=7c",
-  "./core-positions.js": "./core-positions.js?v=7c",
-  "./core-reasons.js": "./core-reasons.js?v=7c",
-  "./core-risk.js": "./core-risk.js?v=7c",
-  "./core-scanner.js": "./core-scanner.js?v=7c",
-  "./core-settings.js": "./core-settings.js?v=7c",
-  "./core-signals.js": "./core-signals.js?v=7c",
-  "./core-stops.js": "./core-stops.js?v=7c",
-  "./core-store.js": "./core-store.js?v=7c",
-  "./core-stream.js": "./core-stream.js?v=7c",
-  "./core-tradeable.js": "./core-tradeable.js?v=7c",
-  "./core-trades.js": "./core-trades.js?v=7c",
-  "./core-trail.js": "./core-trail.js?v=7c",
-  "./core-trendgate.js": "./core-trendgate.js?v=7c",
-  "./core-universe.js": "./core-universe.js?v=7c",
-  "./core-views.js": "./core-views.js?v=7c",
-  "./core-watchlist.js": "./core-watchlist.js?v=7c",
-  "./ledger-markets.js": "./ledger-markets.js?v=7c",
-  "./main.js": "./main.js?v=7c",
-  "./my-settings.js": "./my-settings.js?v=7c",
-  "./test-alerts.js": "./test-alerts.js?v=7c",
-  "./test-autoplan.js": "./test-autoplan.js?v=7c",
-  "./test-backtest.js": "./test-backtest.js?v=7c",
-  "./test-calc.js": "./test-calc.js?v=7c",
-  "./test-chart.js": "./test-chart.js?v=7c",
-  "./test-engine2.js": "./test-engine2.js?v=7c",
-  "./test-feedplan.js": "./test-feedplan.js?v=7c",
-  "./test-fees.js": "./test-fees.js?v=7c",
-  "./test-guard.js": "./test-guard.js?v=7c",
-  "./test-handling.js": "./test-handling.js?v=7c",
-  "./test-levpreview.js": "./test-levpreview.js?v=7c",
-  "./test-market.js": "./test-market.js?v=7c",
-  "./test-path.js": "./test-path.js?v=7c",
-  "./test-patience.js": "./test-patience.js?v=7c",
-  "./test-performance.js": "./test-performance.js?v=7c",
-  "./test-plans.js": "./test-plans.js?v=7c",
-  "./test-planstate.js": "./test-planstate.js?v=7c",
-  "./test-positions.js": "./test-positions.js?v=7c",
-  "./test-privacy.js": "./test-privacy.js?v=7c",
-  "./test-risk.js": "./test-risk.js?v=7c",
-  "./test-settings.js": "./test-settings.js?v=7c",
-  "./test-signal5f.js": "./test-signal5f.js?v=7c",
-  "./test-signals.js": "./test-signals.js?v=7c",
-  "./test-tradeable.js": "./test-tradeable.js?v=7c",
-  "./test-trades.js": "./test-trades.js?v=7c",
-  "./test-trail.js": "./test-trail.js?v=7c",
-  "./test-trendgate.js": "./test-trendgate.js?v=7c",
-  "./test-views.js": "./test-views.js?v=7c",
-  "./ui-backtest.js": "./ui-backtest.js?v=7c",
-  "./ui-chart.js": "./ui-chart.js?v=7c",
-  "./ui-chartview.js": "./ui-chartview.js?v=7c",
-  "./ui-coin.js": "./ui-coin.js?v=7c",
-  "./ui-export.js": "./ui-export.js?v=7c",
-  "./ui-feed.js": "./ui-feed.js?v=7c",
-  "./ui-home.js": "./ui-home.js?v=7c",
-  "./ui-market.js": "./ui-market.js?v=7c",
-  "./ui-parts.js": "./ui-parts.js?v=7c",
-  "./ui-performance.js": "./ui-performance.js?v=7c",
-  "./ui-risk.js": "./ui-risk.js?v=7c",
-  "./ui-settings.js": "./ui-settings.js?v=7c",
-  "./ui-signals.js": "./ui-signals.js?v=7c",
-  "./ui-storage.js": "./ui-storage.js?v=7c",
-  "./ui-testpage.js": "./ui-testpage.js?v=7c",
-  "./ui-trade.js": "./ui-trade.js?v=7c",
-  "./ui-tradeable.js": "./ui-tradeable.js?v=7c",
-  "./ui-views.js": "./ui-views.js?v=7c",
-  "./ui-watchlist-edit.js": "./ui-watchlist-edit.js?v=7c",
-  "./watcher.js": "./watcher.js?v=7c"
+  "./config.js": "./config.js?v=8a",
+  "./core-account.js": "./core-account.js?v=8a",
+  "./core-alerts.js": "./core-alerts.js?v=8a",
+  "./core-api.js": "./core-api.js?v=8a",
+  "./core-autoplan.js": "./core-autoplan.js?v=8a",
+  "./core-backtest.js": "./core-backtest.js?v=8a",
+  "./core-btstore.js": "./core-btstore.js?v=8a",
+  "./core-calc.js": "./core-calc.js?v=8a",
+  "./core-candlesticks.js": "./core-candlesticks.js?v=8a",
+  "./core-confirm.js": "./core-confirm.js?v=8a",
+  "./core-elliott.js": "./core-elliott.js?v=8a",
+  "./core-engine2.js": "./core-engine2.js?v=8a",
+  "./core-exitcalc.js": "./core-exitcalc.js?v=8a",
+  "./core-feedplan.js": "./core-feedplan.js?v=8a",
+  "./core-fees.js": "./core-fees.js?v=8a",
+  "./core-fib.js": "./core-fib.js?v=8a",
+  "./core-format.js": "./core-format.js?v=8a",
+  "./core-gesture.js": "./core-gesture.js?v=8a",
+  "./core-guard.js": "./core-guard.js?v=8a",
+  "./core-health.js": "./core-health.js?v=8a",
+  "./core-hotscan.js": "./core-hotscan.js?v=8a",
+  "./core-indicators.js": "./core-indicators.js?v=8a",
+  "./core-journalmeasure.js": "./core-journalmeasure.js?v=8a",
+  "./core-levpreview.js": "./core-levpreview.js?v=8a",
+  "./core-market.js": "./core-market.js?v=8a",
+  "./core-path.js": "./core-path.js?v=8a",
+  "./core-patience.js": "./core-patience.js?v=8a",
+  "./core-patterns.js": "./core-patterns.js?v=8a",
+  "./core-performance.js": "./core-performance.js?v=8a",
+  "./core-plans.js": "./core-plans.js?v=8a",
+  "./core-planstate.js": "./core-planstate.js?v=8a",
+  "./core-positions.js": "./core-positions.js?v=8a",
+  "./core-privacy.js": "./core-privacy.js?v=8a",
+  "./core-reasons.js": "./core-reasons.js?v=8a",
+  "./core-risk.js": "./core-risk.js?v=8a",
+  "./core-scanner.js": "./core-scanner.js?v=8a",
+  "./core-settings.js": "./core-settings.js?v=8a",
+  "./core-signals.js": "./core-signals.js?v=8a",
+  "./core-stops.js": "./core-stops.js?v=8a",
+  "./core-store.js": "./core-store.js?v=8a",
+  "./core-stream.js": "./core-stream.js?v=8a",
+  "./core-totalrisk.js": "./core-totalrisk.js?v=8a",
+  "./core-tradeable.js": "./core-tradeable.js?v=8a",
+  "./core-trades.js": "./core-trades.js?v=8a",
+  "./core-trail.js": "./core-trail.js?v=8a",
+  "./core-trendgate.js": "./core-trendgate.js?v=8a",
+  "./core-universe.js": "./core-universe.js?v=8a",
+  "./core-views.js": "./core-views.js?v=8a",
+  "./core-watchlist.js": "./core-watchlist.js?v=8a",
+  "./ledger-markets.js": "./ledger-markets.js?v=8a",
+  "./main.js": "./main.js?v=8a",
+  "./my-settings.js": "./my-settings.js?v=8a",
+  "./test-alerts.js": "./test-alerts.js?v=8a",
+  "./test-autoplan.js": "./test-autoplan.js?v=8a",
+  "./test-backtest.js": "./test-backtest.js?v=8a",
+  "./test-calc.js": "./test-calc.js?v=8a",
+  "./test-chart.js": "./test-chart.js?v=8a",
+  "./test-engine2.js": "./test-engine2.js?v=8a",
+  "./test-exitcalc.js": "./test-exitcalc.js?v=8a",
+  "./test-feedplan.js": "./test-feedplan.js?v=8a",
+  "./test-fees.js": "./test-fees.js?v=8a",
+  "./test-gesture.js": "./test-gesture.js?v=8a",
+  "./test-guard.js": "./test-guard.js?v=8a",
+  "./test-handling.js": "./test-handling.js?v=8a",
+  "./test-journalmeasure.js": "./test-journalmeasure.js?v=8a",
+  "./test-levpreview.js": "./test-levpreview.js?v=8a",
+  "./test-market.js": "./test-market.js?v=8a",
+  "./test-path.js": "./test-path.js?v=8a",
+  "./test-patience.js": "./test-patience.js?v=8a",
+  "./test-performance.js": "./test-performance.js?v=8a",
+  "./test-plans.js": "./test-plans.js?v=8a",
+  "./test-position.js": "./test-position.js?v=8a",
+  "./test-planstate.js": "./test-planstate.js?v=8a",
+  "./test-positions.js": "./test-positions.js?v=8a",
+  "./test-privacy.js": "./test-privacy.js?v=8a",
+  "./test-risk.js": "./test-risk.js?v=8a",
+  "./test-settings.js": "./test-settings.js?v=8a",
+  "./test-signal5f.js": "./test-signal5f.js?v=8a",
+  "./test-signals.js": "./test-signals.js?v=8a",
+  "./test-totalrisk.js": "./test-totalrisk.js?v=8a",
+  "./test-tradeable.js": "./test-tradeable.js?v=8a",
+  "./test-trades.js": "./test-trades.js?v=8a",
+  "./test-trail.js": "./test-trail.js?v=8a",
+  "./test-trendgate.js": "./test-trendgate.js?v=8a",
+  "./test-views.js": "./test-views.js?v=8a",
+  "./ui-backtest.js": "./ui-backtest.js?v=8a",
+  "./ui-chart.js": "./ui-chart.js?v=8a",
+  "./ui-chartview.js": "./ui-chartview.js?v=8a",
+  "./ui-coin.js": "./ui-coin.js?v=8a",
+  "./ui-export.js": "./ui-export.js?v=8a",
+  "./ui-feed.js": "./ui-feed.js?v=8a",
+  "./ui-home.js": "./ui-home.js?v=8a",
+  "./ui-market.js": "./ui-market.js?v=8a",
+  "./ui-parts.js": "./ui-parts.js?v=8a",
+  "./ui-performance.js": "./ui-performance.js?v=8a",
+  "./ui-position.js": "./ui-position.js?v=8a",
+  "./ui-risk.js": "./ui-risk.js?v=8a",
+  "./ui-settings.js": "./ui-settings.js?v=8a",
+  "./ui-sheet.js": "./ui-sheet.js?v=8a",
+  "./ui-signals.js": "./ui-signals.js?v=8a",
+  "./ui-storage.js": "./ui-storage.js?v=8a",
+  "./ui-swipe.js": "./ui-swipe.js?v=8a",
+  "./ui-testpage.js": "./ui-testpage.js?v=8a",
+  "./ui-trade.js": "./ui-trade.js?v=8a",
+  "./ui-tradeable.js": "./ui-tradeable.js?v=8a",
+  "./ui-views.js": "./ui-views.js?v=8a",
+  "./ui-watchlist-edit.js": "./ui-watchlist-edit.js?v=8a",
+  "./watcher.js": "./watcher.js?v=8a"
  }
 }
 </script>
-<script type="module" src="main.js?v=7c"></script>
+<script type="module" src="main.js?v=8a"></script>
 <dialog id="alerts-dlg" class="dlg" aria-labelledby="alerts-dlg-h">
   <div class="dlg-head"><b id="alerts-dlg-h">Regeln</b><button type="button" class="ghost small-btn" data-close aria-label="Schließen">✕</button></div>
   <div id="alerts-dlg-body"></div>

@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 01.10.2026 · Etappe 7c · 497 Tests
+Stand: 05.10.2026 · Etappe 8a · 601 Tests (Sammelliste für 8b ff. in Abschnitt 10)
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -27,7 +27,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 - Nutzer heißt Jensen, Anrede **„Buddy“**, keine Programmierkenntnisse, arbeitet nur am iPhone (Brave, Dateien-App, GitHub im Browser).
 - **Ton:** locker und herzlich wie ein Werkstatt-Kumpel (✅, 🐺, „Klasse, Buddy!“), dabei ehrlich. Nicht nüchtern-gutachterlich.
 - **Modular:** jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert (Neues kommt in eigene Dateien).
-- **Etappen:** jedes Update ist ein Paket mit Nummer (zuletzt 4b) und muss einzeln stabil laufen.
+- **Etappen:** jedes Update ist ein Paket mit Nummer (zuletzt 8a) und muss einzeln stabil laufen.
 - **Vor jedem Paket:** alle Tests grün, **zusätzlich mit vielen verstellten Einstellungen**, und der **Wächter komplett durchgespielt** (Testlauf, normaler Lauf, keine doppelten Meldungen).
 - **Nur geänderte Dateien** als ZIP mit eigenem Ordner; Schritt-für-Schritt-Anleitung dazu.
 - **Vor größeren Änderungen:** erst Bestand prüfen (aktuellen Code von GitHub laden, Versionsnummer prüfen!) und Plan zeigen, dann bauen.
@@ -43,7 +43,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 | Wofür | Adresse |
 |---|---|
 | App | `489bw7b66d-lab.github.io/wolf-desk` |
-| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` (bei altem Stand `?v=4b` anhängen) |
+| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` (bei altem Stand `?v=8a` anhängen) |
 | Repository | `github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -58,7 +58,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 
 ## 4. Datenschutz-Regeln (streng, vom Nutzer ausdrücklich gewünscht)
 
-1. **Nie Zugangsdaten, Wallet-Adresse oder Beträge** in Dateien, die ins (öffentliche) Repository gehen.
+1. **Nie Zugangsdaten, Wallet-Adresse oder Beträge** in Dateien, die ins (öffentliche) Repository gehen. Seit 8a lässt „Für den Wächter übernehmen“ auch das **Startkapital** weg (`core-privacy.js`); es bleibt nur in der App auf dem iPhone. Der Masterplan selbst nennt Trefferquoten und R-Werte, aber keine Kontobeträge.
 2. **Einschätzungen und Ziele je Position** gehören nicht in `my-settings.js`, sondern ins Secret `PRIVATE_SETTINGS` (seit 5d).
 3. **Exporte für Claude** („📤 Daten für Claude“) enthalten Beträge, aber nie Wallet oder Zugangsdaten, und gehen nie ins Repository.
 4. **Bevor etwas Persönliches öffentlich würde**, sagt Claude es vorher ausdrücklich.
@@ -79,7 +79,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 ---
 
-## 5. Aufbau der App (95 Dateien, fast alle im Hauptordner)
+## 5. Aufbau der App (117 Dateien, fast alle im Hauptordner)
 
 **Einstellungen:** `config.js` (Empfehlungen) · `ledger-markets.js` (deine Ledger-Märkte, Standard für „Handelbare Märkte“) · `my-settings.js` (deine Abweichungen, Einschätzungen, Ziele, **geänderte Watchlist, handelbare Märkte**; von der App erzeugt, gilt auch für den Wächter)
 
@@ -92,11 +92,16 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 - Positionen: `core-path` (Trade-Weg), `core-plans` (Ziele je Position), `core-autoplan` (automatischer Plan)
 - Sonstiges: `core-backtest`, `core-settings`, `core-views` (Einschätzung), `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-format`
 
-**Anzeige (`ui-*.js`):** `ui-chart` (Zeichnung) + **`ui-chartview`** (Bedienung: wischen, zoomen, Fadenkreuz, eigene Linien), `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-chart`, `ui-performance`, `ui-testpage` (Konto/Positionen), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, **`ui-export`** (Datei „Daten für Claude“), **`ui-watchlist-edit`** (Watchlist in ⚙️), `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
+**Anzeige (`ui-*.js`):** `ui-chart` (Zeichnung) + **`ui-chartview`** (Bedienung: wischen, zoomen, Fadenkreuz, eigene Linien), `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade`, `ui-coin`, `ui-performance`, `ui-testpage` (Konto, System, dazu Trade-Weg `pathBar`, Plan-Ampel `planLine`, `positionPlan`), `ui-risk`, `ui-backtest`, `ui-settings`, **`ui-tradeable`**, **`ui-export`** (Datei „Daten für Claude“), **`ui-watchlist-edit`** (Watchlist in ⚙️), `ui-parts` (gemeinsame Bausteine, Hebel-Regler mit Vorschau, ⓘ)
+
+**Neu seit 8a:**
+- Kern: `core-exitcalc` (Ausstiegsrechner: Menge für X % der offenen Position, abgerundet auf die Nachkommastellen des Marktes, Plan-Hinweis) · `core-totalrisk` (Summe über alle Positionen, wenn alle Stops greifen) · `core-journalmeasure` (Tagebuch-Messwerte: Zone erreicht, größter Lauf ins Plus/Minus) · `core-gesture` (Entscheidung für Wisch-Gesten) · `core-privacy` (keine Beträge in `my-settings.js`)
+- Anzeige: `ui-position` (Positions-Übersicht fürs Blatt, Mini-Balken und Gesamt-Risiko-Zeile für die Startseite, Ausstiegsrechner, Stop von Hand) · `ui-sheet` (alle Blätter: nach unten wegwischen, Zurück-Pfeil, Zurück-Knopf nach Sprung in einen Tab) · `ui-swipe` (Tab-Wechsel durch Wischen)
+- Das **Positions-Blatt** ist das frühere Markt-Blatt (`ui-coin.js`) bei offener Position: Kurs → Trade-Weg → Plan-Ampel → Regeln → Werte → „Mehr Details“ → Ausstiegsrechner → (Stop von Hand) → Chart → Teilverkäufe → Ziele.
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="7c">` und eine Import-Map mit `?v=7c` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8a">` und eine Import-Map mit `?v=8a` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -223,7 +228,7 @@ jobs:
           git push -q origin signals
 ```
 
-**Probelauf ohne Internet (für Claude):** Hyperliquid, CoinGecko und Telegram in Node nachbilden (`globalThis.fetch` ersetzen), Kurse als stetige Funktion der Zeit erzeugen (sonst passen Kerzen und Marktpreis nicht zusammen und es gibt keine Signale), dann `watcher.js` mit `TEST_RUN=true`, danach zweimal normal laufen lassen. Erwartung: Testnachrichten, Signale in den Kanal, zweiter Lauf ohne Meldungen.
+**Probelauf ohne Internet (für Claude):** Hyperliquid, CoinGecko und Telegram in Node nachbilden (`globalThis.fetch` ersetzen), Kurse als stetige Funktion der Zeit erzeugen (sonst passen Kerzen und Marktpreis nicht zusammen und es gibt keine Signale), dann `watcher.js` mit `TEST_RUN=true`, danach zweimal normal laufen lassen. Erwartung: Testnachrichten, Signale in den Kanal, zweiter Lauf ohne Meldungen. Wichtig für die Nachbildung: Einstiege und Trade-Zeiten an einem festen Zeitpunkt verankern (nicht an „jetzt“), sonst sehen die Trades in jedem Lauf neu aus und Ziel-Meldungen kommen doppelt. **Sichtprüfung (seit 8a):** Playwright mit Chromium ist in Claudes Umgebung vorhanden; die App lässt sich in iPhone-Größe (390 × 844, Touch) mit nachgebildeter Schnittstelle laden, bedienen (Tippen, Wischen über CDP) und fotografieren. `tests.html` läuft dort ebenfalls.
 
 ---
 
@@ -290,6 +295,10 @@ Etappe 5g: Stop-Check der offenen Position nennt, was es kostet: „Greift der S
 
 Etappe 6a (Handwerk, keine Signal-Änderung): **Plan-Ampel** je Position (🟢 Plan intakt, laufen lassen · 🟡 knapp mit besserem Stop · 🔴 Plan kaputt, besser schließen, mit Grund: kein Stop, Liquidation vor Stop, Stop im Rauschen ohne sinnvollen Stop, Struktur gebrochen, Einschätzung oder Signal ungültig) in Positionskarte und Positions-Blatt; nur bei 🔴 Verlust bei Auslösung und Orientierung „Stop zuerst / Ziel zuerst / Stop in 24 Std.“ (Zufallslauf aus ATR, keine Vorhersage) · **Backtest-Speicher**: Zwischenstand je Coin, „Weitermachen“ nach Neuladen, Ergebnis bleibt gespeichert, keine Selbst-Aktualisierung während eines Laufs, je Stil nur der letzte Lauf, Statuszeile unter dem Start-Knopf · **Speicher** in ⚙️ (Größe, Backtest-Daten bzw. Zwischenspeicher löschen, persönliche Daten bleiben) · Export-Dateiname mit Uhrzeit und Inhalt · **Tagebuch-Archiv** (abgeschlossene Signale dauerhaft in `signals.json` → `archive`, öffentlich unbedenklich ohne echte Trades; wird bei jedem Lauf aus dem veröffentlichten Zweig nachgeladen) · Tests für Positionen/Stops · Aufräumen: `esc` zentral in core-format, Begründungen (`topReasons`) im Kern (core-reasons), tote Reste der alten Signalgeber-Schnellwahl entfernt, eine einzige Import-Liste · Einstellungs-Hinweise hinter ⓘ bzw. kürzer
 
+Etappe 7a–7c: siehe Abschnitt 10 (Engine 2 A/A2, Maßstab, „Trend oder Seitwärts?“, Stichprobe).
+
+Etappe 8a (Bedienung, keine Signal-Änderung): **Positionen nur noch auf der Startseite**, direkt unter dem Kontowert, je Zeile ein Mini-Trade-Weg · Zeile **„Greifen alle Stops: −X $ (Y %) · n long / m short“** (gelb ab der Hälfte des Tagesverlust-Limits, rot ab dem Limit, Erklärung hinter ⓘ) · **Positions-Blatt** beim Antippen (Trade-Weg oben, Plan-Ampel, alle Werte der früheren Konto-Karte, „Mehr Details“), Block „Offene Positionen“ im Konto entfernt · **Ausstiegsrechner** im Positions-Blatt (Prozent der noch offenen Position frei eintippen, Menge mit Kopier-Knopf, Gegenwert, Gewinn ca., Rest, Plan-Hinweis zum Übernehmen) · **Stop von Hand** im Positions-Blatt statt im Risiko-Tab · **Blätter** nach unten wegwischen, Zurück-Pfeil (Trade-Karte ⇄ Vollanalyse, Position → Analyse), Zurück-Knopf nach „Im Rechner anpassen“ · **Tab-Wechsel durch Wischen** (nicht auf Charts, in Blättern, in Eingaben, am Rand) · Suchfeld im Signale-Tab ganz oben · **Tagebuch-Messwerte** je Signal (Stunden bis zur Zone, größter Lauf ins Plus und ins Minus in R; im Archiv von `signals.json`, öffentlich unbedenklich) · **Export** mit Einzel-Trades und Messwerten · **Datenschutz:** Startkapital nicht mehr in `my-settings.js` · 104 neue Tests (601).
+
 **Experten-Analyse (30.09.2026, Rollenspiel):** Aufbau gut (Kern/Anzeige/Wächter getrennt, keine Kreis-Abhängigkeiten, App und Wächter teilen den Kern). Später: Backtest mit Entwicklungs-/Bestätigungszeitraum, Slippage und Funding, Überlebende-Verzerrung beachten (heutige Ledger-Liste), Korrelation offener Positionen, Regelbrüche im Wochenbericht, Markt-Bias als Kandidat. Bewusst nicht: neu schreiben, mehr Indikatoren.
 
 ---
@@ -301,7 +310,48 @@ Etappe 6a (Handwerk, keine Signal-Änderung): **Plan-Ampel** je Position (🟢 P
 **Etappe 7b (Engine 2 A2, Feinschliff):** Struktur der Trend-Zeitebene ist strikt Pflicht (keine Ausweichregel) · Short-Filter (Einstellung, z. B. „Mittel“) gilt auch für Engine 2 · 0,5er nur mit Key Level, sonst Golden Pocket · Stop hinter die Zone (unter GP bzw. Reaktion, was weiter weg ist) mit ¼ ATR der Zonen-Zeitebene · TP1 bei 2R, danach Impuls-Extrem und Erweiterungen · Platz bis zum Impuls-Extrem mind. 2R · ein Signal je Impuls (Backtest).
 **Etappe 7c (Messen statt Raten):** Backtest-Tabelle **„Trend oder Seitwärts?“** (Tages-ADX 14 beim Einstieg: < 20 seitwärts, 20–25 Übergang, > 25 Trend, dazu „nur ab ADX 20/25“) für alle Engines · dritte Wahl **„Maßstab“** = stumpfe Trendfolge (Long, wenn Tages-EMA 20 > EMA 100 und Kurs darüber, Stop 2 ATR, Ziele 2/3/4/6R) als ehrliche Vergleichslinie, erscheint im Vergleich alt/E2 · Markt-Auswahl **„Stichprobe“** = jeder zweite handelbare Markt alphabetisch (fest, ~88 Märkte, halbe Rechenzeit). Statistik-Faustregel: Für einen Vorteil von ~0,1R braucht man rund 500+ Trades je Lauf; ein Lauf mit 1.000+ Trades ist belastbar.
 Recherche-Ergebnis (01.10.): Trendfolge in Krypto am besten belegt, aber vor allem long (Long-Short-Portfolios ohne signifikanten Vorteil) – deckt sich mit eigenen Daten; Volatilitäts-angepasste Positionsgröße als Hauptquelle risikobereinigter Rendite; Marktphasen-abhängige Signale; Funding + Open Interest als Gedränge-Warnung (Kandidat: Funding-Bremse, Hyperliquid liefert Verlauf).
-Offen für Engine 2 (Sammelliste): Etappe B (Order Blocks, Nadaraya ohne Repainting), „Auf der Lauer“-Liste, Ampel-Stufe 🟠 „Wendesignal · beobachten“, Trade-Karte ohne Signal („Als Long/Short prüfen“), Chance/Risiko ab jetzt in der Positionskarte, Ziele eigener Pläne mind. 2R, Etappe C mit zweiter Datenquelle für Woche/Monat (Hyperliquid erst seit 2023; Dreieck-Ausbruch erst bei Monatsschluss + Retest, Beispiele XLM/QNT).
+**Engine 2 – gestraffter Plan (vom Nutzer am 01.10.2026 bestätigt, gilt für Etappe B und später):** höchstens ca. **8 aktive Bausteine**, geordnet nach **5 Fragen**:
+1. **Richtung:** Struktur (HH/HL), dazu höchstens ADX (Tag) als Seitwärts-Sperre
+2. **Ort:** Fib-Zone + **ein** gemeinsamer Topf „Zonen-Belege“ (Key Level, VWAP-Periodenschluss Woche/Monat, Order Block, eigene blaue Chart-Linien, Nadaraya-Band in Trendrichtung) – je mehr Belege, desto stärker, zählt aber als ein Faktor
+3. **Auslöser:** Umkehrpunkt-Regel des Nutzers oder Liquiditäts-Sweep; RSI-Divergenz als Bestätigung (normale = Umkehr, versteckte = Trendfortsetzung, passt zum Golden Pocket)
+4. **Bremse:** Überdehnung – Nadaraya am Gegenband **nur zusammen mit** RSI überkauft/überverkauft (ICP-Lehre: im Trend läuft der Kurs am Band entlang); dazu Funding extrem + Open Interest steigend
+5. **Risiko:** Chance/Risiko mind. 1 : 2, Stop hinter der Zone
+**MACD und EMA 8/21 fliegen raus** (Schwung doppelt, im Backtest Rauschen). Neue Kandidaten ersetzen statt hinzukommen und müssen im Backtest in beiden Zeiträumen tragen. Nadaraya wird in **beide Richtungen** genutzt (Rückenwind und Bremse), ohne Repainting.
+**Datenquelle:** Binance (öffentlich, ohne Anmeldung) als zweite Quelle für Volumen (VWAP) und lange Historie (Woche/Monat, Etappe C), Hyperliquid als Rückfall; Namens-Übersetzung (z. B. kPEPE → 1000PEPE), Hyperliquid-eigene Coins nur aus Hyperliquid.
+**Backtest-Anzeige (geplant):** Erwartungswert-Formel E = p · Ø Gewinn − (1 − p) · Ø Verlust − Kosten: Trefferquote · Ø Gewinn · Ø Verlust · Kosten in R · Gewinnschwelle; Zeilen mit/ohne Divergenz, mit/ohne Nadaraya-Rückenwind, Fehltrades, die die Bremse verhindert hätte.
+
+**Backtest 01.10. (175 Märkte, alt / Engine 2 A2 / Maßstab):** Maßstab Swing +0,14R (846 Trades, PF 1,39), Daytrade +0,09R (1.569, PF 1,50) – schlägt beide Engines (E2 Swing −0,01R, Daytrade −0,24R). Aber: Maßstab Swing Entwicklung (120 T.) −0,20R, Bestätigung (60 T.) +0,35R → verdient vor allem in Rallyes, d. h. stark marktphasenabhängig. ADX je Coin hilft NICHT (beim Maßstab seitwärts sogar am besten, ADX hinkt; bei E2 seitwärts leicht negativ). Konsequenz: **Maßstab ist die neue Basis**, Engine-2-Bausteine kommen einzeln als Verbesserungen darauf und müssen ihn in beiden Zeiträumen schlagen. Export enthält Zeiträume/Phasen noch nicht (nachziehen).
+
+**ERSTE TAGEBUCH-AUSWERTUNG (05.10.2026, 18 Signale seit 27.09., 12 abgeschlossen, alle long):** Summe −1,26R, Ø −0,11R (Daytrade 8 Signale Ø −0,08R, Swing 4 Signale Ø −0,15R) · 5 Gewinner (2× TP2, 3× TP1), 6 Stops, 1 abgelaufen, Treffer 42 % · Gewinner Ø +1,07R, Verlierer Ø −0,94R → Gewinnschwelle 47 % · kein Signal kam über TP2 hinaus · Haltedauer Daytrade im Mittel ~20 Std., zwei liefen die vollen 72 Std.; zwei Swing-Signale 6 Tage offen · Score 85+ (4 Signale) +0,30R gegen −1,56R darunter (8), zu wenig für ein Urteil · Bild deckt sich mit dem Backtest (um die Null). **Zu klein, um Regeln festzuzurren**; deshalb seit 8a die Messwerte (Zone, Lauf ins Plus/Minus), nächste Auswertung ab ca. 40–50 abgeschlossenen Signalen.
+**Eigene Trades (05.10., ohne Beträge):** 29 abgeschlossen, 31 % Treffer bei Verhältnis Ø Gewinn zu Ø Verlust 1,6 (Gewinnschwelle 39 %) · **in Teilen verkauft: 6 Trades, 83 % Treffer, klar im Plus · alles auf einmal: 23 Trades, 17 % Treffer, klar im Minus** → der Ausstieg in Teilen ist der größte Hebel, größer als jede Signal-Änderung · zum Zeitpunkt der Auswertung 10 Positionen, alle long, freies Kapital unter 1 %, Summe aller Stops über dem Tagesverlust-Limit → Anlass für die Gesamt-Risiko-Zeile (8a).
+**Wünsche des Nutzers vom 05.10. (ändern Signale, laufen über Backtest und Tagebuch-Messwerte, nicht über ein Anzeige-Paket):** Ziele beim Swing zu eng · TP-Auswahl je Stil (Scalp/Daytrade/Swing) überarbeiten · Chance/Risiko mind. 1 : 2, besser 1 : 3 (Vermutung des Nutzers: geht nur mit früheren Einstiegen; passt zum Befund vom 30.09. „Stop im Rauschen, Ziel weit weg“ → Kandidat Rücksetzer-Einstieg Golden Pocket) · Haltedauer zu lang, Signale müssten genauer kommen (Backtest-Zeile „Haltedauer bis TP1 / bis Stop“ ergänzen). Hinweis aus den Daten: TP1 liegt heute bei 1R ab Zonenmitte; weitere Ziele allein drücken die Trefferquote. Offen: „Diskrepanz bei SL“ (Nutzer schickt Beschreibung oder Screenshot; falls zwei Stellen verschiedene Stops zeigen, hat das Vorrang).
+
+**SAMMELLISTE für die nächsten Pakete (Stand 05.10.2026, mit dem Nutzer abgestimmt), Reihenfolge:**
+1. **Paket 8b – Binance als zweite Datenquelle** (öffentlich, ohne Anmeldung, CORS): lange Historie seit 2017/2019 für Woche/Monat und Zyklus-Tests, Volumen für VWAP; Namens-Übersetzung (kPEPE → 1000PEPE …), HL-eigene Coins nur aus Hyperliquid; Erreichbarkeit aus DE prüfen.
+2. **Zyklus-Kompass** (Woche/Monat, nicht scharf): BTC über/unter Bull Market Support Band (20W SMA + 21W EMA) · 🟢 Bulle (Wochenschluss über steigendem Band) · 🟡 Warnung (erster Wochenschluss darunter → Risiko halbieren, Hinweis „Teil der Zyklus-Gewinne sichern“) · 🔴 Bär (2 Wochenschlüsse darunter + Band dreht nach unten, Monatsschluss bestätigt → keine neuen Trendfolge-Longs, „Gewinne sichern“) · zurück auf 🟢 nach 2 Wochenschlüssen über steigendem Band · Halving-Uhr als Info (Hochs bisher 12–18 Monate nach Halving; Bärenmärkte ~1 Jahr). **Rotation** als zweite Anzeige: Stärke je Coin gegen BTC (COIN/BTC im Wochenchart), Rotations-Breite (Anteil Coins, die BTC über 4–12 Wochen schlagen), ETH/BTC; Altseason oft Spätphase (2018: Alts toppten nach BTC). **Bär-Modus bei 🔴:** gespiegelter Maßstab-Short + Setup „Rallye von unten ans Band bzw. 0,5–0,618, Abprall“, weitere Stops, halbes Risiko, große liquide Märkte, Coins schwach gegen BTC. Eigener Knopf „Rückzug jetzt“; keine scharfe Tages-Notbremse. Prüfung mit Binance-Historie an 2018 und 2022.
+3. **Markt-Phasen-Filter** für den Maßstab: BTC-Trend + Marktbreite (Anteil Coins über EMA 100), abgestuft voll/halb/Pause; Positionsgröße nach Volatilität.
+4. **Steuer-Bereich** (DE, keine Kirchensteuer): Perps = Termingeschäfte § 20 EStG, 25 % + 5,5 % Soli (26,375 %), Verluste voll verrechenbar (JStG 2024), Sparer-Pauschbetrag einstellbar (Rest nach Bank-Nutzung), Funding verrechnet oder getrennt (wählbar); Jahr wählbar; Gewinne, Verluste, Gebühren, Funding in USD und EUR (EZB-Tageskurs), Bemessungsgrundlage, Steuer, Gewinn nach Steuern, nach Monat und Coin; **PDF zum Teilen** (Übersicht + Trade-Liste); nur auf dem iPhone, nie ins Repository; Hinweis „keine Steuerberatung“.
+5. ~~Ausstiegsrechner im Positions-Blatt~~ **erledigt in 8a.**
+6. **Backtest-Auswertungen/Export:** Erwartungswert-Formel (Trefferquote · Ø Gewinn · Ø Verlust · Kosten in R · Gewinnschwelle) · Tabelle „Wann eingestiegen?“ (Wochenende/Wochentage, Asien/Europa/US-Session, nur Auswertung) · **Haltedauer bis TP1 / bis Stop** · **Ziel-Varianten je Stil nebeneinander** (Wunsch 05.10.) · Export mit Zeiträumen und Phasen-Tabellen · später Benchmark-Varianten.
+7. **Indikator-Bausteine einzeln auf den Maßstab** (gestraffter Plan oben): Rücksetzer-Einstieg Golden Pocket (auch als Antwort auf „frühere Einstiege“), Umkehrpunkt-Regel, Nadaraya beidseitig, RSI-Divergenzen, VWAP-Levels, Liquidations-Häufungen als Zonen-Beleg, Funding/OI-Bremse, „Ausbruch mit Retest“.
+8. **Bedienung:** Ampel 🟠 „Wendesignal · beobachten“, „Auf der Lauer“-Liste, Trade-Karte ohne Signal, Chance/Risiko ab jetzt in der Positionskarte, Ziele eigener Pläne mind. 2R.
+9. ~~Positions-Blatt von der Startseite, Positionen aus dem Konto~~ **erledigt in 8a.**
+
+**POLITUR-LISTE (vom Nutzer am 03.10. ausdrücklich gewünscht: darf nicht vergessen werden):**
+10. **Backtest aus der Menüleiste** hinter ⚙️ (Leiste dann vier Punkte; `.tabbar` hat heute fünf Spalten).
+11. **Ziele im Positions-Blatt** als eine Zeile „Ziele ändern ›“ statt vier Knöpfen untereinander.
+12. **Konto-Tab:** Kosten und Statistik zum Aufklappen (Seite ist ohne Positionen kürzer, aber noch lang).
+13. **Wallet-Adresse und System-Seite in ⚙️** (heute nur über den kleinen „Live“-Punkt erreichbar).
+14. **Fußnote bei Heiße Coins** („Läuft, solange die App offen ist …“) hinter ⓘ.
+15. **Tab-Wechsel merkt sich die Stelle** (springt heute immer nach oben).
+16. **Ästhetischer Blick** auf die ganze App, sobald Screenshots da sind (Nutzer wollte am 05.10. nicht alle Bilder neu kopieren; kommt, wenn ohnehin Screenshots anfallen).
+17. **Korrelation offener Positionen** als Ergänzung zur Gesamt-Risiko-Zeile (aus der Experten-Analyse).
+18. Kleinigkeit aus dem 8a-Test: `test-backtest` „Nachziehen nach Struktur hebt den Stop“ hängt vom Ausstiegsplan ab (rot bei Plan 100/0/0/0, schon in 7c so); Test unabhängig von der Einstellung machen.
+
+Hintergrund-Recherche (02.10.): Großteil des Handels algorithmisch (Market Maker ziehen sich im Stress zurück, Liquidations-Kaskaden wie 10.10.2025 mit >19 Mrd. $, Ausführungs-Algos am VWAP, Trendfolge-Fonds); Hyperliquid ist on-chain transparent (Positionen, Liquidationen, OI).
+**Hinweis für lange Chats:** Mit diesem Masterplan und dem Code-ZIP lässt sich jederzeit ein frischer Chat starten (spart Limit). Modellwahl: zum Sammeln reicht ein kleineres Modell, gebaut wird mit dem großen.
+
+Offen für Engine 2 (Sammelliste): Etappe B (Order Blocks, Nadaraya ohne Repainting, RSI-Divergenzen, VWAP-Levels, ADX-Sperre, Funding-Bremse), Etappe A3 Setup-Typ „Ausbruch mit Retest“ (vom Seitwärts-Filter ausgenommen), „Auf der Lauer“-Liste, Ampel-Stufe 🟠 „Wendesignal · beobachten“, Trade-Karte ohne Signal („Als Long/Short prüfen“), Chance/Risiko ab jetzt in der Positionskarte, Ziele eigener Pläne mind. 2R, Etappe C mit zweiter Datenquelle für Woche/Monat (Hyperliquid erst seit 2023; Dreieck-Ausbruch erst bei Monatsschluss + Retest, Beispiele XLM/QNT).
 
 **ENGINE 2 – Bauplan (vom Nutzer am 30.09.2026 unterschrieben, ersetzt die bisherigen Einzelschritte):**
 Grundsatz: weniger, dafür die richtigen Faktoren – nach der Handschrift des Nutzers (Top-down, Nadaraya + Smart Money als Hauptansatz). Die heutige Engine gewichtet fast umgekehrt (MA-Kreuzungen viele Punkte, Ort/Zone kaum, kein Warten auf Reaktion, kein Wochen-/Monatschart).
@@ -327,7 +377,9 @@ Grundsatz: weniger, dafür die richtigen Faktoren – nach der Handschrift des N
 
 ---
 
-## 11. Auf Halde bis zur ersten Tagebuch-Analyse (Paket 3, ändert Signale)
+## 11. Auf Halde, bis Tagebuch und Backtest es tragen (ändert Signale)
+
+Die erste Tagebuch-Auswertung (05.10., Abschnitt 10) war mit 12 Signalen zu klein für Entscheidungen. Alles hier wartet weiter: auf mehr abgeschlossene Signale mit Messwerten und auf den Backtest in beiden Zeiträumen.
 
 - **Signal-Vorlauf verkürzen** (Signale kommen zu früh; Abstand um zwei Drittel verkürzen), mit Versionsschnitt im Tagebuch
 - **Konfluenz-Score** je Signal, **Stufen A/B/C** (A = Telegram ⭐, B = nur App, C = gar nicht), Zielgröße ca. 3–8 A-Signale pro Woche, Schwellen per Backtest und Tagebuch
@@ -357,6 +409,8 @@ Vorgehen beim Chart: Struktur zuerst → Konfluenz (Key Level, RSI Tag/Woche, MA
 9. **ALGO, 1D, ❌ Fehlsignal der Engine (29.09.):** Long Score 89 genau ins Strong High / bärischen Order Block, RSI 1D 82, NW ▼. Einstieg am Docht, Stop lag bei 5× hinter der Liquidation (Formel-Fehler, 5b behoben).
 10. **SKY, 4H, ❌ Fehlsignal der Engine (30.09.):** Long Score 80 in Weak High / Angebotszone, RSI ~78, NW ▼ an der Spitze. Fall für den Korrektur-Filter.
 
+11. **BTC, PUMP, ETH, Daytrade, ✅ gutes Timing der alten Engine (02.10.):** drei Long-Signale (Score 83, 82 🛡, 88) kurz vor dem Marktanstieg; ETH erreichte TP2 (+1,5R). Passt zum Backtest-Befund: Longs im Daytrade sind die Stärke der alten Engine. (Nachtrag 05.10.: BTC und PUMP aus dieser Gruppe endeten am Stop.)
+
 Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; die Engine nutzt nur Signale auf abgeschlossenen Kerzen.
 
 ---
@@ -367,4 +421,4 @@ Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; die Engine 
 2. Den aktuellen Code als ZIP anhängen: `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` in Brave öffnen (mit `https://`), herunterladen, im Chat anhängen. Ohne ZIP kann Claude einzelne Dateien über `raw.githubusercontent.com/489bw7b66d-lab/wolf-desk/main/DATEINAME` lesen, wenn du die Adresse in den Chat schreibst.
 3. Diesen Text als erste Nachricht:
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter: modular, Etappen mit Tests (auch mit verstellten Einstellungen), Wächter vor jedem Paket komplett durchspielen, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Sprich locker mit mir wie ein Kumpel. Prüf zuerst, ob die Versionsnummer im Code zum Masterplan passt. Signal-Änderungen erst nach der ersten Tagebuch-Auswertung; Reihenfolge in Abschnitt 10.
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter: modular, Etappen mit Tests (auch mit verstellten Einstellungen), Wächter vor jedem Paket komplett durchspielen, nur geänderte Dateien als ZIP, Schritt-für-Schritt-Anleitungen, ehrliche Einschätzungen und Bremse, wenn ich überpace. Sprich locker mit mir wie ein Kumpel. Prüf zuerst, ob die Versionsnummer im Code zum Masterplan passt. Signal-Änderungen erst, wenn Tagebuch und Backtest sie tragen (Abschnitt 11); Reihenfolge und Politur-Liste in Abschnitt 10.

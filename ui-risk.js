@@ -5,7 +5,6 @@ import { getWatchlist } from './core-watchlist.js';
 import { accountRisk } from './core-positions.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, leverageIssues } from './core-risk.js';
 import { exitTable, fitHint, levSlider, updateLevOut } from './ui-parts.js';
-import { setManualStop, getManualStop } from './core-stops.js';
 import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText, atrFor, setupTf } from './core-guard.js';
 import { tradeHistory } from './core-trades.js';
 import * as f from './core-format.js';
@@ -26,7 +25,7 @@ export function checkRow(c) {
 }
 
 let getState = () => ({});
-let lastStopKey = '', lastCalcKey = '';
+let lastCalcKey = '';
 
 function fillSelect(el, coins, key, keyRef) {
   if (key === keyRef) return keyRef;
@@ -121,19 +120,7 @@ export function initRisk(stateGetter) {
     if (px) $('calc-entry').value = String(px).replace('.', ',');
     renderCalc();
   });
-  $('stop-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const coin = $('stop-coin').value;
-    const v = parse($('stop-price').value);
-    if (!coin) return;
-    setManualStop(coin, v);
-    $('stop-msg').textContent = v ? `Stop-Loss für ${coin} gespeichert.` : `Manueller Stop für ${coin} gelöscht.`;
-    $('stop-price').value = '';
-  });
-  $('stop-coin').addEventListener('change', () => {
-    const v = getManualStop($('stop-coin').value);
-    $('stop-price').value = v ? String(v).replace('.', ',') : '';
-  });
+  // 8a: „Stop-Loss manuell eintragen“ steht jetzt im Positions-Blatt (ui-position.js), direkt bei der Position
 }
 
 // Vom Signalgeber: Markt, Einstieg und Stop in den Rechner übernehmen.
@@ -163,9 +150,6 @@ export function renderRisk(s) {
   }
   // Auswahllisten nur neu füllen, wenn sich die Auswahl ändert (sonst springt die Eingabe)
   const posCoins = r ? r.positions.map((p) => p.coin) : [];
-  const noOrderStop = r ? r.positions.filter((p) => p.stopSource !== 'Order').map((p) => p.coin) : [];
-  lastStopKey = fillSelect($('stop-coin'), noOrderStop, noOrderStop.join(','), lastStopKey);
-  $('stop-box').hidden = noOrderStop.length === 0;
   const calcCoins = [...new Set([...getWatchlist(), ...posCoins, $('calc-coin').value].filter(Boolean))];
   lastCalcKey = fillSelect($('calc-coin'), calcCoins, calcCoins.join(','), lastCalcKey);
   if (!$('calc-entry').value && s.prices[$('calc-coin').value]) $('calc-entry').value = String(s.prices[$('calc-coin').value]).replace('.', ',');

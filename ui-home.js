@@ -2,7 +2,9 @@
 import { CONFIG } from './config.js';
 import { accountRisk } from './core-positions.js';
 import { parsePortfolio, honestSplit, lifePnlOf } from './core-performance.js';
-import { perfSplit, change24h, tradeHistory } from './core-trades.js';
+import { perfSplit, change24h, tradeHistory, openTradeFor } from './core-trades.js';
+import { positionPlan } from './ui-testpage.js';
+import { miniPath, riskSum } from './ui-position.js';
 import { cooldown, leftText, cooledRisk } from './core-guard.js';
 import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
 import { badge, esc, dn, topReasons, seal, viewMark, coinIcon } from './ui-parts.js';
@@ -77,14 +79,18 @@ export function renderHome(s) {
     ? `<button type="button" class="alert-pill ${nBad ? 'bad' : 'warn'}" id="alerts-open">${nBad ? '●' : '○'} ${parts.join(' · ')} <span aria-hidden="true">›</span></button>`
     : '';
 
-  $('home-pos').innerHTML = r.positions.length ? r.positions.map((p) => {
+  // 8a: Die Startseite ist der Ort für die Positionen. Oben die Summe (alle Stops), je Zeile ein Mini-Trade-Weg;
+  // Antippen öffnet das Positions-Blatt mit der ganzen Übersicht.
+  const trades = s.fills ? tradeHistory(s.fills) : null;
+  const mini = (p) => { try { return miniPath(positionPlan(s, p, trades ? openTradeFor(trades, p.coin) : null).path); } catch { return ''; } };
+  $('home-pos').innerHTML = r.positions.length ? riskSum(r.positions, r.summary.equity) + r.positions.map((p) => {
     const st = p.evaluation.worst;
     const ch = change24h(s.prices?.[p.coin], s.prevDay?.[p.coin]);
-    return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}"><span class="dot r-${st}"></span>
+    return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}" aria-label="${esc(dn(p.coin))}: Positions-Blatt öffnen"><span class="dot r-${st}"></span>
       <span class="sym">${coinIcon(p.coin)}${esc(dn(p.coin))} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
         <span class="pos-px">${f.price(p.mark)} <b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2)}</b></span></span>
       <span class="meta">Liq ${f.pct(p.liqDist)}</span>
-      <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span></button>`;
+      <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span>${mini(p)}</button>`;
   }).join('') : '<p class="empty">Keine offenen Positionen.</p>';
 }
 

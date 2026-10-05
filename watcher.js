@@ -9,6 +9,7 @@ import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { getCandles, getMarketCtx, analyzeAllModes, heat } from './core-scanner.js';
 import { analyzeTimeframe, scoreTimeframe, closedCandles } from './core-signals.js';
+import { measureSignal, measureDue, withMeasure } from './core-journalmeasure.js';
 import { scanUniverse } from './core-universe.js';
 import { loadAccount } from './core-account.js';
 import { accountRisk } from './core-positions.js';
@@ -117,11 +118,17 @@ async function findChannels() {
 // Offene Tagebuch-Einträge mit den Kerzen seit der Meldung auswerten
 async function updateJournal(state, now) {
   for (const [i, e] of state.journal.entries()) {
-    if (e.status !== 'offen') continue;
+    // 8a: Abgeschlossene Signale werden nicht neu bewertet, aber weiter vermessen (Zone erreicht, Lauf ins Plus/Minus),
+    // bis ihr Fenster zu ist. Das ändert kein Signal und kein Ergebnis, es kommen nur Messwerte dazu.
+    const open = e.status === 'offen';
+    if (!open && !measureDue(e, now)) continue;
     try {
       const tf = e.style === 'swing' ? '1h' : '15m';
-      const raw = await hl.candles(e.coin, tf, e.at - 36e5, now);
-      state.journal[i] = judgeSignal(e, closedCandles(raw, Infinity), now, CONFIG.alerts.journalDays?.[e.style] || 7);
+      const days = CONFIG.alerts.journalDays?.[e.style] || 7;
+      const raw = await hl.candles(e.coin, tf, e.at - 36e5, open ? now : Math.min(now, e.at + days * 864e5 + 36e5));
+      const candles = closedCandles(raw, Infinity);
+      const judged = open ? judgeSignal(e, candles, now, days) : e;
+      state.journal[i] = { ...judged, m: measureSignal(judged, candles, now, days) };
     } catch (err) { log('Tagebuch', e.coin, err.message); }
   }
   // Aufräumen: ausgewertete Einträge nach 60 Tagen entfernen, höchstens 400 behalten
@@ -152,7 +159,7 @@ async function loadArchive() {
 }
 async function publish(state) {
   if (!state.archiveLoaded) { state.archive = mergeArchive(await loadArchive(), state.archive || []); state.archiveLoaded = true; }
-  state.archive = mergeArchive(state.archive, archiveEntries(state.journal));
+  state.archive = mergeArchive(state.archive, withMeasure(archiveEntries(state.journal), state.journal));
   await writeFile('signals.json', JSON.stringify({ signals: publicSignals(state.journal), archive: state.archive }, null, 1));
 }
 

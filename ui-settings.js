@@ -12,6 +12,7 @@ import { shareReport } from './ui-export.js';
 import { tipInline } from './ui-parts.js';
 import { MY_SETTINGS } from './config.js';
 import { GROUPS, FIELDS, STYLE_KEYS, currentValues, recommendedValue, isChanged, toShown, fromShown, validate, localSnapshot, diffFromRecommended, settingsFile, listsForExport, privatePart, publicLeak } from './core-settings.js';
+import { publicDiff, amountLeak } from './core-privacy.js';
 
 const $ = (id) => document.getElementById(id);
 const num = (v) => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 6 }).format(v);
@@ -86,6 +87,7 @@ export function renderSettings() {
     </div>
     <p class="set-hint" id="set-private-msg" hidden></p>
     ${publicLeak(MY_SETTINGS) ? '<p class="warnline" style="margin-top:10px">In deiner my-settings.js bei GitHub stehen noch Einschätzungen oder Ziele (öffentlich lesbar). „Für den Wächter übernehmen“ und die neue Datei hochladen, dazu die privaten Daten ins Secret.</p>' : ''}
+    ${amountLeak(MY_SETTINGS) ? '<p class="warnline" style="margin-top:10px">In deiner my-settings.js bei GitHub steht noch dein Startkapital (öffentlich lesbar). „Für den Wächter übernehmen“ und die neue Datei hochladen, dann ist der Betrag draußen.</p>' : ''}
     <p class="empty" style="font-size:12px;margin-top:10px">„Speichern“ gilt sofort für die App auf diesem iPhone. „Für den Wächter übernehmen“ erzeugt die Datei <b>my-settings.js</b>. Die lädst du wie gewohnt bei GitHub hoch, dann rechnet auch der Telegram-Wächter mit deinen Werten.</p>`;
   if (open.has('storage')) refreshSize();
 }
@@ -116,7 +118,8 @@ async function copyPrivate() {
 
 async function exportFile() {
   // 5d: Einschätzungen und Ziele NICHT mehr in die öffentliche Datei, die gehen ins Secret (Knopf „Private Daten“)
-  const diff = diffFromRecommended(values);
+  // 8a: auch keine Beträge (Startkapital) in die öffentliche Datei; der Wert bleibt in der App auf diesem iPhone
+  const diff = publicDiff(diffFromRecommended(values));
   Object.assign(diff, listsForExport(getWatchlist(), getTradeable()));
   const text = settingsFile(diff);
   const file = new File([text], 'my-settings.js', { type: 'text/javascript' });

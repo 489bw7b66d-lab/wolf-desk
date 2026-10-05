@@ -95,9 +95,6 @@ button { height: 46px; padding: 0 16px; border: 0; border-radius: var(--radius-s
 .hrow .tag { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; }
 select { height: 46px; min-width: 0; padding: 0 10px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--text); font: 600 15px var(--font); }
 select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-#stop-form .row { flex-wrap: wrap; }
-#stop-form select { flex: 1 1 110px; }
-#stop-form input { flex: 1 1 110px; }
 .calc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .calc-grid label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .calc-grid input, .calc-grid select { width: 100%; }
@@ -630,3 +627,48 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .e2-line .long { color: var(--ok); } .e2-line .short { color: var(--bad); }
 #bt-engine { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 #bt-engine button { width: 100%; }
+
+/* ===== 8a: Bedienung ===== */
+/* Blätter: Griff oben, nach unten wegwischen, Zurück-Pfeil */
+.sheet-panel { transition: transform .18s ease; overscroll-behavior: contain; }
+.sheet-panel.dragging { transition: none; }
+.sheet-panel::before { content: ''; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--line); }
+.sheet-back { position: absolute; top: 12px; left: 12px; width: 44px; height: 44px; padding: 0 0 3px; border-radius: 50%; background: var(--line); color: var(--text); font-size: 26px; font-weight: 700; line-height: 1; }
+.sheet-back[hidden] { display: none; }
+.sheet-panel.has-back .sheet-head { margin-left: 52px; }
+.return-pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(74px + env(safe-area-inset-bottom, 0px)); z-index: 12; height: 40px; padding: 0 18px; border-radius: 999px; font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.5); white-space: nowrap; }
+.return-pill[hidden] { display: none; }
+
+/* Startseite: Summe über alle Stops und Mini-Trade-Weg je Position */
+.risk-sum { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; margin: 10px 0 6px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+.risk-sum b { font-weight: 800; }
+.risk-sum .risk-side { color: var(--muted); font-size: 12.5px; }
+.risk-sum.warn { border-color: color-mix(in srgb, var(--warn) 55%, transparent); } .risk-sum.warn .risk-main b { color: var(--warn); }
+.risk-sum.bad { border-color: color-mix(in srgb, var(--bad) 55%, transparent); background: color-mix(in srgb, var(--bad) 7%, transparent); } .risk-sum.bad .risk-main b { color: var(--bad); }
+.risk-sum .risk-side { flex: 1 1 auto; }
+.risk-sum .tip-i[open] { display: block; }
+button.pos-row { padding: 9px 0 11px; row-gap: 8px; }
+button.pos-row:first-of-type { border-top: 0; }
+.mini-path { grid-column: 2 / -1; position: relative; display: block; height: 4px; border-radius: 2px; background: var(--line); }
+.mini-path .path-fill { border-radius: 2px; }
+.mini-path .path-tick { top: -3px; height: 10px; }
+
+/* Positions-Blatt: Übersicht, Ausstiegsrechner, Stop von Hand */
+#coin-pos .path { margin-top: 4px; }
+#coin-pos .pos-more { margin: 12px 0 4px; }
+.exit-calc, .stop-manual { margin-top: 6px; }
+.ex-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ex-row label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.ex-row .meta { font-size: 12.5px; color: var(--muted); }
+.ex-in { display: inline-flex; align-items: center; gap: 6px; }
+.ex-in input { flex: none; width: 96px; height: 44px; font: 700 17px var(--font); text-align: right; }
+.ex-plan { display: block; width: 100%; height: auto; min-height: 40px; margin-top: 10px; padding: 8px 12px; background: transparent; border: 1px dashed var(--line); color: var(--gold); font-size: 13px; font-weight: 700; text-align: left; }
+.ex-plan[hidden], .ex-res[hidden] { display: none; }
+.ex-res { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.ex-qty { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ex-qty .k { display: block; margin-bottom: 2px; }
+.ex-qty b { font-size: 20px; font-weight: 800; }
+.ex-res .meta, .exit-calc > .meta { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
+.exit-calc > .meta:empty, .ex-res .meta:empty { display: none; }
+.stop-manual .row input { height: 46px; }
+
