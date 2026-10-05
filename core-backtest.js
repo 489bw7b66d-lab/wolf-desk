@@ -10,6 +10,8 @@ import { bmFlip, bmPlan, BM_EVENT } from './core-benchmark.js';
 import { atr, adx, ema } from './core-indicators.js';
 import { trailStop } from './core-trail.js';
 import { exitVariants } from './core-exitcompare.js';
+import { donchianFromSlices, simulateDonchian } from './core-donchian.js';
+import { fundingR, afterFunding, FUNDING } from './core-btmetrics.js';
 
 export const BT = {
   days: { swing: 180, intraday: 45, scalp: 14 }, // Testzeitraum je Stil (Hyperliquid liefert max. 5000 Kerzen)
@@ -157,7 +159,7 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       return list.slice(Math.max(0, ptr[k] + 1 - BT.lookback), ptr[k] + 1);
     });
     let r;
-    try { r = engine === 4 ? benchmarkFlipFromSlices(allTfs, slices) : engine === 3 ? benchmarkFromSlices(allTfs, slices) : engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
+    try { r = engine === 5 ? donchianFromSlices(allTfs, slices, t, setupMs) : engine === 4 ? benchmarkFlipFromSlices(allTfs, slices) : engine === 3 ? benchmarkFromSlices(allTfs, slices) : engine === 2 ? engine2FromSlices(modeKey, allTfs, slices) : signalFromSeries(coin, modeKey, slices, undefined, { ignoreGate: true }); } catch { continue; }
     const p = r.plan;
     if (!p) continue;
     if (p.impulseKey) { if (usedImpulses.has(p.impulseKey)) continue; usedImpulses.add(p.impulseKey); }
@@ -166,12 +168,15 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
     const startIdx = advance(fine, ptr[2], t) + 1;
     const path = fine.slice(startIdx);
     if (!path.length) break;
-    const sim = simulateTrade(p, path, {
+    const dIdx = allTfs.indexOf('1d');
+    // 8d: Funding als Haltekosten für Longs (Schätzung, siehe core-btmetrics.js); gilt für alle Engines, damit der Vergleich stimmt
+    const fund = (x) => (x?.filled ? afterFunding(x, p.dir) : x);
+    // 8d: Donchian hat keine Ziele und kein Zeitlimit und wird deshalb eigens nachgespielt
+    const sim = fund(engine === 5 ? simulateDonchian(p, path, series[dIdx], { t, feePct: BT.feePct }) : simulateTrade(p, path, {
       fillNow, nowPx: close,
       validUntil: t + BT.entryBars * setupMs,
       maxUntil: t + BT.maxBars * setupMs,
-    });
-    const dIdx = allTfs.indexOf('1d');
+    }));
     const meta = {
       time: t, dir: p.dir, score: r.total[p.dir], method: p.method,
       adx: dIdx >= 0 ? adx(slices[dIdx], 14) : null, // 7c: Marktphase beim Einstieg (Tages-ADX)
@@ -179,18 +184,19 @@ export async function runBacktest(coin, modeKey, series, { days = BT.days[modeKe
       seal: (r.confirms || []).some((c) => c.dir === p.dir),
       gate: r.gate ? { known: r.gate.known, mild: r.gate.mild, mittel: r.gate.mittel, streng: r.gate.streng } : null,
     };
-    if (sim.filled) {
+    if (sim.filled && engine === 5) { trades.push({ ...meta, ...sim, alt: null, ex: null, btc: regime ? regime(sim.fillTime ?? t) : null }); busyUntil = sim.exitTime; }
+    else if (sim.filled) {
       // Dieselben Einstiege noch einmal mit „Nachziehen nach Struktur“ (Vergleich der Ausstiegsregel, 4d)
-      const alt = simulateTrade(p, path, { fillNow, nowPx: close, validUntil: t + BT.entryBars * setupMs, maxUntil: t + BT.maxBars * setupMs, stepTrail: false, trailFn: structureTrail(p, setup, setupAtr) });
+      const alt = fund(simulateTrade(p, path, { fillNow, nowPx: close, validUntil: t + BT.entryBars * setupMs, maxUntil: t + BT.maxBars * setupMs, stepTrail: false, trailFn: structureTrail(p, setup, setupAtr) }));
       // 8c (nur Messung): dieselben Einstiege mit zwei weiteren Ausstiegen, dazu die Marktphase von BTC beim Einstieg
-      const ex = exitVariants(simulateTrade, p, path, { fillNow, nowPx: close, validUntil: t + BT.entryBars * setupMs, maxUntil: t + BT.maxBars * setupMs });
+      const ex = exitVariants(simulateTrade, p, path, { fillNow, nowPx: close, validUntil: t + BT.entryBars * setupMs, maxUntil: t + BT.maxBars * setupMs }, (x) => fundingR(x, p.dir));
       trades.push({ ...meta, ...sim, alt: alt.filled ? { r: alt.r, outcome: alt.outcome, hits: alt.hits } : null, ex, btc: regime ? regime(sim.fillTime ?? t) : null });
       busyUntil = sim.exitTime;
     }
     else { missed.push({ ...meta, reason: sim.reason }); busyUntil = sim.end || t + BT.entryBars * setupMs; }
   }
   onProgress?.(1);
-  return { coin, mode: modeKey, days, trades, missed, from, to: setup.at(-1)?.T, engine };
+  return { coin, mode: modeKey, days, trades, missed, from, to: setup.at(-1)?.T, engine, fundingPctDay: FUNDING.pctPerDay };
 }
 
 // Nachziehen nach Struktur für den Backtest: nur Setup-Kerzen, die zum Zeitpunkt c schon abgeschlossen waren

@@ -6,6 +6,7 @@ import { BT, loadHistory, runBacktest, summarize, compareTrail, splitPeriods, by
 import { compareGate, GATE_LABEL } from './core-trendgate.js';
 import { regimeIndex, regimeAt, compareRegime, regimeHolds, REGIME_ROWS } from './core-regime.js';
 import { compareExits, EXIT_ROWS } from './core-exitcompare.js';
+import { paretoShare, avgHoldDays, FUNDING } from './core-btmetrics.js';
 import { hl } from './core-api.js';
 import { closedCandles } from './core-signals.js';
 import { saveBacktest, shareReport } from './ui-export.js';
@@ -22,17 +23,17 @@ let getNames = () => [];
 const STYLES = ['swing', 'intraday', 'scalp'];
 let style = 'swing', running = false, stopFlag = false, last = null;
 let engine = 1; // 7a: 1 = bisherige Engine, 2 = Engine 2 (Bauplan des Nutzers)
-const keyOf = (st, en) => st + (en === 2 ? ':e2' : en === 3 ? ':bm' : en === 4 ? ':bf' : '');
-const ENG = { 1: 'Alte Engine', 2: 'Engine 2', 3: 'Maßstab', 4: 'Neu im Trend' };
-const ENG_SUB = { 1: 'bis 8a Telegram', 2: 'dein Bauplan', 3: 'stumpfe Trendfolge', 4: 'Maßstab · jetzt Telegram' };
-const ENG_TAG = { 2: ' · Engine 2', 3: ' · Maßstab', 4: ' · Maßstab neu im Trend' };
-const ENG_SHORT = { 2: ' E2', 3: ' Maßstab', 4: ' Neu im Trend' };
+const keyOf = (st, en) => st + (en === 2 ? ':e2' : en === 3 ? ':bm' : en === 4 ? ':bf' : en === 5 ? ':dc' : '');
+const ENG = { 1: 'Alte Engine', 2: 'Engine 2', 3: 'Maßstab', 4: 'Neu im Trend', 5: 'Donchian' };
+const ENG_SUB = { 1: 'bis 8a Telegram', 2: 'dein Bauplan', 3: 'stumpfe Trendfolge', 4: 'Maßstab · jetzt Telegram', 5: 'Ausbruch 20/10 · nur Swing' };
+const ENG_TAG = { 2: ' · Engine 2', 3: ' · Maßstab', 4: ' · Maßstab neu im Trend', 5: ' · Donchian 20/10' };
+const ENG_SHORT = { 2: ' E2', 3: ' Maßstab', 4: ' Neu im Trend', 5: ' Donchian' };
 
 const R = (v, d = 2) => (v == null || !Number.isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + new Intl.NumberFormat('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }).format(Math.abs(v)) + 'R');
 const P = (v) => (v == null ? '–' : f.pct(v, 0));
 const cls = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
 const date = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-const OUT = { stop: 'Stop', einstieg: 'Stop auf Einstieg', nachgezogen: 'Nachzieh-Stop', tp4: 'Alle Ziele', zeit: 'Zeitlimit', offen: 'Noch offen' };
+const OUT = { stop: 'Stop', einstieg: 'Stop auf Einstieg', nachgezogen: 'Nachzieh-Stop', tp4: 'Alle Ziele', zeit: 'Zeitlimit', offen: 'Noch offen', kanal: 'Kanal-Ausstieg' };
 
 function renderControls(prefer = null) {
   const wl = getWatchlist(), tr = getTradeable();
@@ -43,7 +44,7 @@ function renderControls(prefer = null) {
     + single.map((c) => `<option value="${esc(c)}">${esc(dn(c))}${c === extra && !wl.includes(c) ? ' (Suche)' : ''}</option>`).join('');
   const ok = [ALL, ...(tr.length ? [TRADE, SAMPLE] : []), ...single];
   sel.value = ok.includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
-  $('bt-engine') && ($('bt-engine').innerHTML = [4, 3, 1, 2].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${ENG_SUB[e]}</small></button>`).join(''));
+  $('bt-engine') && ($('bt-engine').innerHTML = [4, 5, 3, 1, 2].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${ENG_SUB[e]}</small></button>`).join(''));
   $('bt-styles').innerHTML = STYLES.map((k) => `<button type="button" data-bts="${k}" aria-pressed="${k === style}">${CONFIG.signals.modes[k].label}<small>${BT.days[k]} Tage</small></button>`).join('');
 }
 
@@ -129,16 +130,19 @@ function periodBlock(trades, from, to) {
 async function fillCompare() {
   const box = $('bt-cmp');
   if (!box || !last) return;
-  const st = style, get = (en) => loadResultWait(keyOf(st, en), 8000), a = await get(1), b = await get(2), c = await get(3); let d = await get(4); // 8b1: mit Geduld laden, sonst fehlen auf dem iPhone Zeilen
+  const st = style, get = (en) => loadResultWait(keyOf(st, en), 8000), a = await get(1), b = await get(2), c = await get(3), dc = await get(5); let d = await get(4); // 8b1: mit Geduld laden, sonst fehlen auf dem iPhone Zeilen
   // 8c: nur Läufe über dieselben Märkte nebeneinanderstellen (sonst steht ein BTC-Einzellauf neben 175 Märkten)
   const mk = (r) => `${r.label.split(' · ')[0]}|${r.total ?? r.runs?.length ?? ''}`;
-  const found = [['Neu im Trend', d], ['Maßstab', c], ['Alt', a], ['Engine 2', b]].filter((x) => x[1]);
+  const found = [['Neu im Trend', d], ['Donchian', dc], ['Maßstab', c], ['Alt', a], ['Engine 2', b]].filter((x) => x[1]);
   const have = found.filter((x) => mk(x[1]) === mk(last));
   const other = found.filter((x) => mk(x[1]) !== mk(last));
   const otherNote = other.length ? `<p class="empty" style="font-size:12.5px;margin:6px 0 0">Nicht im Vergleich, weil mit anderen Märkten gerechnet: ${other.map(([n, r]) => `${n} (${esc(r.label.split(' · ')[0])})`).join(', ')}.</p>` : '';
   if (d && !have.some((x) => x[1] === d)) d = null;
   if (have.length < 2) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich der Engines: rechne ${CONFIG.signals.modes[st].label} mit einer zweiten Engine auf denselben Märkten, dann erscheint er hier.</p>${otherNote}`; return; }
-  const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.dev.avgR)}">${R(sp?.dev.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
+  // 8d: Läufe von vor 8d sind ohne Funding gerechnet und stehen deshalb etwas zu gut da
+  const noFund = have.filter((x) => !(x[1].fundingPctDay > 0));
+  const fundNote = noFund.length && noFund.length < have.length ? `<p class="empty" style="font-size:12.5px;margin:6px 0 0">Noch ohne Funding gerechnet (vor 8d): ${noFund.map((x) => x[0]).join(', ')}. Für einen fairen Vergleich neu rechnen.</p>` : '';
+  const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}${r.fundingPctDay > 0 ? '' : ' · ohne Funding'}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.dev.avgR)}">${R(sp?.dev.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
   // 8b: Urteil über die Regel, nach der Telegram jetzt meldet („neu im Trend“): im Schnitt im Plus UND in beiden Zeiträumen
   let verdict = '';
   if (d) {
@@ -149,7 +153,7 @@ async function fillCompare() {
   } else verdict = '<p class="bt-verdict warn">„Neu im Trend“ (die Regel hinter den Telegram-Signalen seit 8b) ist für diesen Stil auf diesen Märkten noch nicht gerechnet.</p>';
   box.innerHTML = `${tipHead('Vergleich der Engines', 'Jeweils der letzte vollständige Lauf dieses Stils. „Entwicklung“ sind die ersten zwei Drittel des Zeitraums, „Bestätigung“ das letzte Drittel. Eine Regel gilt erst als belegt, wenn sie im Schnitt UND in beiden Zeiträumen im Plus liegt und genug Trades hat. „Neu im Trend“ ist der Maßstab mit Einstieg nur beim Wechsel in den Trend: danach meldet Telegram seit 8b.')}
     <div class="bt-cmp5">${table(['Engine', 'Trades', 'Ø R', 'Entw.', 'Best.'], have.map(([n, r]) => row(n, r)))}</div>
-    ${verdict}${otherNote}`;
+    ${verdict}${fundNote}${otherNote}`;
 }
 
 // Short-Filter: dieselben Signale, Shorts je Stufe nur mit bärischem Tagestrend
@@ -190,17 +194,20 @@ function renderResult() {
   }
   const v = verdict(sm);
   // 8b1: Der Maßstab hat weder Score noch Siegel noch mehrere Ereignisse; diese Blöcke wären dort leer gedroschen
-  const plain = last.engine === 3 || last.engine === 4;
+  const plain = last.engine === 3 || last.engine === 4 || last.engine === 5;
+  const pareto = paretoShare(trades), hold = avgHoldDays(trades);
   const perCoin = runs.length > 1 ? runs.map((r) => ({ coin: r.coin, ...summarize(r.trades), err: r.error })) : [];
   box.innerHTML = `<h3 class="sub-h" style="margin-top:4px">${esc(label)}</h3>
     <p class="bt-verdict ${v.cls}">${esc(v.text)}</p>
     <div class="kv">
       <div><span class="k">Trades</span><span class="v">${sm.n}</span></div>
       <div><span class="k">Gewinn-Trades</span><span class="v">${P(sm.winRate)}</span></div>
-      <div><span class="k">TP1 erreicht</span><span class="v">${P(sm.tp1Rate)}</span></div>
+      ${last.engine === 5 ? '' : `<div><span class="k">TP1 erreicht</span><span class="v">${P(sm.tp1Rate)}</span></div>`}
       <div><span class="k">Ø pro Trade</span><span class="v ${cls(sm.avgR)}">${R(sm.avgR)}</span></div>
       <div><span class="k">Summe</span><span class="v ${cls(sm.totalR)}">${R(sm.totalR, 1)}</span></div>
       <div><span class="k">Profit-Faktor</span><span class="v">${sm.profitFactor == null ? '–' : sm.profitFactor.toFixed(2).replace('.', ',')}</span></div>
+      <div><span class="k">Gewinn aus den besten 15 % ${tipInline('Anteil des gesamten Gewinns, der aus den besten 15 % der Trades kommt. Hohe Werte heißen: Das Ergebnis hängt an wenigen großen Läufern, und wer die früh verkauft, hat keinen Vorteil mehr. Über 100 % heißt: Alle übrigen Trades haben zusammen Geld gekostet. Ein Strich steht da, wenn der Lauf insgesamt im Minus liegt.')}</span><span class="v">${pareto ? P(pareto.pct) : '–'}</span></div>
+      <div><span class="k">Ø Haltedauer</span><span class="v">${hold == null ? '–' : hold.toFixed(1).replace('.', ',') + ' Tage'}</span></div>
     </div>
     <h3 class="sub-h">Verlauf in R</h3>
     ${curve(sm.curve)}
@@ -225,7 +232,7 @@ function renderResult() {
     ${perCoin.length ? `<h3 class="sub-h">Nach Markt</h3>${table(['Markt', 'Trades', 'Gewinn', 'Ø R'], perCoin.map((c) => `<div class="bt-row" role="row"><span><b>${esc(dn(c.coin))}</b></span><span>${c.err ? '–' : c.n}</span><span>${c.err ? '' : P(c.winRate)}</span><span class="${cls(c.avgR)}">${c.err ? 'Fehler' : R(c.avgR)}</span></div>`))}` : ''}
     <h3 class="sub-h">Letzte Trades</h3>
     ${table(['Datum', 'Markt', 'Ausgang', 'R'], trades.slice(-8).reverse().map((t) => `<div class="bt-row" role="row"><span>${date(t.time)}</span><span>${esc(dn(t.coin))} <small class="${t.dir}">${t.dir === 'long' ? 'L' : 'S'}</small></span><span class="muted">${OUT[t.outcome] || t.outcome}${t.hits ? ` · TP${t.hits}` : ''}</span><span class="${cls(t.r)}">${R(t.r)}</span></div>`))}
-    <div class="empty" style="font-size:12.5px;margin-top:12px">So wurde gerechnet ${tipInline(`1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen (${f.pct(BT.feePct, 3)} je Seite), Slippage und Funding nicht. Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.`)}</div>`;
+    <div class="empty" style="font-size:12.5px;margin-top:12px">So wurde gerechnet ${tipInline(`1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen (${f.pct(BT.feePct, 3)} je Seite)${last.fundingPctDay > 0 ? `, dazu Funding für Longs als Schätzung (${String(last.fundingPctDay).replace('.', ',')} % je Tag Haltedauer; der echte Satz schwankt je Coin)` : ', Funding nicht (Lauf von vor 8d)'}. Slippage ist nicht eingerechnet.${last.engine === 5 ? ' Donchian: Einstieg zum Tagesschluss über dem 20-Tage-Hoch, Stop 2 × ATR, Ausstieg bei Tagesschluss unter dem 10-Tage-Tief, keine Ziele und kein Zeitlimit.' : ''} Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.`)}</div>`;
   fillCompare();
 }
 
@@ -277,7 +284,7 @@ async function start(resume = null) {
   }
   const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : sel === SAMPLE ? 'Stichprobe' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage${ENG_TAG[engine] || ''}`;
   const complete = !stopFlag && runs.length === coins.length;
-  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missedN ?? r.missed?.length ?? 0), 0), complete, done: runs.length, total: coins.length, engine,
+  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missedN ?? r.missed?.length ?? 0), 0), complete, done: runs.length, total: coins.length, engine, fundingPctDay: FUNDING.pctPerDay,
     from: Math.min(...runs.map((r) => r.from).filter(Boolean)), to: Math.max(...runs.map((r) => r.to).filter(Boolean)) };
   saveBacktest(last, keyOf(style, engine)); // für „Daten für Claude“
   await saving;
@@ -292,8 +299,8 @@ async function start(resume = null) {
 }
 
 // Eine Zeile unter dem Start-Knopf: unterbrochener Lauf (Weitermachen) und gespeicherte Ergebnisse je Stil
-const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm', 'swing:bf', 'intraday:bf', 'scalp:bf'];
-const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : k.endsWith(':bf') ? ' Neu im Trend' : '');
+const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm', 'swing:bf', 'intraday:bf', 'scalp:bf', 'swing:dc'];
+const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : k.endsWith(':bf') ? ' Neu im Trend' : k.endsWith(':dc') ? ' Donchian' : '');
 let indexChecked = false;
 // 8b1: Gespeichertes Ergebnis zu einer Auswahl zeigen (Knopf in der Liste oder Tipp auf Stil bzw. Engine)
 const note = (txt) => { $('bt-status').innerHTML = `<p class="empty" style="font-size:13px;margin:10px 0 0">${esc(txt)}</p>`; };
@@ -352,6 +359,7 @@ export function initBacktest(getState = () => ({})) {
   $('bt-styles').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-bts]');
     if (!b || running) return;
+    if (engine === 5 && b.dataset.bts !== 'swing') { note('Donchian rechnet mit Tageskerzen und läuft nur als Swing (180 Tage).'); return; }
     style = b.dataset.bts;
     renderControls();
     showSaved(keyOf(style, engine)); // 8b1: gespeichertes Ergebnis dieser Auswahl gleich zeigen
@@ -369,6 +377,7 @@ export function initBacktest(getState = () => ({})) {
     const b = e.target.closest('button[data-bte]');
     if (!b || running) return;
     engine = Number(b.dataset.bte);
+    if (engine === 5) style = 'swing'; // 8d: Donchian gibt es nur auf Tageskerzen
     renderControls();
     showSaved(keyOf(style, engine));
   });

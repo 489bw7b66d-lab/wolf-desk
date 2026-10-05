@@ -19,9 +19,10 @@ export function planWithTp1AtR(plan, base) {
 
 // Die zwei Varianten für einen Einstieg rechnen. sim = simulateTrade (wird hereingereicht, damit diese Datei den Kern nicht einbindet).
 // Rückgabe { b, c }: Ergebnis in R nach Gebühren, null = in dieser Variante kein Einstieg.
-export function exitVariants(sim, plan, path, opts) {
+// cost(x) (8d, optional): zusätzliche Kosten des Trades in R, z. B. Funding über die Haltedauer.
+export function exitVariants(sim, plan, path, opts, cost = null) {
   const base = opts.fillNow ? opts.nowPx : plan.entry;
-  const run = (p) => { if (!p) return null; const x = sim(p, path, { ...opts, trailFn: breakevenTrail() }); return x.filled ? x.r : null; };
+  const run = (p) => { if (!p) return null; const x = sim(p, path, { ...opts, trailFn: breakevenTrail() }); return x.filled ? x.r - (cost ? cost(x) : 0) : null; };
   return { b: run(plan), c: run(planWithTp1AtR(plan, base)) };
 }
 

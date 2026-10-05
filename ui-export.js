@@ -12,6 +12,7 @@ import { getWatchlist } from './core-watchlist.js';
 import { summarize, compareTrail, splitPeriods, byRegime } from './core-backtest.js';
 import { compareRegime } from './core-regime.js';
 import { compareExits } from './core-exitcompare.js';
+import { paretoShare, avgHoldDays } from './core-btmetrics.js';
 import { compareGate } from './core-trendgate.js';
 import { getFeedSignals, getArchive } from './ui-feed.js';
 
@@ -37,7 +38,8 @@ export function btDigest(last, style) {
   const rows = (g) => (g ? g.rows.map((x) => ({ key: x.key, ...slim(x), dev: slim(x.dev), conf: slim(x.conf) })) : null);
   const rg = sp ? compareRegime(t, last.from, last.to) : null, exg = sp ? compareExits(t, last.from, last.to) : null;
   const adxT = t.length ? byRegime(t) : null;
-  return { style, label: last?.label, at: last?.at || Date.now(), periods,
+  const par = paretoShare(t);
+  return { style, label: last?.label, at: last?.at || Date.now(), periods, pareto: par ? { pct: par.pct, k: par.k } : null, holdDays: avgHoldDays(t), fundingPctDay: last?.fundingPctDay ?? null,
     regime: rg ? { rows: rows(rg), unknown: rg.unknown } : null, exits: exg ? { rows: rows(exg), n: exg.n, skipped: exg.skipped } : null,
     adx: adxT && (adxT.side.n || adxT.mid.n || adxT.trend.n) ? { side: slim(adxT.side), mid: slim(adxT.mid), trend: slim(adxT.trend) } : null, summary: rest, gate: t.length ? compareGate(t) : [], trail: compareTrail(t), perMarket, missed: last?.missed ?? 0,
     complete: last?.complete !== false, done: last?.done ?? null, total: last?.total ?? null };
@@ -56,6 +58,7 @@ function btText(d) {
   const L = [];
   L.push(`### ${d.label || d.style} (gerechnet ${new Date(d.at).toLocaleString('de-DE')}${d.total ? ` · ${d.complete ? 'vollständig' : 'abgebrochen bei'} ${d.done}/${d.total}` : ''})`);
   L.push(`Trades ${s.n ?? 0} · Gewinn-Trades ${pc(s.winRate)} · TP1 erreicht ${pc(s.tp1Rate)} · Ø ${r2(s.avgR)} · Summe ${r2(s.totalR)} · Profit-Faktor ${n2(s.profitFactor)} · größter Rückgang ${n2(s.maxDdR, 1)}R · ohne Einstieg ${d.missed}`);
+  L.push(`Gewinn aus den besten 15 % der Trades: ${d.pareto ? pc(d.pareto.pct) + ` (${d.pareto.k} Trades)` : '–'} · Ø Haltedauer ${d.holdDays == null ? '–' : n2(d.holdDays, 1) + ' Tage'} · Funding ${d.fundingPctDay > 0 ? `eingerechnet (Schätzung ${String(d.fundingPctDay).replace('.', ',')} % je Tag für Longs)` : 'nicht eingerechnet (Lauf von vor 8d)'}`);
   if (d.periods) L.push(`Zeiträume: Entwicklung ${d.periods.dev.n} Trades, Ø ${r2(d.periods.dev.avgR)}, Summe ${r2(d.periods.dev.sum)} · Bestätigung ${d.periods.conf.n} Trades, Ø ${r2(d.periods.conf.avgR)}, Summe ${r2(d.periods.conf.sum)}`);
   const RN = { all: 'alle', trend: 'nur BTC im Trend', above: 'nur BTC über EMA 100' }, EN = { plan: 'heutiger Plan', be: 'nach TP1 Stop auf Einstieg', r1: 'TP1 bei 1R, dann Einstieg' };
   if (d.regime?.rows) L.push('Marktphasen-Schalter (Trades, Ø R, Entwicklung, Bestätigung): ' + d.regime.rows.map((x) => `${RN[x.key]} ${x.n}, ${r2(x.avgR)}, ${r2(x.dev?.avgR)} (${x.dev?.n ?? 0}), ${r2(x.conf?.avgR)} (${x.conf?.n ?? 0})`).join(' · ') + (d.regime.unknown ? ` · ohne BTC-Daten ${d.regime.unknown}` : ''));

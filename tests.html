@@ -66,7 +66,9 @@ import { tests as po } from './test-position.js';
 import { tests as bm } from './test-benchmark.js';
 import { tests as rg } from './test-regime.js';
 import { tests as ec } from './test-exitcompare.js';
-const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst, ...e2, ...xc, ...tk, ...jm, ...gs, ...po, ...bm, ...rg, ...ec];
+import { tests as dc } from './test-donchian.js';
+import { tests as bx } from './test-btmetrics.js';
+const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst, ...e2, ...xc, ...tk, ...jm, ...gs, ...po, ...bm, ...rg, ...ec, ...dc, ...bx];
 let pass = 0;
 const list = document.getElementById('list');
 for (const [name, fn] of tests) {
