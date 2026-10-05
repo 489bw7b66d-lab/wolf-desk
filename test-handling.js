@@ -2,6 +2,7 @@ import { stopNoise, lossAtStop } from './core-guard.js';
 import { trailStop } from './core-trail.js';
 import { blockReason } from './core-alerts.js';
 import { btDigest, buildReport, saveBacktest } from './ui-export.js';
+import { metaOf } from './core-btstore.js';
 
 export const tests = [
   ['Stop-Check: Vorschlag hinter der Liquidation wird erkannt (ALGO-Fall)', () => {
@@ -34,4 +35,10 @@ export const tests = [
     return L.liqFirst && L.pnl === -109.64 && L.exit === 0.11967;
   }],
   ['Stop-Check: Short und Stop im Gewinn', () => { const L = lossAtStop({ side: 'short', size: -10, entry: 100, stop: 95, mark: 90, liq: 120 }); return L.pnl === 50 && L.fromNow === -50; }],
+  // 8b1: gespeicherte Backtests (Verzeichnis) und Zeiträume im Export
+  ['Backtest-Verzeichnis: kleine Zeile je Ergebnis, ohne die Trades', () => { const m = metaOf('swing:bf', { at: 5, label: 'X', complete: true, done: 3, total: 3, trades: [{}, {}] }); return m.style === 'swing:bf' && m.at === 5 && m.n === 2 && m.complete && m.trades === undefined && JSON.stringify(m).length < 200; }],
+  ['Backtest-Verzeichnis: abgebrochener Lauf wird als unvollständig geführt, fehlende Felder ohne Absturz', () => metaOf('swing', { complete: false, trades: [] }).complete === false && metaOf('swing', {}).n === 0],
+  ['Export: Zusammenfassung enthält Entwicklung und Bestätigung', () => { const tr = [0, 1, 2, 3, 4, 5].map((i) => ({ time: i * 10, r: i < 4 ? -0.5 : 1, dir: 'long', coin: 'A', hits: 0, outcome: 'stop', events: [] })); const d = btDigest({ trades: tr, from: 0, to: 60, label: 'T' }, 'swing:bf'); return d.periods.dev.n === 4 && d.periods.conf.n === 2 && d.periods.dev.avgR === -0.5 && d.periods.conf.avgR === 1; }],
+  ['Export: ohne Zeitraum-Angabe keine Zeiträume, kein Absturz', () => btDigest({ trades: [], label: 'T' }, 'swing').periods === null],
+  ['Export: Bericht nennt beide Zeiträume', () => { const mem = {}, st = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; } }; saveBacktest({ trades: [0, 1, 2].map((i) => ({ time: i * 10, r: 1, dir: 'long', coin: 'A', hits: 1, outcome: 'tp4', events: [] })), from: 0, to: 30, label: 'T' }, 'swing:bf', st); const t = buildReport({}, Date.now(), st); return t.includes('Zeiträume: Entwicklung 2 Trades') && t.includes('Bestätigung 1 Trades'); }],
 ];

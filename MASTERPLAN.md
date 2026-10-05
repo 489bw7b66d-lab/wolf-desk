@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 05.10.2026 · Etappe 8b · 633 Tests (Sammelliste für 8c ff. in Abschnitt 10)
+Stand: 05.10.2026 · Etappe 8b1 · 638 Tests (Sammelliste für 8c ff. in Abschnitt 10)
 
 Dieses Dokument enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs), weil das Repository öffentlich ist.
@@ -27,7 +27,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 - Nutzer heißt Jensen, Anrede **„Buddy“**, keine Programmierkenntnisse, arbeitet nur am iPhone (Brave, Dateien-App, GitHub im Browser).
 - **Ton:** locker und herzlich wie ein Werkstatt-Kumpel (✅, 🐺, „Klasse, Buddy!“), dabei ehrlich. Nicht nüchtern-gutachterlich.
 - **Modular:** jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert (Neues kommt in eigene Dateien).
-- **Etappen:** jedes Update ist ein Paket mit Nummer (zuletzt 8b) und muss einzeln stabil laufen.
+- **Etappen:** jedes Update ist ein Paket mit Nummer (zuletzt 8b1) und muss einzeln stabil laufen.
 - **Vor jedem Paket:** alle Tests grün, **zusätzlich mit vielen verstellten Einstellungen**, und der **Wächter komplett durchgespielt** (Testlauf, normaler Lauf, keine doppelten Meldungen).
 - **Nur geänderte Dateien** als ZIP mit eigenem Ordner; Schritt-für-Schritt-Anleitung dazu.
 - **Vor größeren Änderungen:** erst Bestand prüfen (aktuellen Code von GitHub laden, Versionsnummer prüfen!) und Plan zeigen, dann bauen.
@@ -43,7 +43,7 @@ Nur lesender Zugriff: Die App kann keine Orders setzen, nur anzeigen, rechnen, w
 | Wofür | Adresse |
 |---|---|
 | App | `489bw7b66d-lab.github.io/wolf-desk` |
-| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` (bei altem Stand `?v=8b` anhängen) |
+| Tests | `489bw7b66d-lab.github.io/wolf-desk/tests.html` (bei altem Stand `?v=8b1` anhängen) |
 | Repository | `github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -102,7 +102,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten“. Nur der BotFather m
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8b">` und eine Import-Map mit `?v=8b` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8b1">` und eine Import-Map mit `?v=8b1` je Datei (auch `tests.html`). Bei jedem Update erhöhen und neue Dateien eintragen; seit 6a gibt es nur noch **eine** Import-Liste (index.html), `tests.html` übernimmt sie von dort; die App erkennt neue Versionen selbst und lädt neu.
 
 ---
 
@@ -302,6 +302,9 @@ Etappe 7a–7c: siehe Abschnitt 10 (Engine 2 A/A2, Maßstab, „Trend oder Seitw
 Etappe 8a (Bedienung, keine Signal-Änderung): **Positionen nur noch auf der Startseite**, direkt unter dem Kontowert, je Zeile ein Mini-Trade-Weg · Zeile **„Greifen alle Stops: −X $ (Y %) · n long / m short“** (gelb ab der Hälfte des Tagesverlust-Limits, rot ab dem Limit, Erklärung hinter ⓘ) · **Positions-Blatt** beim Antippen (Trade-Weg oben, Plan-Ampel, alle Werte der früheren Konto-Karte, „Mehr Details“), Block „Offene Positionen“ im Konto entfernt · **Ausstiegsrechner** im Positions-Blatt (Prozent der noch offenen Position frei eintippen, Menge mit Kopier-Knopf, Gegenwert, Gewinn ca., Rest, Plan-Hinweis zum Übernehmen) · **Stop von Hand** im Positions-Blatt statt im Risiko-Tab · **Blätter** nach unten wegwischen, Zurück-Pfeil (Trade-Karte ⇄ Vollanalyse, Position → Analyse), Zurück-Knopf nach „Im Rechner anpassen“ · **Tab-Wechsel durch Wischen** (nicht auf Charts, in Blättern, in Eingaben, am Rand) · Suchfeld im Signale-Tab ganz oben · **Tagebuch-Messwerte** je Signal (Stunden bis zur Zone, größter Lauf ins Plus und ins Minus in R; im Archiv von `signals.json`, öffentlich unbedenklich) · **Export** mit Einzel-Trades und Messwerten · **Datenschutz:** Startkapital nicht mehr in `my-settings.js` · 104 neue Tests (601).
 
 Etappe 8b (Signalgeber auf Maßstab, vom Nutzer am 05.10. entschieden: „alles auf Maßstab“, Telegram sofort, Backtest danach): **Telegram meldet nach dem Maßstab** statt nach der alten Engine (Regel in Abschnitt 6), ein Signal-Typ „Trendfolge“, nur Long, Text ohne Score · **Versionsschnitt:** Tagebuch-Einträge und Archiv tragen `eng: 'bm'`, alles ohne Kennzeichen ist die alte Engine; der Wochenbericht wertet getrennt aus · **Schalter** in ⚙️ zum Zurückdrehen · **Backtest:** vierte Wahl „Neu im Trend“ (Maßstab mit Einstieg nur beim Wechsel, also die Telegram-Regel), Vergleichstabelle aller Engines mit Entwicklung und Bestätigung und einem Urteil zur Telegram-Regel · **App:** Zeile „📈 Maßstab“ im Signalgeber-Blatt (im Trend seit …, Plan zum Kurs, Knopf „Trade-Karte nach Maßstab“), „Letzte Signale“ und Trade-Karte zeigen „Trendfolge · Maßstab“ statt Score · 32 neue Tests (633). **Bewusst offen:** Heiße Coins scannen noch mit der alten Engine; das Kopf-Etikett im Signalgeber („KEIN SIGNAL“) meint ebenfalls die alte Engine.
+Etappe 8b1 (Fehlerbehebung Backtest): Knöpfe der gespeicherten Läufe waren auf dem iPhone verschwunden, und ein Tipp auf Stil oder Engine zeigte kein gespeichertes Ergebnis. Ursache: Die Liste lud jedes der bis zu zwölf großen Ergebnisse komplett, jedes mit 2,5 s Zeitlimit. Jetzt: kleines **Verzeichnis** (`bt:index`) je gespeichertem Lauf, Ergebnisse von vorher werden einmal je Sitzung nachgetragen, das große Ergebnis lädt erst beim Antippen (bis 20 s, mit Hinweis) · **Tipp auf Stil oder Engine zeigt das gespeicherte Ergebnis** dieser Auswahl · Vergleichs-Block lädt mit Geduld · **Export enthält Entwicklung und Bestätigung** (auch für alte Läufe, sobald sie einmal angezeigt wurden) · Engine-Knöpfe 2 × 2 · Maßstab-Läufe ohne die leeren Blöcke Score, Ereignisse, Siegel.
+**Backtest „Neu im Trend“ (05.10., 175 Märkte):** Swing 589 Trades, 49 % Treffer, Ø +0,17R, PF 1,51, größter Rückgang 77R, TP1 nur bei 15 % erreicht · Daytrade 518 Trades, 55 %, Ø +0,11R, PF 1,78, Rückgang 18R, TP1 bei 1 % · Scalp 306 Trades, Ø +0,04R (Entwicklung +0,03R, Bestätigung +0,05R; zu dünn für Slippage). Besser als der Maßstab mit Einstieg an jeder Kerze (Swing +0,14R) und als die alte Engine. **Noch offen:** Entwicklung/Bestätigung für Swing und Daytrade (kamen wegen des Fehlers nicht an). **Wichtig:** Der Gewinn kommt aus dem Zeit-Ausstieg des Backtests (60 Setup-Kerzen, bei Swing 10 Tage), nicht aus den Zielen → fürs nächste Paket: Hinweis „Ausstieg spätestens nach 10 Tagen“ im Telegram-Signal und Tagebuch-Fenster der Maßstab-Signale auf 10 Tage. Der Rückgang von 77R zeigt gebündelte Verlierer bei Marktdrehern: Aufgabe für den Kompass.
+
 **Ehrlicher Stand zu 8b:** Die Regel „neu im Trend“ ging ungetestet scharf. Belegt war nur der Maßstab mit Einstieg an jeder Kerze (Swing +0,14R, aber Entwicklung −0,20R / Bestätigung +0,35R; Daytrade +0,09R, TP1 nur bei 4 % der Trades erreicht). Der Stop liegt meist 8–17 % entfernt, TP1 entsprechend 16–34 %: wenige, weite Trades, Gewinn durch Laufenlassen. Der Daytrade-Maßstab unterscheidet sich im Backtest nur durch die Haltedauer, deshalb gibt es live einen Signal-Typ.
 
 **Experten-Analyse (30.09.2026, Rollenspiel):** Aufbau gut (Kern/Anzeige/Wächter getrennt, keine Kreis-Abhängigkeiten, App und Wächter teilen den Kern). Später: Backtest mit Entwicklungs-/Bestätigungszeitraum, Slippage und Funding, Überlebende-Verzerrung beachten (heutige Ledger-Liste), Korrelation offener Positionen, Regelbrüche im Wochenbericht, Markt-Bias als Kandidat. Bewusst nicht: neu schreiben, mehr Indikatoren.
@@ -334,6 +337,7 @@ Recherche-Ergebnis (01.10.): Trendfolge in Krypto am besten belegt, aber vor all
 **NACH 8b ZUERST (vom Nutzer am 05.10. so bestellt):**
 - **Backtest der Telegram-Regel:** in der App Backtest → „Neu im Trend“ → Handelbare Märkte → Swing (und danach Daytrade), dann „📤 Daten für Claude“ schicken. Entscheidung danach: bleibt die Regel, bekommt sie einen Filter, oder Schalter zurück. Maßgeblich: Ø R, Entwicklung und Bestätigung beide im Plus, mindestens einige hundert Trades.
 - **Danach das Kompass-Paket** (Punkte 1 und 2 unten: Binance als zweite Datenquelle, dann Zyklus-Kompass). Der Kompass ist zugleich der Marktphasen-Schutz, der dem Maßstab fehlt.
+- **Mit ins Kompass-Paket:** neues App-Icon des Nutzers (goldener Wolfskopf, 05.10.; quadratisch bis zum Rand zuschneiden, 180/192/512 px; Hinweis: Icon wechselt erst nach Löschen und neuem Hinzufügen zum Home-Bildschirm, vorher Einstellungen sichern) · Zeit-Ausstieg im Signal und 10-Tage-Fenster im Tagebuch.
 - **Heiße Coins auf Maßstab umstellen** (Liste „neu im Trend / im Trend“ statt alter Engine) und das Kopf-Etikett im Signalgeber anpassen.
 
 **SAMMELLISTE für die nächsten Pakete (Stand 05.10.2026, mit dem Nutzer abgestimmt), Reihenfolge:**

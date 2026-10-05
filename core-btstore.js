@@ -54,12 +54,45 @@ export const clearRun = () => kvDel(RUN);
 export const remaining = (run) => (run?.coins || []).filter((c) => !(run.runs || []).some((r) => r.coin === c));
 
 // ---- Fertige Ergebnisse: je Stil nur das letzte ----
-export const saveResult = (style, last) => kvSet('bt:last:' + style, { ...last, trades: (last.trades || []).map(compactTrade), runs: (last.runs || []).map(compactRun), style, at: Date.now() });
+export async function saveResult(style, last) {
+  const rec = { ...last, trades: (last.trades || []).map(compactTrade), runs: (last.runs || []).map(compactRun), style, at: Date.now() };
+  const out = await kvSet('bt:last:' + style, rec);
+  await indexPut(style, metaOf(style, rec)); // 8b1: kleines Verzeichnis, damit die Liste ohne die großen Ergebnisse auskommt
+  return out;
+}
+
+// ---- Verzeichnis der gespeicherten Ergebnisse (8b1) ----
+// Anlass: Auf dem iPhone verschwanden die Knöpfe der gespeicherten Läufe. Die Liste hat dafür bisher jedes Ergebnis
+// komplett geladen (bis zu 12 große Einträge nacheinander, jeder mit 2,5 s Zeitlimit); dauerte es länger, fehlte der Knopf.
+// Jetzt steht je Ergebnis eine kleine Zeile im Verzeichnis, und das große Ergebnis wird erst beim Antippen geladen (mit Geduld).
+const INDEX = 'bt:index';
+export const metaOf = (style, r) => ({ style, at: r.at ?? Date.now(), complete: r.complete !== false, done: r.done ?? null, total: r.total ?? null, label: r.label ?? '', n: (r.trades || []).length });
+export async function loadIndex() { const i = await kvGet(INDEX); return i && typeof i === 'object' && !Array.isArray(i) ? i : {}; }
+export async function indexPut(style, meta) { const i = await loadIndex(); i[style] = meta; await kvSet(INDEX, i); return i; }
+// Ein Ergebnis mit längerem Zeitlimit laden (große Läufe brauchen auf dem iPhone mehrere Sekunden)
+export async function loadResultWait(style, ms = 20000) {
+  const r = await withTimeout(kvGetRaw('bt:last:' + style), ms);
+  return r && Array.isArray(r.trades) ? r : null;
+}
+// Verzeichnis nachtragen für Ergebnisse, die vor 8b1 gespeichert wurden. Gibt true zurück, wenn etwas dazukam.
+export async function rebuildIndex(styles, ms = 20000) {
+  const idx = await loadIndex();
+  const keys = await withTimeout(kvKeysRaw(), ms, null);
+  let changed = false;
+  for (const s of styles) {
+    if (idx[s]) continue;
+    if (keys && !keys.includes('bt:last:' + s)) continue;
+    const r = await loadResultWait(s, ms);
+    if (r) { await indexPut(s, metaOf(s, r)); changed = true; }
+  }
+  return changed;
+}
 // Nur gültige Ergebnisse zurückgeben (Schutz gegen leere oder beschädigte Einträge)
 export const loadResult = async (style) => { const r = await kvGet('bt:last:' + style); return r && Array.isArray(r.trades) ? r : null; };
 export async function savedList(styles) {
   const out = [];
-  for (const s of styles) { const r = await loadResult(s); if (r) out.push({ style: s, at: r.at, complete: r.complete !== false, done: r.done, total: r.total, label: r.label }); }
+  const idx = await loadIndex(); // 8b1: aus dem Verzeichnis, ohne die großen Ergebnisse zu laden
+  for (const s of styles) if (idx[s]) out.push({ ...idx[s], style: s });
   return out;
 }
 export async function clearAll() { for (const k of await kvKeys()) if (String(k).startsWith('bt:')) await kvDel(k); }

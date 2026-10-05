@@ -5,7 +5,7 @@ import { getTradeable, onTradeable, matchMarkets } from './core-tradeable.js';
 import { BT, loadHistory, runBacktest, summarize, compareTrail, splitPeriods, byRegime } from './core-backtest.js';
 import { compareGate, GATE_LABEL } from './core-trendgate.js';
 import { saveBacktest, shareReport } from './ui-export.js';
-import { loadRun, saveRun, clearRun, remaining, saveResult, loadResult, savedList } from './core-btstore.js';
+import { loadRun, saveRun, clearRun, remaining, saveResult, loadResultWait, savedList, rebuildIndex } from './core-btstore.js';
 import { esc, dn, tipHead, tipInline } from './ui-parts.js';
 import * as f from './core-format.js';
 
@@ -96,7 +96,7 @@ function periodBlock(trades, from, to) {
 async function fillCompare() {
   const box = $('bt-cmp');
   if (!box || !last) return;
-  const st = style, a = await loadResult(keyOf(st, 1)), b = await loadResult(keyOf(st, 2)), c = await loadResult(keyOf(st, 3)), d = await loadResult(keyOf(st, 4));
+  const st = style, get = (en) => loadResultWait(keyOf(st, en), 8000), a = await get(1), b = await get(2), c = await get(3), d = await get(4); // 8b1: mit Geduld laden, sonst fehlen auf dem iPhone Zeilen
   const have = [['Neu im Trend', d], ['Maßstab', c], ['Alt', a], ['Engine 2', b]].filter((x) => x[1]);
   if (have.length < 2) { box.innerHTML = `<p class="empty" style="font-size:13px">Vergleich der Engines: rechne ${CONFIG.signals.modes[st].label} mit einer zweiten Engine auf denselben Märkten, dann erscheint er hier.</p>`; return; }
   const row = (name, r) => { const sm = summarize(r.trades), sp = splitPeriods(r.trades, r.from, r.to); return `<div class="bt-row" role="row"><span><b>${name}</b><br><small class="muted">${esc(r.label.split(' · ')[0])}</small></span><span>${sm.n}</span><span class="${cls(sm.avgR)}">${R(sm.avgR)}</span><span class="${cls(sp?.dev.avgR)}">${R(sp?.dev.avgR)}</span><span class="${cls(sp?.conf.avgR)}">${R(sp?.conf.avgR)}</span></div>`; };
@@ -150,6 +150,8 @@ function renderResult() {
     return;
   }
   const v = verdict(sm);
+  // 8b1: Der Maßstab hat weder Score noch Siegel noch mehrere Ereignisse; diese Blöcke wären dort leer gedroschen
+  const plain = last.engine === 3 || last.engine === 4;
   const perCoin = runs.length > 1 ? runs.map((r) => ({ coin: r.coin, ...summarize(r.trades), err: r.error })) : [];
   box.innerHTML = `<h3 class="sub-h" style="margin-top:4px">${esc(label)}</h3>
     <p class="bt-verdict ${v.cls}">${esc(v.text)}</p>
@@ -169,14 +171,14 @@ function renderResult() {
     <button type="button" class="wide ghost" id="bt-export" style="margin:4px 0 14px">📤 Daten für Claude exportieren</button>
     ${gateBlock(compareGate(trades))}
     ${trailBlock(compareTrail(trades))}
-    <h3 class="sub-h">Taugt ein höherer Score mehr?</h3>
-    ${table(['Score', 'Trades', 'Gewinn', 'Ø R'], sm.byScore.map((b) => `<div class="bt-row" role="row"><span><b>${b.label}</b></span><span>${b.n}</span><span>${P(b.winRate)}</span><span class="${cls(b.avgR)}">${R(b.avgR)}</span></div>`))}
-    ${tipHead('Welche Ereignisse helfen?', 'Vorteil = Ø R mit diesem Ereignis minus Ø R ohne. Erst ab 3 Trades gelistet.')}
-    ${sm.byEvent.length ? table(['Ereignis', 'Trades', 'Ø R', 'Vorteil'], sm.byEvent.map((e) => `<div class="bt-row" role="row"><span>${esc(e.name)}</span><span>${e.n}</span><span class="${cls(e.avgR)}">${R(e.avgR)}</span><span class="${cls(e.edge)}">${R(e.edge)}</span></div>`))
+    ${plain ? '' : `<h3 class="sub-h">Taugt ein höherer Score mehr?</h3>
+    ${table(['Score', 'Trades', 'Gewinn', 'Ø R'], sm.byScore.map((b) => `<div class="bt-row" role="row"><span><b>${b.label}</b></span><span>${b.n}</span><span>${P(b.winRate)}</span><span class="${cls(b.avgR)}">${R(b.avgR)}</span></div>`))}`}
+    ${plain ? '' : tipHead('Welche Ereignisse helfen?', 'Vorteil = Ø R mit diesem Ereignis minus Ø R ohne. Erst ab 3 Trades gelistet.')}
+    ${plain ? '' : sm.byEvent.length ? table(['Ereignis', 'Trades', 'Ø R', 'Vorteil'], sm.byEvent.map((e) => `<div class="bt-row" role="row"><span>${esc(e.name)}</span><span>${e.n}</span><span class="${cls(e.avgR)}">${R(e.avgR)}</span><span class="${cls(e.edge)}">${R(e.edge)}</span></div>`))
 
       : '<p class="empty">Zu wenige Trades je Ereignis für eine Aussage.</p>'}
-    <h3 class="sub-h">Retest-Siegel und Richtung</h3>
-    ${table(['Gruppe', 'Trades', 'Gewinn', 'Ø R'], [
+    ${plain ? '' : '<h3 class="sub-h">Retest-Siegel und Richtung</h3>'}
+    ${plain ? '' : table(['Gruppe', 'Trades', 'Gewinn', 'Ø R'], [
       ['🛡 mit Siegel', sm.seal.with], ['ohne Siegel', sm.seal.without], ['Long', sm.long], ['Short', sm.short],
     ].filter(([, x]) => x.n).map(([n, x]) => `<div class="bt-row" role="row"><span>${n}</span><span>${x.n}</span><span>${P(x.winRate)}</span><span class="${cls(x.avgR)}">${R(x.avgR)}</span></div>`))}
     ${perCoin.length ? `<h3 class="sub-h">Nach Markt</h3>${table(['Markt', 'Trades', 'Gewinn', 'Ø R'], perCoin.map((c) => `<div class="bt-row" role="row"><span><b>${esc(dn(c.coin))}</b></span><span>${c.err ? '–' : c.n}</span><span>${c.err ? '' : P(c.winRate)}</span><span class="${cls(c.avgR)}">${c.err ? 'Fehler' : R(c.avgR)}</span></div>`))}` : ''}
@@ -243,16 +245,36 @@ async function start(resume = null) {
 // Eine Zeile unter dem Start-Knopf: unterbrochener Lauf (Weitermachen) und gespeicherte Ergebnisse je Stil
 const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm', 'swing:bf', 'intraday:bf', 'scalp:bf'];
 const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : k.endsWith(':bf') ? ' Neu im Trend' : '');
+let indexChecked = false;
+// 8b1: Gespeichertes Ergebnis zu einer Auswahl zeigen (Knopf in der Liste oder Tipp auf Stil bzw. Engine)
+const note = (txt) => { $('bt-status').innerHTML = `<p class="empty" style="font-size:13px;margin:10px 0 0">${esc(txt)}</p>`; };
+async function showSaved(key, viaButton = false) {
+  if (running) return;
+  note('Lade gespeichertes Ergebnis …', null);
+  const r = await loadResultWait(key);
+  if (running) return;
+  if (!r) {
+    note(viaButton ? 'Das gespeicherte Ergebnis ließ sich nicht laden. App einmal schließen und neu öffnen, dann noch einmal versuchen.' : 'Für diese Auswahl ist noch nichts gespeichert. „Backtest starten“ rechnet sie.', null);
+    return;
+  }
+  style = r.style.split(':')[0]; engine = r.engine || 1; last = r;
+  saveBacktest(r, key); // Zusammenfassung für „Daten für Claude“ auffrischen (seit 8b1 mit beiden Zeiträumen)
+  note(`Gespeichertes Ergebnis vom ${new Date(r.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}.`, null);
+  renderControls(); renderResult();
+}
 async function renderSaved() {
   const box = $('bt-resume');
   if (!box) return;
+  // Ergebnisse von vor 8b1 einmal je Sitzung ins Verzeichnis nachtragen (im Hintergrund, mit Geduld)
+  if (!indexChecked) { indexChecked = true; rebuildIndex(BT_STYLES).then((changed) => { if (changed) renderSaved(); }).catch(() => {}); }
   const run = running ? null : await loadRun();
   const saved = await savedList(BT_STYLES);
   const time = (t) => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const day = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   box.innerHTML = (run && remaining(run).length
     ? `<div class="bt-pause">${esc(CONFIG.signals.modes[run.style].label)}${ENG_SHORT[run.engine] || ''} · ${esc(run.sel === ALL ? 'Watchlist' : run.sel === TRADE ? 'Handelbare Märkte' : run.sel === SAMPLE ? 'Stichprobe' : dn(run.sel))} unterbrochen bei ${run.runs.length} von ${run.coins.length}
         <span><button type="button" id="bt-go" class="small-btn">Weitermachen</button><button type="button" id="bt-drop" class="small-btn ghost">Verwerfen</button></span></div>` : '')
-    + (saved.length ? `<div class="bt-saved">${saved.map((x) => `<button type="button" data-bt-show="${x.style}">${esc(keyLabel(x.style))} ✓ ${time(x.at)}</button>`).join('')}</div>` : '');
+    + (saved.length ? `<div class="bt-saved">${saved.sort((a, b) => b.at - a.at).map((x) => `<button type="button" data-bt-show="${x.style}">${esc(keyLabel(x.style))} ✓ ${day(x.at)} ${time(x.at)}</button>`).join('')}</div>` : '');
 }
 
 // Suche über alle Hyperliquid-Märkte (auch xyz: Rohstoffe, Aktien, Devisen)
@@ -283,6 +305,7 @@ export function initBacktest(getState = () => ({})) {
     if (!b || running) return;
     style = b.dataset.bts;
     renderControls();
+    showSaved(keyOf(style, engine)); // 8b1: gespeichertes Ergebnis dieser Auswahl gleich zeigen
   });
   $('bt-run').addEventListener('click', () => start());
   // 6a: Unterbrochenen Lauf anbieten, letztes Ergebnis des Stils wieder anzeigen
@@ -290,14 +313,15 @@ export function initBacktest(getState = () => ({})) {
     if (e.target.id === 'bt-go') { const r = await loadRun(); if (r) start(r); }
     if (e.target.id === 'bt-drop') { await clearRun(); renderSaved(); }
     const b = e.target.closest('button[data-bt-show]');
-    if (b) { const r = await loadResult(b.dataset.btShow); if (r) { style = r.style.split(':')[0]; engine = r.engine || 1; last = r; renderControls(); renderResult(); } }
+    if (b) showSaved(b.dataset.btShow, true);
   });
-  renderSaved().then(async () => { if (!last) { const r = await loadResult(keyOf(style, engine)); if (r) { last = r; renderResult(); } } });
+  renderSaved().then(async () => { if (!last) { const r = await loadResultWait(keyOf(style, engine)); if (r && !last && !running) { last = r; renderResult(); } } });
   $('bt-engine')?.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-bte]');
     if (!b || running) return;
     engine = Number(b.dataset.bte);
     renderControls();
+    showSaved(keyOf(style, engine));
   });
   $('bt-out').addEventListener('click', (e) => { if (e.target.closest('#bt-export')) shareReport(getState); });
 }
