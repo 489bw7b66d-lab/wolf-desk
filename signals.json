@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "BTC",
+   "dir": "long",
+   "style": "intraday",
+   "score": 80,
+   "seal": true,
+   "at": 1791160660133,
+   "px": 86282,
+   "zone": [
+    86235.51432766333,
+    86504
+   ],
+   "stop": 85564.30014682167,
+   "tps": [
+    87175.21418084168,
+    87980.67119785168,
+    88786.12821486169,
+    89591.5852318717
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "MACD-Kreuzung aufwärts",
+    "Starkes Momentum",
+    "Volumen-Spike"
+   ],
+   "id": 8
+  },
+  {
    "coin": "XRP",
    "dir": "long",
    "style": "intraday",
