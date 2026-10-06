@@ -24,6 +24,7 @@ import { refreshMarket } from './core-market.js';
 import { refreshTrade, closeTrade } from './ui-trade.js';
 import { initSheet, setBack, showReturn } from './ui-sheet.js';
 import { initTabSwipe } from './ui-swipe.js';
+import { initNotice } from './ui-notice.js';
 import * as fmt from './core-format.js';
 
 const ADDR_KEY = 'wolfdesk.address';
@@ -195,6 +196,7 @@ const openCalc = (r) => {
 const openAnalyze = (coin) => { analyze(coin); if ((getState().account?.positions || []).some((p) => p.coin === coin)) backTo(() => openCoin(coin)); };
 initSheet();
 initTabSwipe();
+initNotice();
 initTrade(getState, fullFromTrade, openCalc);
 initCoin(getState, openAnalyze);
 initSignals(getState, tradeFromDetail, openCoin);

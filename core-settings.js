@@ -24,6 +24,8 @@ export const FIELDS = [
   n('risiko', 'rules.riskPerTradeWarnPct', 'Risiko pro Trade: gelb ab', 0.5, 50, 0.5, '%'),
   n('risiko', 'rules.riskPerTradeMaxPct', 'Risiko pro Trade: rot ab', 0.5, 50, 0.5, '%'),
   n('risiko', 'rules.dailyLossLimitPct', 'Tagesverlust: Schluss ab', 1, 50, 0.5, '%'),
+  n('risiko', 'rules.totalRiskWarnPct', 'Greifen alle Stops: gelb ab', 0.5, 50, 0.5, '%', { hint: 'Summe über alle offenen Positionen bis zu ihren Stops' }),
+  n('risiko', 'rules.totalRiskMaxPct', 'Greifen alle Stops: rot ab (Risiko-Budget)', 0.5, 50, 0.5, '%'),
   n('risiko', 'rules.maxLeverage', 'Maximaler Hebel', 1, 50, 1, '×'),
   n('risiko', 'guard.stopNoiseAtr', 'Stop im Rauschen: rot unter', 0.25, 5, 0.25, '× ATR', { hint: 'Stop-Abstand im Vergleich zur normalen Schwankung' }),
   n('risiko', 'guard.stopTightAtr', 'Stop knapp: gelb unter', 0.25, 5, 0.25, '× ATR'),
@@ -129,6 +131,7 @@ export function validate(v) {
   const sum = [0, 1, 2, 3, 4].reduce((s, i) => s + (Number(v[`exitPlan.${i}.pct`]) || 0), 0);
   if (Math.round(sum) !== 100) e('exitPlan.0.pct', `Ausstiegsplan ergibt ${sum} %, es müssen genau 100 % sein`);
   if (v['rules.riskPerTradeWarnPct'] > v['rules.riskPerTradeMaxPct']) e('rules.riskPerTradeWarnPct', 'Risiko: „gelb ab“ muss kleiner oder gleich „rot ab“ sein');
+  if (v['rules.totalRiskWarnPct'] > v['rules.totalRiskMaxPct']) e('rules.totalRiskWarnPct', 'Greifen alle Stops: „gelb ab“ muss kleiner oder gleich „rot ab“ sein');
   const st = [0, 1, 2].map((i) => v[`rules.riskSteps.${i}`]);
   if (!(st[0] < st[1] && st[1] < st[2])) e('rules.riskSteps.0', 'Risiko-Stufen müssen aufsteigen: Stufe 1 < Stufe 2 < Stufe 3');
   if (v['guard.stopNoiseAtr'] > v['guard.stopTightAtr']) e('guard.stopNoiseAtr', 'Stop-Check: „rot unter“ muss kleiner oder gleich „gelb unter“ sein');

@@ -160,9 +160,10 @@ export function checkAccount({ equity, positionsCount, realizedToday, openRiskTo
     },
     {
       rule: 'Gesamtrisiko bis Stops',
-      status: level(false, openRiskTotal == null),
+      // 8e: eigene Grenzen für das Gesamt-Risiko (fehlen sie in den Regeln, bleibt es wie bis 8d ohne Ampel)
+      status: (() => { const pct = openRiskTotal == null || !(equity > 0) ? null : (Math.max(0, openRiskTotal) / equity) * 100; return level(pct != null && pct >= (rules.totalRiskMaxPct ?? Infinity), pct == null || pct >= (rules.totalRiskWarnPct ?? Infinity)); })(),
       text: openRiskTotal == null ? 'Nicht berechenbar, mindestens ein Stop-Loss fehlt'
-        : `${(equity > 0 ? (openRiskTotal / equity) * 100 : 0).toFixed(1).replace('.', ',')} % vom Konto, wenn alle Stops greifen`,
+        : `${(equity > 0 ? (openRiskTotal / equity) * 100 : 0).toFixed(1).replace('.', ',')} % vom Konto, wenn alle Stops greifen${rules.totalRiskMaxPct ? ` (gelb ab ${rules.totalRiskWarnPct} %, rot ab ${rules.totalRiskMaxPct} %)` : ''}`,
     },
     ...free,
   ];

@@ -4,7 +4,8 @@
 import { CONFIG } from './config.js';
 import { pathBar, planLine } from './ui-testpage.js';
 import { trailText } from './core-trail.js';
-import { totalRisk, totalRiskStatus } from './core-totalrisk.js';
+import { totalRisk } from './core-totalrisk.js';
+import { totalRiskLevel } from './core-riskbudget.js';
 import { exitCalc, qtyText, planHint } from './core-exitcalc.js';
 import { getManualStop, setManualStop } from './core-stops.js';
 import { tipInline, tipHead, esc, dn } from './ui-parts.js';
@@ -41,9 +42,9 @@ export function miniPath(path) {
 export function riskSum(positions, equity) {
   const t = totalRisk(positions, equity);
   if (!t) return '';
-  const st = totalRiskStatus(t, CONFIG.rules.dailyLossLimitPct);
+  const st = totalRiskLevel(t, CONFIG.rules.totalRiskWarnPct, CONFIG.rules.totalRiskMaxPct); // 8e: eigene Grenzen
   const dirs = [t.long ? `${t.long} long` : '', t.short ? `${t.short} short` : ''].filter(Boolean).join(' / ');
-  const tip = `Summe über alle Positionen, gerechnet vom aktuellen Kurs bis zum Stop (ohne Stop bis zur Liquidation). Offene Buchgewinne wären dann mit weg. Gegenüber den Einstiegen: ${f.signedUsd(t.fromEntry)}${t.pctEntry == null ? '' : ` (${signedPct(t.pctEntry)})`}. Alle Positionen zusammen sind ${f.usd(t.notional)} groß${t.leverage == null ? '' : `, das ${f.lev(t.leverage)}-fache des Kontos`}. Gleich gerichtete Positionen fallen in einem schwachen Markt oft gemeinsam. Gelb ab der Hälfte deines Tagesverlust-Limits, rot ab dem Limit.`;
+  const tip = `Summe über alle Positionen, gerechnet vom aktuellen Kurs bis zum Stop (ohne Stop bis zur Liquidation). Offene Buchgewinne wären dann mit weg. Gegenüber den Einstiegen: ${f.signedUsd(t.fromEntry)}${t.pctEntry == null ? '' : ` (${signedPct(t.pctEntry)})`}. Alle Positionen zusammen sind ${f.usd(t.notional)} groß${t.leverage == null ? '' : `, das ${f.lev(t.leverage)}-fache des Kontos`}. Gleich gerichtete Positionen fallen in einem schwachen Markt oft gemeinsam. Gelb ab ${CONFIG.rules.totalRiskWarnPct} %, rot ab ${CONFIG.rules.totalRiskMaxPct} % vom Konto (⚙️ → Risiko). Die rote Grenze ist zugleich dein Risiko-Budget für neue Trades.`;
   return `<div class="risk-sum ${st}"><span class="risk-main">Greifen alle Stops: <b>${f.signedUsd(t.fromNow)}</b>${t.pctNow == null ? '' : ` (${signedPct(t.pctNow)})`}</span>
     <span class="risk-side">${dirs}${t.noStop ? ` · <b class="short">${t.noStop} ohne Stop</b>` : ''} ${tipInline(tip, 'risk-sum')}</span></div>`;
 }

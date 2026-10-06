@@ -26,7 +26,7 @@ export const tests = [
   ['Mini-Balken: Stop im Gewinn wird grün markiert', () => miniPath(path({ ...P, stop: 1.05 })).includes('sl-gain')],
   ['Mini-Balken: ohne Ziele oder ohne Weg leer (kein Absturz)', () => miniPath(null) === '' && miniPath({ empty: true }) === ''],
   ['Gesamt-Risiko-Zeile: Betrag, Prozent und Richtung', () => pub(() => { const h = riskSum([P], 1000); return h.includes('Greifen alle Stops') && h.includes('−200,00 $') && h.includes('1 long') && !h.includes('short'); })],
-  ['Gesamt-Risiko-Zeile: rot ab deinem Tagesverlust-Limit, gelb ab der Hälfte, sonst neutral', () => { const lim = CONFIG.rules.dailyLossLimitPct, eq = (x) => 200 / ((lim * x) / 100); return riskSum([P], eq(1.1)).includes('risk-sum bad') && riskSum([P], eq(0.7)).includes('risk-sum warn') && riskSum([P], eq(0.3)).includes('risk-sum ok'); }],
+  ['Gesamt-Risiko-Zeile: rot ab der eigenen Grenze, gelb ab der Warn-Grenze, sonst neutral (8e)', () => { const w = CONFIG.rules.totalRiskWarnPct, m = CONFIG.rules.totalRiskMaxPct, eq = (pct) => 200 / (pct / 100); return riskSum([P], eq(m * 1.1)).includes('risk-sum bad') && riskSum([P], eq((w + m) / 2)).includes('risk-sum warn') && riskSum([P], eq(w * 0.5)).includes('risk-sum ok'); }],
   ['Gesamt-Risiko-Zeile: Position ohne Stop wird genannt', () => riskSum([{ ...P, stop: null }], 5000).includes('1 ohne Stop')],
   ['Gesamt-Risiko-Zeile: ohne Positionen nichts', () => riskSum([], 1000) === ''],
   ['Gesamt-Risiko-Zeile: Privatmodus verbirgt den Betrag, Prozent bleibt', () => { const was = f.isPrivate(); f.setPrivate(true); try { const h = riskSum([P], 1000); return !h.includes('200,00') && h.includes('20,0 %'); } finally { f.setPrivate(was); } }],

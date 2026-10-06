@@ -57,7 +57,7 @@ function btText(d) {
   const s = d.summary || {};
   const L = [];
   L.push(`### ${d.label || d.style} (gerechnet ${new Date(d.at).toLocaleString('de-DE')}${d.total ? ` · ${d.complete ? 'vollständig' : 'abgebrochen bei'} ${d.done}/${d.total}` : ''})`);
-  L.push(`Trades ${s.n ?? 0} · Gewinn-Trades ${pc(s.winRate)} · TP1 erreicht ${pc(s.tp1Rate)} · Ø ${r2(s.avgR)} · Summe ${r2(s.totalR)} · Profit-Faktor ${n2(s.profitFactor)} · größter Rückgang ${n2(s.maxDdR, 1)}R · ohne Einstieg ${d.missed}`);
+  L.push(`Trades ${s.n ?? 0} · Gewinn-Trades ${pc(s.winRate)}${String(d.style).endsWith(':dc') ? '' : ` · TP1 erreicht ${pc(s.tp1Rate)}`} · Ø ${r2(s.avgR)} · Summe ${r2(s.totalR)} · Profit-Faktor ${n2(s.profitFactor)} · größter Rückgang ${n2(s.maxDdR, 1)}R · ohne Einstieg ${d.missed}`);
   L.push(`Gewinn aus den besten 15 % der Trades: ${d.pareto ? pc(d.pareto.pct) + ` (${d.pareto.k} Trades)` : '–'} · Ø Haltedauer ${d.holdDays == null ? '–' : n2(d.holdDays, 1) + ' Tage'} · Funding ${d.fundingPctDay > 0 ? `eingerechnet (Schätzung ${String(d.fundingPctDay).replace('.', ',')} % je Tag für Longs)` : 'nicht eingerechnet (Lauf von vor 8d)'}`);
   if (d.periods) L.push(`Zeiträume: Entwicklung ${d.periods.dev.n} Trades, Ø ${r2(d.periods.dev.avgR)}, Summe ${r2(d.periods.dev.sum)} · Bestätigung ${d.periods.conf.n} Trades, Ø ${r2(d.periods.conf.avgR)}, Summe ${r2(d.periods.conf.sum)}`);
   const RN = { all: 'alle', trend: 'nur BTC im Trend', above: 'nur BTC über EMA 100' }, EN = { plan: 'heutiger Plan', be: 'nach TP1 Stop auf Einstieg', r1: 'TP1 bei 1R, dann Einstieg' };

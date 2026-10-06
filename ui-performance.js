@@ -8,6 +8,7 @@ import { evaluatePatience, patienceStats, PATIENCE_KEY, windowDays } from './cor
 import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getFeedSignals } from './ui-feed.js';
 import * as f from './core-format.js';
+import { paretoShare } from './core-btmetrics.js';
 import { dn, tipHead, tipInline } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
@@ -106,11 +107,16 @@ function renderTrades(s) {
 // Deine Statistik: Auswertung der eigenen abgeschlossenen Trades (90 Tage)
 const cl = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
 const pc = (v) => (v == null ? '–' : f.pct(v, 0));
+const ofAcct = (v, eq) => (v == null || !(eq > 0) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs((v / eq) * 100).toFixed(2).replace('.', ',') + ' %');
 function renderStats(s) {
   const box = $('stats');
   if (!box) return;
   if (!s.fills) { box.innerHTML = `<p class="empty">${s.fillsError ? 'Trades konnten nicht geladen werden.' : 'Wird geladen …'}</p>`; return; }
-  const st = tradeStats(tradeHistory(s.fills));
+  const hist = tradeHistory(s.fills);
+  const st = tradeStats(hist);
+  // 8e: Pareto-Anteil und Ø Gewinn / Ø Verlust in Prozent vom (heutigen) Kontowert
+  const par = paretoShare(hist.filter((t) => t.closedAt != null && !t.partial).map((t) => ({ r: t.realized })));
+  const eq = s.account ? accountSummary(s.account, CONFIG.accountMode).equity : null;
   if (!st.n) { box.innerHTML = '<p class="empty">Noch keine abgeschlossenen Trades in den letzten 90 Tagen.</p>'; return; }
   // Kernaussage: Ausstiegsplan (in Teilen verkauft) gegen alles auf einmal
   let insight = '';
@@ -129,6 +135,9 @@ function renderStats(s) {
       <div><span class="k">Ø Verlust</span><span class="v short">${f.signedUsd(st.avgLoss)}</span></div>
       <div><span class="k">Gewinn : Verlust</span><span class="v">${st.payoff == null ? '–' : st.payoff.toFixed(2).replace('.', ',') + ' : 1'}</span></div>
       <div><span class="k">Summe</span><span class="v ${cl(st.total)}">${f.signedUsd(st.total)}</span></div>
+      <div><span class="k">Ø Gewinn vom Konto</span><span class="v long">${ofAcct(st.avgWin, eq)}</span></div>
+      <div><span class="k">Ø Verlust vom Konto</span><span class="v short">${ofAcct(st.avgLoss, eq)}</span></div>
+      <div class="span2"><span class="k">Gewinn aus den besten 15 % ${tipInline('Anteil deines gesamten Gewinns, der aus den besten 15 % deiner Trades kommt. Bei Trendfolge ist ein hoher Wert normal: Wenige große Läufer tragen das Ergebnis, und wer sie früh verkauft, verschenkt den Vorteil. Ein Strich steht da, solange die Summe im Minus liegt. „Vom Konto“ bei Ø Gewinn und Ø Verlust ist am heutigen Kontowert gemessen.', 'stats-pareto')}</span><span class="v">${par ? pc(par.pct) + ` (${par.k} von ${par.n} Trades)` : '–'}</span></div>
     </div>
     ${tipHead('Wie du verkaufst', `Bester Trade: ${dn(st.best.coin)} ${f.signedUsd(st.best.realized)}, schlechtester: ${dn(st.worst.coin)} ${f.signedUsd(st.worst.realized)}. Alle Beträge nach Gebühren, ohne Funding.`)}
     <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Gruppe</span><span>Trades</span><span>Treffer</span><span>Ø PnL</span></div>

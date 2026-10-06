@@ -91,14 +91,16 @@ export const CONFIG = {
 
   // DEINE RISIKO-REGELN (Prozentwerte beziehen sich auf den Kontowert)
   rules: {
-    riskSteps: [2, 3, 5],     // Knöpfe „Risiko pro Trade“ auf Trade-Karte und im Rechner (Prozent vom Konto)
-    riskPerTradeWarnPct: 3,   // ab hier gelbe Warnung (Verlust bis Stop-Loss)
-    riskPerTradeMaxPct: 5,    // ab hier roter Regelverstoß
-    dailyLossLimitPct: 15,    // realisierter Tagesverlust, ab dem Schluss ist
+    riskSteps: [0.5, 1, 2],   // (8e: vorher 2 / 3 / 5) Knöpfe „Risiko pro Trade“ auf Trade-Karte und im Rechner (Prozent vom Konto)
+    riskPerTradeWarnPct: 1,   // (8e: vorher 3) ab hier gelbe Warnung (Verlust bis Stop-Loss)
+    riskPerTradeMaxPct: 2,    // (8e: vorher 5) ab hier roter Regelverstoß
+    dailyLossLimitPct: 5,     // (8e: vorher 15) realisierter Tagesverlust, ab dem Schluss ist
     maxLeverage: 20,          // maximaler Hebel pro Position
     liqBufferPct: 1,          // Liquidation muss mind. so viel % (vom Kurs) HINTER dem Stop liegen
     liqNoStopMinShare: 0.5,   // ohne Stop: Warnung, wenn mehr als die Hälfte des Anfangsabstands verbraucht ist
-    marginBudgetPct: 50,      // Hebel-Empfehlung: pro Trade höchstens so viel % des verfügbaren Kapitals als Margin
+    marginBudgetPct: 25,      // (8e: vorher 50) Hebel-Empfehlung: pro Trade höchstens so viel % des verfügbaren Kapitals als Margin
+    totalRiskWarnPct: 4,      // 8e: „Greifen alle Stops“ gelb ab so viel % vom Konto
+    totalRiskMaxPct: 6,       // 8e: rot ab hier; zugleich das Risiko-Budget für neue Trades
     freeCapitalWarnPct: 10,   // gelb, wenn weniger als so viel % vom Konto frei sind
     freeCapitalMinPct: 2,     // rot darunter: keine neuen Trades möglich, kein Puffer
   },

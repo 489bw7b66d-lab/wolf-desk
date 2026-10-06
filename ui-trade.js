@@ -8,6 +8,9 @@ import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.
 import { estimateFees, DEFAULT_RATES } from './core-fees.js';
 import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText, planWithStop, planOrigStop } from './core-guard.js';
 import { tradeHistory } from './core-trades.js';
+import { accountRisk } from './core-positions.js';
+import { totalRisk } from './core-totalrisk.js';
+import { riskBudget, budgetText } from './core-riskbudget.js';
 import { badge, ladder, esc, dn, viewMark, topReasons, styleRow, exitTable, fitHint, TFL, CHART_TFS, seal, confirmsFor, levSlider, updateLevOut, tipInline, coinIcon } from './ui-parts.js';
 import { ago } from './ui-feed.js';
 import * as f from './core-format.js';
@@ -39,6 +42,17 @@ function calc() {
   const levCtx = size ? { notional: size.notional, available: sum.available, liqMax, exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct,
     plan: { dir: p.dir, entry: p.entry, stop: p.stop, tps: p.tps }, bufferPct: CONFIG.rules.liqBufferPct, note } : null;
   return { sum, size, maxLev, rec, cap, exits, lev, margin, issues, exchangeMax, styleMax, levCtx };
+}
+
+// 8e: Risiko-Budget über alle offenen Positionen (Zeile unter den Risiko-Knöpfen)
+function budgetLine(sum) {
+  if (!sum || !(sum.equity > 0)) return '';
+  let t = null;
+  try { const r = accountRisk(getState()); t = r ? totalRisk(r.positions, sum.equity) : null; } catch { return ''; }
+  const b = riskBudget(t, CONFIG.rules.totalRiskMaxPct);
+  if (!b.known) return '';
+  const x = budgetText(b, riskPct);
+  return x.state === 'ok' ? `<p class="empty" style="margin:-6px 0 12px;font-size:12.5px">${esc(x.text)}</p>` : `<p class="cap-note ${x.state}">${esc(x.text)}</p>`;
 }
 
 function planText() {
@@ -81,8 +95,9 @@ function render() {
     ${stopBox(r, p, sum, size)}
     <h3 class="sub-h">Risiko pro Trade</h3>
     <div class="tabs risk-chips" role="group" aria-label="Risiko pro Trade">
-      ${RISKS().map((x) => `<button type="button" data-risk="${x}" aria-pressed="${x === riskPct}">${x} %</button>`).join('')}
+      ${RISKS().map((x) => `<button type="button" data-risk="${x}" aria-pressed="${x === riskPct}">${String(x).replace('.', ',')} %</button>`).join('')}
     </div>
+    ${budgetLine(sum)}
     ${RISKS().includes(riskPct) ? '' : `<p class="empty" style="margin:-6px 0 12px">Gewählt: ${String(riskPct).replace('.', ',')} % Risiko (angepasst an dein Kapital)</p>`}
     ${!sum ? '<p class="empty">Kontodaten fehlen, Größe nicht berechenbar.</p>' : `
     <div class="kv">
