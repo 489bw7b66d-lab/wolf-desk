@@ -1,27 +1,40 @@
 // Backtest: „Testplan-Läufe“ (8i). Rechnet eine Regel auf der langen Historie und zeigt das Urteil nach dem Testplan.
 // Entwicklung darf beliebig oft gerechnet werden. Die Prüfung wird je Regel einmal geöffnet, gespeichert und danach nur noch gezeigt.
 // Der Tresor ist gesperrt (die Kerzen sind nicht einmal geladen). Logik und Tests: core-longtest.js.
-import { RULES, LT, runLongTest, verdict, loadResults, saveResults, resultText } from './core-longtest.js';
+import { RULES, LT, runLongTest, verdict, loadResults, saveResults, resultText, fmtR } from './core-longtest.js';
 import { loadMeta, phaseOf, getSeries } from './core-binance.js';
 import { esc, tipInline } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
 const VER = () => document.querySelector('meta[name="app-version"]')?.content || '';
-const R = (v) => (v == null || !Number.isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(2).replace('.', ',') + 'R');
+const R = fmtR;
 const cls = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
 const yn = (b) => (b == null ? '<span class="muted">offen</span>' : b ? '<b class="long">✓</b>' : '<b class="short">✗</b>');
 let rule = 'flip', busy = false, note = '', open = false;
 
 function block(name, r) {
   if (!r) return '';
+  const pc = (v) => (v == null ? '–' : Math.round(v) + ' %');
+  // Regel 5 (gepaart): Schalter an gegen aus
+  if (r.pair) return `<div class="lt-per"><h4>${name}</h4>
+    <div class="lt-grid">
+      <div><span class="k">Schalter an</span><b class="${cls(r.avg)}">${R(r.avg)}</b> <span class="muted">rund ${r.n} Trades</span></div>
+      <div><span class="k">Schalter aus</span><b class="${cls(r.avgOff)}">${R(r.avgOff)}</b> <span class="muted">rund ${r.nOff} Trades</span></div>
+      <div><span class="k">Differenz an minus aus</span><b class="${cls(r.diff)}">${R(r.diff)}</b></div>
+      <div><span class="k">Spanne der Differenz</span><b>${R(r.diffLo)} bis ${R(r.diffHi)}</b></div>
+      <div><span class="k">Über 0 in</span><b>${pc(r.pct)}</b> <span class="muted">der ${r.draws} Durchgänge</span></div>
+      <div><span class="k">Schalter an</span><b>${pc(r.share)}</b> <span class="muted">der Tage, ${r.flips} Wechsel</span></div>
+    </div></div>`;
   return `<div class="lt-per"><h4>${name}</h4>
     <div class="lt-grid">
       <div><span class="k">Trades</span><b>${r.n}</b></div>
       <div><span class="k">Ø pro Trade</span><b class="${cls(r.avg)}">${R(r.avg)}</b></div>
       <div><span class="k">Spanne (Monate)</span><b>${R(r.lo)} bis ${R(r.hi)}</b></div>
-      <div><span class="k">Zufall Ø</span><b>${R(r.rndAvg)}</b></div>
+      <div><span class="k">Zufall, selbe Kerze</span><b>${R(r.rndAvg)}</b></div>
       <div><span class="k">Zufall 5 bis 95 %</span><b>${R(r.rndLo)} bis ${R(r.rndHi)}</b></div>
-      <div><span class="k">Besser als</span><b>${r.pct == null ? '–' : Math.round(r.pct) + ' %'}</b> <span class="muted">der ${r.draws} Durchgänge</span></div>
+      <div><span class="k">Besser als</span><b>${pc(r.pct)}</b> <span class="muted">der ${r.draws} Durchgänge</span></div>
+      <div><span class="k">Rahmen allein</span><b>${R(r.plain)}</b> <span class="muted">nur zur Einordnung</span></div>
+      ${r.skipped >= 0.5 ? `<div><span class="k">Ausgelassen</span><b>${Math.round(r.skipped)}</b> <span class="muted">ohne zulässigen Markt</span></div>` : ''}
     </div></div>`;
 }
 
@@ -37,7 +50,7 @@ function body() {
   if (note) h += `<p class="set-hint" role="status">${esc(note)}</p>`;
   if (rec.dev) {
     h += block('Entwicklung · 2020 bis 2023', rec.dev) + (rec.check ? block('Prüfung · 2024 bis zur Sperrfrist', rec.check) : '');
-    h += `<p class="lt-verdict">A besser als ${LT.passPct} % des Zufalls: Entwicklung ${yn(v.A.dev)} · Prüfung ${yn(v.A.check)}<br>
+    h += `<p class="lt-verdict">${rec.dev.pair ? `A an besser als aus in ${LT.passPct} % der Durchgänge` : `A besser als ${LT.passPct} % des Zufalls`}: Entwicklung ${yn(v.A.dev)} · Prüfung ${yn(v.A.check)}<br>
       B im Plus nach Kosten: Entwicklung ${yn(v.B.dev)} · Prüfung ${yn(v.B.check)} · Trades ${v.nAll}${v.done && !v.enough ? ` <span class="short">(nötig ${LT.minTrades})</span>` : ''}</p>`;
     const state = RULES[rule].kind === 'vergleich' ? `Vergleichsregel: zählt nicht als Kandidat.${v.done ? '' : ' Prüfung noch nicht angesehen.'}`
       : v.dropped ? '<b class="short">Abgelegt:</b> in der Entwicklung bei A und B durchgefallen. Die Regel wird nicht nachgebessert.'
@@ -52,7 +65,7 @@ function paint() {
   const el = $('lt-area');
   if (!el) return;
   el.innerHTML = `<details class="bt-saved-box" id="lt-box"${open ? ' open' : ''}><summary>Testplan-Läufe</summary>
-    <div>${tipInline(`Rechnet eine Regel auf den Binance-Kerzen im festen Rahmen des Testplans und vergleicht sie mit ${LT.draws} Zufalls-Durchgängen, die je Markt und Monat gleich viele Einstiege haben. Entwicklung beliebig oft, Prüfung einmal je Regel, Tresor gesperrt.`, 'lt-intro')}</div>
+    <div>${tipInline(`Rechnet eine Regel auf den Binance-Kerzen im festen Rahmen des Testplans und vergleicht sie mit ${LT.draws} Zufalls-Durchgängen: Zu jedem Einstieg der Regel steigt der Zufall zur selben Kerze in einem zufälligen zulässigen Markt ein. Regel 5 vergleicht Zufalls-Einstiege bei Schalter an mit denen bei Schalter aus. Entwicklung beliebig oft, Prüfung einmal je Regel, Tresor gesperrt.`, 'lt-intro')}</div>
     ${open ? body() : ''}</details>`;
 }
 
@@ -65,7 +78,7 @@ async function run(withCheck) {
     const res = await runLongTest(rule, m, { withCheck, load: getSeries, pause: () => new Promise((r) => setTimeout(r, 0)),
       onProgress: (k, n) => { note = `Rechne: ${k} von ${n} Märkten …`; const s = $('lt-area')?.querySelector('[role=status]'); if (s) s.textContent = note; } });
     const all = loadResults(), rec = all[rule] || {};
-    rec.dev = res.dev; rec.devAt = Date.now(); rec.ver = VER();
+    rec.dev = res.dev; rec.devAt = Date.now(); rec.ver = VER(); rec.cmp = LT.cmp;
     if (withCheck && !rec.check) { rec.check = res.check; rec.checkAt = Date.now(); }
     all[rule] = rec;
     note = saveResults(all) ? '' : 'Das Ergebnis ließ sich nicht speichern.';

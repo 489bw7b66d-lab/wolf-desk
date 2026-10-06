@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 07.10.2026 (kurz nach Mitternacht) · Code: Etappe 8i · 838 Tests · auf dem iPhone geprüft bis 8h1 (800 von 800, lange Historie vollständig geladen), 8i noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
+Stand: 07.10.2026 (nachts) · Code: Etappe 8j · 852 Tests · auf dem iPhone geprüft bis 8i (838 von 838, drei Entwicklungs-Läufe), 8j noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
 
 Dieses Dokument ersetzt den Masterplan „Stand 05.10. · 8b1" und den „Nachtrag 8c". Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -52,7 +52,7 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8i` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8j` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -108,7 +108,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 42 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8i">` und eine Import-Liste mit `?v=8i` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8j">` und eine Import-Liste mit `?v=8j` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -302,6 +302,17 @@ jobs:
 - **Offen beim Nutzer:** Entwicklung für alle drei Regeln rechnen und die Ergebnisse an Claude geben. **Die Prüfung von Regel 5 noch nicht öffnen**, bis die Maschine an den beiden Vergleichsregeln plausibel aussieht (ein Fehler in der Maschine würde sonst einen Blick in die Prüfung verbrauchen).
 - **Für 8j vormerken:** Regeln 1, 2, 3, 4, 6 als weitere `fire`-Funktionen; Wochen beginnen montags UTC, Monate am Ersten UTC (VWAP); Datum der fehlenden 4H-Kerze nachsehen.
 
+**Etappe 8j „Änderung 1: neuer Zufalls-Vergleich“ (07.10. nachts, reines Mess-Paket):**
+- **Anlass:** Die ersten Läufe mit 8i (Neu im Trend +0,13R, Platz 7 % · Donchian +0,26R, Platz 0 % · Regel 5 +0,24R, Platz 42 %) zeigten zwei Fehler im Vergleich; die zweite Meinung hat beide bestätigt. (1) Angleichen je Markt und Monat wählt Markt-Monate im Nachhinein aus: Der Zufall darf vor dem Auslöser einsteigen (verzerrt gegen Ausbruch- und Trendregeln, für Rücksetzer-Regeln). (2) Regel 5 ist ein Zeit-Filter und wurde gegen fast dieselben Tage gemessen. **Die drei Ergebnisse sind ungültig; daraus keine Schlüsse ziehen.** Die App zeigt sie nicht mehr an.
+- **Neuer Vergleich für alle Einstiegsregeln (Fassung 2):** Zu jedem Einstieg der Regel steigt der Zufall **zur selben 4H-Kerze in einem zufälligen zulässigen Markt** ein. Zulässig: genug Historie, Vorbedingung der Regel erfüllt (Tagestrend aufwärts; bei Donchian keine), in diesem Durchgang nicht schon im Trade; der Markt der Regel selbst darf gezogen werden. Kein zulässiger Markt: auslassen und zählen. **Messlatte A fragt damit nur noch: Ist dieser Markt an dieser Stelle besser als ein beliebiger zulässiger Markt zur selben Zeit?** Das „Wann“ prüfen Regel 5 und Messlatte B.
+- **Regel 5 gepaart:** je Durchgang Zufalls-Einstiege über Zeit und Märkte (im Schnitt einer je 280 freien Kerzen), eingeteilt nach Schalterstand. Kennzahl: Ø R an minus Ø R aus. A bestanden, wenn die Differenz in mindestens 95 % der Durchgänge über 0 liegt; B: Ø R bei Schalter an im Plus. Dazu Anteil der Tage mit Schalter an und Zahl der Wechsel (die wahre Stichprobe).
+- **Nur beschreibend:** „Rahmen allein“ = Ø R, wenn man an jeder 5. Kerze jedes Marktes einsteigt.
+- **Nachweis an Zufallskursen (fester Test):** Auf Kursen ohne jeden Vorteil liegt Donchian mit dem alten Vergleich im Schnitt bei 0 % der Durchgänge, mit dem neuen um 50 % (40 Kurs-Sätze: 0 % gegen 51 %). Der alte Vergleich bleibt nur für diesen Test im Code (`randomMatchedOld`).
+- **Von Jensen am 07.10. ausdrücklich bestätigt. Danach wird am Würfel nichts mehr geändert, egal wie die Regeln abschneiden.** Eingetragen als „Änderung 1“ im `TESTPLAN-PROTOKOLL.md` (der Testplan selbst bleibt unverändert).
+- Außerdem: „−0,00R“ behoben. 14 neue Tests (852). Geprüft: alle Tests, Testseite und Ablauf im Browser in iPhone-Größe. Wächter unverändert (keine Datei des Wächters berührt), diesmal nicht erneut gestartet.
+- **Nicht getestet:** Ergebnisse und Tempo auf dem iPhone mit echten Kerzen.
+- **Offen beim Nutzer:** Entwicklung für alle drei Regeln neu rechnen und die Texte an Claude geben. Prüfung von Regel 5 erst öffnen, wenn Claude die Maschine freigibt.
+
 **Kleinigkeiten, die noch offen sind:** `config.js` enthält seit der ersten Version `startCapital: 1500` (Jensen klärt, ob Platzhalter oder echter Betrag) · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
 
 ---
@@ -442,7 +453,7 @@ Der Nutzer hat bezweifelt, dass die gewachsene Testreihe richtig aufgebaut ist, 
 
 **Reihenfolge am 06.10. abends vom Nutzer geändert („so einfach und so schnell wie möglich, so valide wie nötig"):** erst der **Testplan** (erledigt: `TESTPLAN.md`, vom Nutzer am 06.10. um 22:12 bestätigt, seitdem fest; **gehört zusammen mit diesem Masterplan in jeden neuen Chat**), dann **Binance** (Punkt 4, nächster Bau-Schritt), dann **Umstellen** (Punkt 1). Binance ist vom iPhone des Nutzers aus erreichbar (Test-Adresse im Browser geprüft, 06.10.); offen ist, ob die App selbst laden darf. Der Nutzer hat ein Binance-Konto; es wird nicht gebraucht, und API-Schlüssel kommen nie in App oder Repository.
 
-**Stand:** 8i (Messmaschine mit Vergleichsregeln und Regel 5) ist gebaut, noch nicht eingespielt; `TESTPLAN-PROTOKOLL.md` liegt im Paket. Danach 8j: die Regeln 1, 2, 3, 4 und 6. Ursprünglicher Wortlaut: die sechs Regeln aus dem Testplan als Engines auf der langen Historie (Paket 8i), danach „Umstellen“.
+**Stand:** 8j (Änderung 1: neuer Zufalls-Vergleich) ist gebaut, noch nicht eingespielt. Danach 8k: die Regeln 1, 2, 3, 4 und 6 (in 8i und 8j steht dafür teils noch „8j“). Ursprünglicher Wortlaut: die sechs Regeln aus dem Testplan als Engines auf der langen Historie (Paket 8i), danach „Umstellen“.
 
 1. **Umstellen** (Nummer wird beim Bau vergeben; hieß erst 8g, dann 8h; fasst den Wächter an: ein Tag Abstand zu 8e, also frühestens 07.10.; vom Nutzer bestätigt, dass es direkt nach „Geld schützen" kommt):
    - Heiße Coins und das Kopf-Etikett im Signalgeber auf „Neu im Trend". Telegram und Heiße Coins melden **beide Varianten, getrennt gekennzeichnet:** „Trendfolge · Swing" (Wechsel auf 4H, Ausstieg nach 10 Tagen) und „Trendfolge · Daytrade" (Wechsel auf 1H, Ausstieg nach 2,5 Tagen), eigenes Kennzeichen je Variante im Tagebuch. Stop und Ziele sind bei beiden gleich. Ein Coin, ein Signal: Welche Variante zuerst auslöst, gilt. **Die Regel ist beim Zufalls-Maßstab durchgefallen: Die Signale heißen in App und Telegram „Beobachtung"** (Wortlaut vor dem Bau mit dem Nutzer abstimmen).
@@ -561,4 +572,4 @@ Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; gerechnet w
 3. Falls vorhanden: den letzten Export („📤 Daten für Claude") und das Wolfskopf-Bild müssen nicht mehr mit, die Icons liegen im Repository.
 4. Diesen Text als erste Nachricht:
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk" gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter, wie es in Abschnitt 2 steht. Hol dir zuerst Datum und Uhrzeit von der Uhr, prüf dann, ob die Versionsnummer im Code zum Masterplan passt (8i), und lass die Tests laufen (838). Der Testplan ist bestätigt und fest; bitte nichts daran ändern. Danach geht es nach der Reihenfolge in Abschnitt 12 weiter (nächster Schritt: Paket 8j mit den Regeln 1, 2, 3, 4 und 6 aus dem Testplan; `TESTPLAN-PROTOKOLL.md` gehört mit in den Chat): erst den Bestand prüfen und mir kurz sagen, was du vorhast. Aussagen über die App bitte nur, nachdem du im Code nachgesehen hast. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle.
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk" gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter, wie es in Abschnitt 2 steht. Hol dir zuerst Datum und Uhrzeit von der Uhr, prüf dann, ob die Versionsnummer im Code zum Masterplan passt (8j), und lass die Tests laufen (852). Der Testplan ist bestätigt und fest; bitte nichts daran ändern. Danach geht es nach der Reihenfolge in Abschnitt 12 weiter (nächster Schritt: Paket 8k mit den Regeln 1, 2, 3, 4 und 6 aus dem Testplan; `TESTPLAN-PROTOKOLL.md` gehört mit in den Chat): erst den Bestand prüfen und mir kurz sagen, was du vorhast. Aussagen über die App bitte nur, nachdem du im Code nachgesehen hast. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle.

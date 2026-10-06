@@ -2,7 +2,8 @@
 // Grundlage: TESTPLAN.md (Fassung 3, fest) und TESTPLAN-PROTOKOLL.md (Stichtag, Märkte, Lesarten). Tests in test-longtest.js.
 // Gemeinsamer Rahmen für ALLE Einstiege: nur Long · Einstieg zum Schluss der 4H-Signalkerze · Stop 2 x ATR(14) der Tageskerzen ·
 // Teilverkäufe bei 2R / 3R / 4R, Rest läuft · Zeit-Ausstieg nach 10 Tagen · ein offener Trade je Markt · Gebühren und Funding.
-// In 8i enthalten: die Vergleichsregeln „Neu im Trend“ und Donchian 20/10 sowie Regel 5 (Marktphasen-Schalter).
+// Zufalls-Vergleich seit 8j („Änderung 1“ im Protokoll): zur selben Kerze ein zufälliger zulässiger Markt; Regel 5 gepaart an gegen aus.
+// Enthalten: die Vergleichsregeln „Neu im Trend“ und Donchian 20/10 sowie Regel 5 (Marktphasen-Schalter).
 import { simulateTrade } from './core-backtest.js';
 import { ema, atr } from './core-indicators.js';
 import { mulberry32, hashStr } from './core-randombase.js';
@@ -25,12 +26,14 @@ export const LT = {
   draws: 200, seed: 20261006,
   boot: 1000,                       // Ziehungen ganzer Monate für die Spanne der Regel
   passPct: 95, minTrades: 300,
+  plainStride: 5,                   // „Rahmen allein“: jede 5. Kerze aller Märkte (nur beschreibend)
+  cmp: 2,                           // Fassung des Zufalls-Vergleichs (1 = je Markt und Monat, ungültig seit 8j)
 };
 
 export const RULES = {
   flip: { label: 'Neu im Trend', kind: 'vergleich', sub: 'Vergleichsregel' },
   donch: { label: 'Donchian 20/10', kind: 'vergleich', sub: 'Vergleichsregel, im gemeinsamen Rahmen' },
-  r5: { label: 'Regel 5 · Marktphasen-Schalter', kind: 'kandidat', sub: 'Zufall nur bei positivem 28-Tage-Momentum' },
+  r5: { label: 'Regel 5 · Marktphasen-Schalter', kind: 'kandidat', sub: 'Schalter an gegen aus' },
 };
 
 // ---- Markt vorbereiten ----
@@ -85,13 +88,7 @@ export const fireDonch = (M, i) => {
   const d = M.dOf[i];
   return d >= LT.donchian && M.daily[d].t + DAY === M.g.t[i] + H4 && M.daily[d].c > M.hi[d];
 };
-// Regel 5: Zufalls-Einstieg (Würfel hängt an Markt und Kerzenzeit), aber nur wenn der Schalter am letzten Tagesschluss an war
-const roll = (coin, T, salt) => mulberry32((LT.seed ^ hashStr(coin + '|' + salt) ^ Math.imul(Math.floor(T / 60000) | 0, 2246822519)) >>> 0)();
-export const fireR5 = (M, i, sw) => {
-  const d = M.dOf[i];
-  return d >= 0 && sw.get(M.daily[d].t) === true && roll(M.coin, M.g.t[i], 'r5') < 1 / LT.every;
-};
-export const fireOf = (rule, sw) => (rule === 'flip' ? fireFlip : rule === 'donch' ? fireDonch : (M, i) => fireR5(M, i, sw));
+export const fireOf = (rule) => (rule === 'flip' ? fireFlip : fireDonch);
 
 // Schalter für Regel 5: gleichgewichteter Schnitt der 28-Tage-Veränderung aller Märkte, die es an dem Tag (und 28 Tage davor) gab.
 // dailyByCoin: { coin: Tageskerzen }. Ergebnis: Map Tagesbeginn → true (Schnitt im Plus) / false.
@@ -124,12 +121,17 @@ export function runRule(M, fire, stichtag, allowed = ['dev']) {
   return trades;
 }
 
+export const mean = (list) => (list.length ? list.reduce((a, b) => a + b, 0) / list.length : null);
+const quant = (sorted, q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))))] : null);
+
 export const monthOf = (t) => { const d = new Date(t); return d.getUTCFullYear() * 12 + d.getUTCMonth(); };
 export const monthLabel = (m) => `${String((m % 12) + 1).padStart(2, '0')}.${Math.floor(m / 12)}`;
 
-// ---- Zufalls-Vergleich: je Markt und Kalendermonat so viele Zufalls-Einstiege wie die Regel, 200 Durchgänge ----
+// ---- ALTER Zufalls-Vergleich (8i, UNGÜLTIG): je Markt und Kalendermonat so viele Zufalls-Einstiege wie die Regel ----
+// Bleibt nur im Code, damit der Test an Zufallskursen zeigen kann, dass er verzerrt (er wählt Markt-Monate im Nachhinein aus).
+// Die App benutzt ihn nicht mehr.
 // Ergebnis: je Zeitraum Summe und Anzahl je Durchgang (Float64Array / Int32Array der Länge draws)
-export function randomMatched(M, ruleTrades, stichtag, allowed = ['dev'], draws = LT.draws) {
+export function randomMatchedOld(M, ruleTrades, stichtag, allowed = ['dev'], draws = LT.draws) {
   const need = new Map(); // Monat → Anzahl
   for (const t of ruleTrades) need.set(monthOf(t.t), (need.get(monthOf(t.t)) || 0) + 1);
   const months = [...need.keys()].sort((a, b) => a - b);
@@ -158,9 +160,104 @@ export function randomMatched(M, ruleTrades, stichtag, allowed = ['dev'], draws 
   return out;
 }
 
+// ---- Zufalls-Vergleich (8j, Änderung 1): zur selben Kerze ein zufälliger zulässiger Markt ----
+// Frage: Ist DIESER Markt an DIESER Stelle besser als ein beliebiger zulässiger Markt zur selben Zeit?
+// Nutzt nur Wissen, das zum Einstieg vorlag; die Marktphase ist für Regel und Zufall exakt gleich.
+const trendUp = (M, i) => { const d = M.dOf[i]; return d >= 0 && M.fast[d] > 0 && M.slow[d] > 0 && M.fast[d] > M.slow[d]; };
+// Gemeinsame Vorbedingung je Regel (gilt auch für den gewürfelten Markt). Donchian hat keine.
+export const preOf = (rule) => (rule === 'donch' || rule === 'r5' ? () => true : trendUp);
+// Kann an Kerze i überhaupt eingestiegen werden? (dieselben Bedingungen wie simAt, ohne zu rechnen)
+export const canEnter = (M, i) => { const d = M.dOf[i]; return i >= 0 && i + 1 < M.n && d + 1 >= LT.minDays && M.atr[d] > 0 && M.g.c[i] - LT.atrMult * M.atr[d] > 0; };
+// Index der Kerze mit Öffnungszeit t (−1 = gibt es in diesem Markt nicht)
+export function idxAt(M, t) {
+  let lo = 0, hi = M.n - 1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1, v = M.g.t[mid]; if (v === t) return mid; if (v < t) lo = mid + 1; else hi = mid - 1; }
+  return -1;
+}
+// entries: Einstiege der Regel über alle Märkte [{ t, per }], zeitlich sortiert. Ms: vorbereitete Märkte (Array).
+// Ergebnis je Zeitraum: Summe und Anzahl je Durchgang, dazu wie viele Einstiege mangels zulässigem Markt ausgelassen wurden.
+export function randomSameCandle(Ms, entries, pre, allowed = ['dev'], draws = LT.draws) {
+  const out = {};
+  for (const p of allowed) out[p] = { s: new Float64Array(draws), n: new Int32Array(draws), skipped: 0 };
+  // Zulässige Märkte je Einstieg einmal bestimmen (hängt nicht vom Durchgang ab, nur „schon im Trade“ kommt je Durchgang dazu)
+  const elig = entries.map((e) => { const list = []; for (let m = 0; m < Ms.length; m++) { const i = idxAt(Ms[m], e.t - H4); if (i >= 0 && canEnter(Ms[m], i) && pre(Ms[m], i)) list.push(m, i); } return list; });
+  const busy = new Float64Array(Ms.length), free = [];
+  for (let d = 0; d < draws; d++) {
+    const rng = mulberry32((LT.seed ^ Math.imul(d + 1, 2654435761) ^ 0x51ab) >>> 0);
+    busy.fill(-Infinity);
+    for (let k = 0; k < entries.length; k++) {
+      const e = entries[k], list = elig[k];
+      free.length = 0;
+      for (let j = 0; j < list.length; j += 2) if (e.t >= busy[list[j]]) free.push(j);
+      const s = free.length ? (() => { const j = free[Math.floor(rng() * free.length)]; const x = simAt(Ms[list[j]], list[j + 1]); if (x) busy[list[j]] = x.x; return x; })() : null;
+      if (!s) { out[e.per].skipped++; continue; }
+      out[e.per].s[d] += s.r; out[e.per].n[d]++;
+    }
+  }
+  for (const p of allowed) out[p].skipped = out[p].skipped / draws; // Ø ausgelassene Einstiege je Durchgang
+  return out;
+}
+
+// „Rahmen allein“ (nur beschreibend, zählt nicht fürs Urteil): Ø R, wenn man an jeder 5. Kerze jedes Marktes einsteigt
+export function plainFrame(Ms, stichtag, allowed = ['dev']) {
+  const s = {}, n = {};
+  for (const p of allowed) { s[p] = 0; n[p] = 0; }
+  for (const M of Ms) {
+    for (let i = 0; i < M.n; i += LT.plainStride) {
+      const per = periodOf(entryTime(M, i), stichtag);
+      if (!allowed.includes(per) || !canEnter(M, i)) continue;
+      const had = M.sims.has(i), x = simAt(M, i);
+      if (!had) M.sims.delete(i); // nicht aufheben: das wären zu viele Einträge im Speicher
+      if (x) { s[per] += x.r; n[per]++; }
+    }
+  }
+  const out = {};
+  for (const p of allowed) out[p] = n[p] ? s[p] / n[p] : null;
+  return out;
+}
+
+// ---- Regel 5 gepaart (8j, Änderung 1): Zufalls-Einstiege über Zeit und Märkte, eingeteilt nach Schalterstand ----
+// Kennzahl je Durchgang: Ø R bei Schalter an minus Ø R bei Schalter aus. Der Abstand zum nächsten Einstieg wird gewürfelt
+// (im Schnitt LT.every freie Kerzen), ein offener Trade je Markt.
+export function pairedSwitch(Ms, sw, stichtag, allowed = ['dev'], draws = LT.draws) {
+  const acc = {};
+  for (const p of allowed) acc[p] = { sOn: new Float64Array(draws), nOn: new Int32Array(draws), sOff: new Float64Array(draws), nOff: new Int32Array(draws) };
+  const logq = Math.log(1 - 1 / LT.every);
+  for (const M of Ms) {
+    for (let d = 0; d < draws; d++) {
+      const rng = mulberry32((LT.seed ^ hashStr(M.coin + '|r5') ^ Math.imul(d + 1, 2654435761)) >>> 0);
+      let i = 0;
+      while (i < M.n) {
+        i += Math.floor(Math.log(1 - rng()) / logq); // so viele freie Kerzen bleiben ungenutzt
+        if (i >= M.n) break;
+        const t = entryTime(M, i), per = periodOf(t, stichtag), dd = M.dOf[i];
+        const on = dd >= 0 ? sw.get(M.daily[dd].t) : undefined;
+        const s = allowed.includes(per) && on !== undefined && canEnter(M, i) ? simAt(M, i) : null;
+        if (!s) { i++; continue; }
+        const a = acc[per];
+        if (on) { a.sOn[d] += s.r; a.nOn[d]++; } else { a.sOff[d] += s.r; a.nOff[d]++; }
+        while (i < M.n && entryTime(M, i) < s.x) i++; // bis der Trade zu ist
+      }
+    }
+  }
+  return acc;
+}
+// Auswertung eines Zeitraums für Regel 5. days: Schalterstände der Tage im Zeitraum (zeitlich sortiert, true / false)
+export function pairResult(a, days) {
+  const diffs = []; let sOn = 0, nOn = 0, sOff = 0, nOff = 0;
+  for (let d = 0; d < a.sOn.length; d++) {
+    sOn += a.sOn[d]; nOn += a.nOn[d]; sOff += a.sOff[d]; nOff += a.nOff[d];
+    if (a.nOn[d] > 0 && a.nOff[d] > 0) diffs.push(a.sOn[d] / a.nOn[d] - a.sOff[d] / a.nOff[d]);
+  }
+  diffs.sort((x, y) => x - y);
+  const D = a.sOn.length || 1;
+  let flips = 0; for (let k = 1; k < days.length; k++) if (days[k] !== days[k - 1]) flips++;
+  return { pair: true, n: Math.round(nOn / D), nOff: Math.round(nOff / D), avg: nOn ? sOn / nOn : null, avgOff: nOff ? sOff / nOff : null,
+    diff: mean(diffs), diffLo: quant(diffs, 0.05), diffHi: quant(diffs, 0.95), pct: diffs.length ? (diffs.filter((x) => x > 0).length / diffs.length) * 100 : null,
+    draws: diffs.length, share: days.length ? (days.filter(Boolean).length / days.length) * 100 : null, flips, daysN: days.length };
+}
+
 // ---- Auswertung ----
-export const mean = (list) => (list.length ? list.reduce((a, b) => a + b, 0) / list.length : null);
-const quant = (sorted, q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))))] : null);
 
 // Spanne der Regel: ganze Kalendermonate des Zeitraums neu ziehen (nicht einzelne Trades), 5. bis 95. Perzentil des Ø R
 export function monthSpan(trades, range, boots = LT.boot, seed = LT.seed) {
@@ -180,14 +277,14 @@ export function monthSpan(trades, range, boots = LT.boot, seed = LT.seed) {
 
 // Ergebnis eines Zeitraums: Regel gegen die Verteilung der Zufalls-Durchgänge
 // rnd: { s, n } über alle Märkte summiert. pct = Anteil der Durchgänge, die schlechter waren als die Regel.
-export function periodResult(trades, rnd, range) {
+export function periodResult(trades, rnd, range, plain = null) {
   const n = trades.length, avg = n ? mean(trades.map((t) => t.r)) : null;
   const d = []; for (let i = 0; i < rnd.s.length; i++) if (rnd.n[i] > 0) d.push(rnd.s[i] / rnd.n[i]);
   d.sort((a, b) => a - b);
   const below = avg == null ? 0 : d.filter((x) => x < avg).length;
   const span = monthSpan(trades, range);
   return { n, avg, sum: n ? avg * n : 0, wins: trades.filter((t) => t.r > 0).length, pct: d.length && avg != null ? (below / d.length) * 100 : null,
-    rndAvg: mean(d), rndLo: quant(d, 0.05), rndHi: quant(d, 0.95), rndN: d.length ? Math.round(mean([...rnd.n].filter((x) => x > 0))) : 0, draws: d.length, lo: span.lo, hi: span.hi, months: span.months };
+    rndAvg: mean(d), rndLo: quant(d, 0.05), rndHi: quant(d, 0.95), rndN: d.length ? Math.round(mean([...rnd.n].filter((x) => x > 0))) : 0, draws: d.length, lo: span.lo, hi: span.hi, months: span.months, skipped: rnd.skipped || 0, plain };
 }
 export const passA = (r) => !!r && r.pct != null && r.pct >= LT.passPct;
 export const passB = (r) => !!r && r.avg != null && r.avg > 0;
@@ -206,46 +303,59 @@ export function verdict(rule, dev, check) {
 
 // ---- Ablage der Ergebnisse (klein, im normalen Speicher). Die Prüfung wird je Regel nur EINMAL gerechnet und dann nur noch gezeigt. ----
 const KEY = 'wolfdesk.lt';
-export function loadResults() { try { const r = JSON.parse(globalThis.localStorage?.getItem(KEY) || 'null'); return r && typeof r === 'object' ? r : {}; } catch { return {}; } }
+// Ergebnisse mit dem alten Zufalls-Vergleich (8i) werden nicht mehr gezeigt: Sie sind laut Protokoll ungültig.
+export const validResults = (r) => Object.fromEntries(Object.entries(r && typeof r === 'object' ? r : {}).filter(([, v]) => v && v.cmp === LT.cmp));
+export function loadResults() { try { return validResults(JSON.parse(globalThis.localStorage?.getItem(KEY) || 'null')); } catch { return {}; } }
 export function saveResults(r) { try { globalThis.localStorage?.setItem(KEY, JSON.stringify(r)); return true; } catch { return false; } }
 
 // ---- Ganzer Lauf über alle Märkte. load(tf, coin) liefert die gespeicherten Spalten (core-binance getSeries). ----
 export async function runLongTest(rule, meta, { withCheck = false, load, onProgress = null, pause = async () => {} } = {}) {
   const allowed = withCheck ? ['dev', 'check'] : ['dev'];
-  const P = periods(meta.stichtag), coins = meta.markets;
-  const dailies = {};
-  for (const c of coins) { dailies[c] = unpack(await load('1d', c), DAY); if (!dailies[c].length) throw new Error(`Tageskerzen von ${c} fehlen`); }
-  const sw = rule === 'r5' ? marketSwitch(dailies) : null, fire = fireOf(rule, sw);
-  const trades = [], rnd = {};
-  for (const p of allowed) rnd[p] = { s: new Float64Array(LT.draws), n: new Int32Array(LT.draws) };
+  const P = periods(meta.stichtag), coins = meta.markets, range = { dev: P.dev, check: [P.check[0], P.lastEntry] };
+  const dailies = {}, Ms = [];
   let k = 0;
   for (const c of coins) {
+    dailies[c] = unpack(await load('1d', c), DAY);
+    if (!dailies[c].length) throw new Error(`Tageskerzen von ${c} fehlen`);
     const g = await load('4h', c);
     if (!g?.n) throw new Error(`4H-Kerzen von ${c} fehlen`);
-    const M = prepare(c, dailies[c], g);
-    const tr = runRule(M, fire, meta.stichtag, allowed);
-    const r = randomMatched(M, tr, meta.stichtag, allowed);
-    for (const p of allowed) for (let d = 0; d < LT.draws; d++) { rnd[p].s[d] += r[p].s[d]; rnd[p].n[d] += r[p].n[d]; }
-    for (const t of tr) trades.push({ coin: c, t: t.t, x: t.x, r: t.r, per: t.per });
+    Ms.push(prepare(c, dailies[c], g));
     if (onProgress) onProgress(++k, coins.length);
     await pause();
   }
-  const res = { dev: periodResult(trades.filter((t) => t.per === 'dev'), rnd.dev, P.dev) };
-  if (withCheck) res.check = periodResult(trades.filter((t) => t.per === 'check'), rnd.check, [P.check[0], P.lastEntry]);
+  const res = {};
+  if (rule === 'r5') {
+    const sw = marketSwitch(dailies), acc = pairedSwitch(Ms, sw, meta.stichtag, allowed);
+    const days = [...sw.keys()].sort((a, b) => a - b);
+    for (const p of allowed) res[p] = pairResult(acc[p], days.filter((t) => t >= range[p][0] && t < range[p][1]).map((t) => sw.get(t)));
+    return res;
+  }
+  const fire = fireOf(rule), trades = [];
+  for (const M of Ms) for (const t of runRule(M, fire, meta.stichtag, allowed)) trades.push({ coin: M.coin, t: t.t, x: t.x, r: t.r, per: t.per });
+  trades.sort((a, b) => a.t - b.t || (a.coin < b.coin ? -1 : 1));
+  await pause();
+  const rnd = randomSameCandle(Ms, trades, preOf(rule), allowed);
+  await pause();
+  const plain = plainFrame(Ms, meta.stichtag, allowed);
+  for (const p of allowed) res[p] = periodResult(trades.filter((t) => t.per === p), rnd[p], range[p], plain[p]);
   return res;
 }
 
 // ---- Text zum Kopieren ----
-const R2 = (v) => (v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(2).replace('.', ',') + 'R');
+const R2 = (v) => { if (v == null || !Number.isFinite(v)) return '–'; const x = Math.round(v * 100) / 100; return (x > 0 ? '+' : x < 0 ? '−' : '±') + Math.abs(x).toFixed(2).replace('.', ',') + 'R'; };
+export const fmtR = R2;
 export function resultText(rule, rec, version = '') {
   if (!rec?.dev) return '';
   const v = verdict(rule, rec.dev, rec.check || null);
-  const line = (name, r) => `${name}: ${r.n} Trades · Ø ${R2(r.avg)} (Spanne ${R2(r.lo)} bis ${R2(r.hi)}, ${r.months} Monate) · Treffer ${r.n ? Math.round((r.wins / r.n) * 100) : 0} % · Zufall Ø ${R2(r.rndAvg)} (${R2(r.rndLo)} bis ${R2(r.rndHi)}, ${r.draws} Durchgänge, je rund ${r.rndN} Trades) · besser als ${r.pct == null ? '–' : Math.round(r.pct)} % der Durchgänge`;
+  const line = (name, r) => (r.pair
+    ? `${name}: Schalter an Ø ${R2(r.avg)} (rund ${r.n} Trades je Durchgang) · aus Ø ${R2(r.avgOff)} (rund ${r.nOff}) · Differenz Ø ${R2(r.diff)} (${R2(r.diffLo)} bis ${R2(r.diffHi)}) · über 0 in ${r.pct == null ? '–' : Math.round(r.pct)} % der ${r.draws} Durchgänge · Schalter an ${r.share == null ? '–' : Math.round(r.share)} % der ${r.daysN} Tage, ${r.flips} Wechsel`
+    : `${name}: ${r.n} Trades · Ø ${R2(r.avg)} (Spanne ${R2(r.lo)} bis ${R2(r.hi)}, ${r.months} Monate) · Treffer ${r.n ? Math.round((r.wins / r.n) * 100) : 0} % · Zufall selbe Kerze Ø ${R2(r.rndAvg)} (${R2(r.rndLo)} bis ${R2(r.rndHi)}, ${r.draws} Durchgänge, je rund ${r.rndN} Trades${r.skipped >= 0.5 ? `, ${Math.round(r.skipped)} ausgelassen` : ''}) · besser als ${r.pct == null ? '–' : Math.round(r.pct)} % der Durchgänge · Rahmen allein Ø ${R2(r.plain)}`);
+  const aText = rec.dev.pair ? 'A (an besser als aus in mind. 95 % der Durchgänge)' : 'A (besser als 95 % der Zufalls-Durchgänge)';
   return [
-    `WOLF DESK – Testplan-Lauf: ${RULES[rule].label} (${RULES[rule].kind === 'kandidat' ? 'Kandidat' : 'Vergleichsregel'})${version ? ' · ' + version : ''}`,
+    `WOLF DESK – Testplan-Lauf: ${RULES[rule].label} (${RULES[rule].kind === 'kandidat' ? 'Kandidat' : 'Vergleichsregel'})${version ? ' · ' + version : ''} · Zufalls-Vergleich Fassung ${LT.cmp}`,
     line('Entwicklung', rec.dev),
     rec.check ? line('Prüfung', rec.check) : 'Prüfung: noch nicht angesehen',
-    `A (besser als 95 % der Zufalls-Durchgänge): Entwicklung ${v.A.dev ? 'ja' : 'nein'}${rec.check ? ' · Prüfung ' + (v.A.check ? 'ja' : 'nein') : ''}`,
+    `${aText}: Entwicklung ${v.A.dev ? 'ja' : 'nein'}${rec.check ? ' · Prüfung ' + (v.A.check ? 'ja' : 'nein') : ''}`,
     `B (im Plus nach Kosten): Entwicklung ${v.B.dev ? 'ja' : 'nein'}${rec.check ? ' · Prüfung ' + (v.B.check ? 'ja' : 'nein') : ''} · Trades gesamt ${v.nAll} (nötig ${LT.minTrades})`,
     RULES[rule].kind === 'vergleich' ? `Stand: Vergleichsregel, zählt nicht als Kandidat${v.done ? '' : ' · Prüfung offen'}` : v.dropped ? 'Stand: in der Entwicklung bei A und B durchgefallen → abgelegt' : v.done ? `Stand: ${v.passed ? 'A und B bestanden → darf einmal in den Tresor' : 'nicht bestanden'}` : 'Stand: Prüfung offen',
     'Tresor: gesperrt',

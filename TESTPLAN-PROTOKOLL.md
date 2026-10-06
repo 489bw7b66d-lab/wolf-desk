@@ -100,6 +100,35 @@ Von Claude zusätzlich festgelegt (technisch, ohne Wahl nach Ergebnis):
 9. **Spanne der Regel:** 1.000 Ziehungen ganzer Kalendermonate des Zeitraums, 5. bis 95. Perzentil des Ø R.
 10. **Prüfung** reicht bis zum Beginn der Sperrfrist (Einstiege bis 25.09.2025).
 
+## Änderung 1 (07.10.2026): neuer Zufalls-Vergleich
+
+**Von Jensen am 07.10.2026 ausdrücklich bestätigt („ja ändere das“), nach Prüfung durch die zweite Meinung. Vor dem ersten Lauf eines der Kandidaten 1, 2, 3, 4, 6. Nur die Entwicklung war bis dahin angesehen, Prüfung und Tresor waren zu. Danach wird am Vergleich nichts mehr geändert, egal wie die Regeln abschneiden.**
+
+**Grund:** Lesart 2 (je Markt und Kalendermonat gleich viele Zufalls-Einstiege) wählt Markt-Monate im Nachhinein aus. Ein Markt-Monat mit Signal ist im Rückblick ein besonderer Monat dieses Coins, und der Zufall darf darin vor dem Auslöser einsteigen. Das verzerrt gegen Ausbruch- und Trendregeln und für Rücksetzer-Regeln. Lesart 3 hat Regel 5 (einen Zeit-Filter) gegen Zufall in denselben Monaten gemessen, also gegen fast dieselben Tage.
+
+**Nachweis unabhängig von echten Zahlen:** Auf Zufallskursen ohne jeden Vorteil (40 Sätze mit je 10 Märkten) liegt Donchian mit dem alten Vergleich im Schnitt bei 0 % der Durchgänge, mit dem neuen bei 51 %. Der Nachweis läuft als fester Test mit (test-longtest.js).
+
+**Neue Lesart 2 (ersetzt die alte) für die Regeln 1, 2, 3, 4, 6 und die Vergleichsregeln:**
+- Zu jedem Einstieg der Regel (Zeit t, Markt m) steigt der Zufall zur selben 4H-Kerze t in einem zufälligen zulässigen Markt ein.
+- Zulässig: zu t genug Historie (110 Tage), die gemeinsame Vorbedingung der Regel erfüllt (Tagestrend aufwärts: Tages-EMA 20 über EMA 100; bei Donchian keine), in diesem Durchgang nicht schon im Trade. Der Markt der Regel selbst darf gezogen werden.
+- Gibt es keinen zulässigen Markt, wird der Einstieg ausgelassen und gezählt.
+- Derselbe Rahmen, 200 Durchgänge, Platz der Regel in der Verteilung (A ab 95 %).
+- Die Frage, die A damit beantwortet: Ist dieser Markt an dieser Stelle besser als ein beliebiger zulässiger Markt zur selben Zeit?
+- Zusätzlich nur beschreibend: „Rahmen allein“ (Einstieg an jeder 5. Kerze jedes Marktes). Zählt nicht fürs Urteil.
+
+**Neue Lesart 3 (ersetzt die alte) für Regel 5:**
+- Je Durchgang Zufalls-Einstiege über Zeit und Märkte, im Schnitt einer je 280 freien 4H-Kerzen, ein offener Trade je Markt.
+- Jeder Einstieg wird nach dem Schalterstand am letzten abgeschlossenen Tag eingeteilt (an / aus).
+- Kennzahl: Ø R an minus Ø R aus. A bestanden, wenn die Differenz in mindestens 95 % der 200 Durchgänge über 0 liegt, in Entwicklung und Prüfung. B: Ø R bei Schalter an im Plus. Trades = Ø Zahl der Einstiege bei Schalter an je Durchgang.
+- Berichtet werden zusätzlich der Anteil der Tage mit Schalter an und die Zahl der Wechsel.
+
+**Ungültige Ergebnisse (alter Vergleich, App 8i, Entwicklung 2020 bis 2023; bleiben hier stehen, daraus werden keine Schlüsse gezogen):**
+- Neu im Trend: 935 Trades, Ø +0,13R · Zufall Ø +0,17R (+0,13R bis +0,21R) · besser als 7 % der Durchgänge
+- Donchian 20/10: 883 Trades, Ø +0,26R · Zufall Ø +0,47R (+0,42R bis +0,52R) · besser als 0 %
+- Regel 5: 358 Trades, Ø +0,24R · Zufall Ø +0,24R (+0,16R bis +0,33R) · besser als 42 %
+
+Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian hängen nicht am Vergleich und bleiben gültig.
+
 ## Läufe
 
-(wird nach jedem Lauf ergänzt: Datum, Regel, Zeitraum, Ergebnis)
+(wird nach jedem gültigen Lauf ergänzt: Datum, Regel, Zeitraum, Ergebnis)

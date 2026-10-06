@@ -704,7 +704,7 @@ button.pos-row:first-of-type { border-top: 0; }
 /* 8i: Testplan-Läufe */
 #lt-area .mk-actions { margin-top: 8px; }
 #lt-area .set-hint { margin: 8px 0 0; }
-#lt-area .bt-select { margin-top: 8px; }
+#lt-area .bt-select { margin-top: 8px; width: 100%; max-width: 100%; box-sizing: border-box; text-overflow: ellipsis; }
 .lt-per { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
 .lt-per h4 { margin: 0 0 8px; font-size: 14px; }
 .lt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; font-size: 14px; }
