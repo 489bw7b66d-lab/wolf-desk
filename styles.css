@@ -627,7 +627,7 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .e2-line .long { color: var(--ok); } .e2-line .short { color: var(--bad); }
 #bt-engine { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } /* 8b1: vier Engines als 2 × 2 */
 #bt-engine button { width: 100%; }
-#bt-engine button:first-child { grid-column: 1 / -1; } /* 8d: fünf Engines, die Telegram-Regel oben über die ganze Breite */
+/* 8f: sechs Engines als 3 × 2 (die Sonderregel für fünf Knöpfe aus 8d entfällt) */
 
 /* ===== 8a: Bedienung ===== */
 /* Blätter: Griff oben, nach unten wegwischen, Zurück-Pfeil */

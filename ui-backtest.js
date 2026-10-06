@@ -7,6 +7,7 @@ import { compareGate, GATE_LABEL } from './core-trendgate.js';
 import { regimeIndex, regimeAt, compareRegime, regimeHolds, REGIME_ROWS } from './core-regime.js';
 import { compareExits, EXIT_ROWS } from './core-exitcompare.js';
 import { paretoShare, avgHoldDays, FUNDING } from './core-btmetrics.js';
+import { runRandomBase, sumDraws, randomSummary, randomVerdict, RND } from './core-randombase.js';
 import { hl } from './core-api.js';
 import { closedCandles } from './core-signals.js';
 import { saveBacktest, shareReport } from './ui-export.js';
@@ -23,11 +24,11 @@ let getNames = () => [];
 const STYLES = ['swing', 'intraday', 'scalp'];
 let style = 'swing', running = false, stopFlag = false, last = null;
 let engine = 1; // 7a: 1 = bisherige Engine, 2 = Engine 2 (Bauplan des Nutzers)
-const keyOf = (st, en) => st + (en === 2 ? ':e2' : en === 3 ? ':bm' : en === 4 ? ':bf' : en === 5 ? ':dc' : '');
-const ENG = { 1: 'Alte Engine', 2: 'Engine 2', 3: 'Maßstab', 4: 'Neu im Trend', 5: 'Donchian' };
-const ENG_SUB = { 1: 'bis 8a Telegram', 2: 'dein Bauplan', 3: 'stumpfe Trendfolge', 4: 'Maßstab · jetzt Telegram', 5: 'Ausbruch 20/10 · nur Swing' };
-const ENG_TAG = { 2: ' · Engine 2', 3: ' · Maßstab', 4: ' · Maßstab neu im Trend', 5: ' · Donchian 20/10' };
-const ENG_SHORT = { 2: ' E2', 3: ' Maßstab', 4: ' Neu im Trend', 5: ' Donchian' };
+const keyOf = (st, en) => st + (en === 2 ? ':e2' : en === 3 ? ':bm' : en === 4 ? ':bf' : en === 5 ? ':dc' : en === 6 ? ':rn' : '');
+const ENG = { 1: 'Alte Engine', 2: 'Engine 2', 3: 'Maßstab', 4: 'Neu im Trend', 5: 'Donchian', 6: 'Zufall' };
+const ENG_SUB = { 1: 'bis 8a Telegram', 2: 'dein Bauplan', 3: 'stumpfe Trendfolge', 4: 'Maßstab · jetzt Telegram', 5: 'Ausbruch 20/10 · nur Swing', 6: 'Würfel-Vergleich' };
+const ENG_TAG = { 2: ' · Engine 2', 3: ' · Maßstab', 4: ' · Maßstab neu im Trend', 5: ' · Donchian 20/10', 6: ' · Zufalls-Maßstab' };
+const ENG_SHORT = { 2: ' E2', 3: ' Maßstab', 4: ' Neu im Trend', 5: ' Donchian', 6: ' Zufall' };
 
 const R = (v, d = 2) => (v == null || !Number.isFinite(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + new Intl.NumberFormat('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }).format(Math.abs(v)) + 'R');
 const P = (v) => (v == null ? '–' : f.pct(v, 0));
@@ -44,7 +45,7 @@ function renderControls(prefer = null) {
     + single.map((c) => `<option value="${esc(c)}">${esc(dn(c))}${c === extra && !wl.includes(c) ? ' (Suche)' : ''}</option>`).join('');
   const ok = [ALL, ...(tr.length ? [TRADE, SAMPLE] : []), ...single];
   sel.value = ok.includes(cur) ? cur : (wl.includes('BTC') ? 'BTC' : ALL);
-  $('bt-engine') && ($('bt-engine').innerHTML = [4, 5, 3, 1, 2].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${ENG_SUB[e]}</small></button>`).join(''));
+  $('bt-engine') && ($('bt-engine').innerHTML = [4, 6, 5, 3, 1, 2].map((e) => `<button type="button" data-bte="${e}" aria-pressed="${e === engine}">${ENG[e]}<small>${ENG_SUB[e]}</small></button>`).join(''));
   $('bt-styles').innerHTML = STYLES.map((k) => `<button type="button" data-bts="${k}" aria-pressed="${k === style}">${CONFIG.signals.modes[k].label}<small>${BT.days[k]} Tage</small></button>`).join('');
 }
 
@@ -84,6 +85,33 @@ function regimeBlock(trades) {
   const row = (name, x) => `<div class="bt-row" role="row"><span><b>${name}</b></span><span>${x.n}</span><span class="${cls(x.avgR)}">${x.avgR == null ? '–' : R(x.avgR)}</span><span class="${cls(x.sum)}">${R(x.sum, 1)}</span></div>`;
   return `${tipHead('Trend oder Seitwärts?', 'Jeder Trade wird beim Einstieg nach dem ADX (14) des Tagescharts eingeordnet: unter 20 seitwärts, 20 bis 25 Übergang, über 25 Trend. Darunter: was gewesen wäre, wenn nur bei ADX ab 20 bzw. ab 25 gehandelt worden wäre.')}
     ${table(['Phase', 'Trades', 'Ø R', 'Summe'], [row('Seitwärts (&lt; 20)', g.side), row('Übergang (20–25)', g.mid), row('Trend (&gt; 25)', g.trend), row('Nur ab ADX 20', g.min20), row('Nur ab ADX 25', g.min25)])}`;
+}
+
+// 8f: Zufalls-Maßstab. Schnitt und Spanne der Durchgänge, daneben „Neu im Trend“ auf denselben Märkten (falls gerechnet)
+async function fillRandom() {
+  const host = $('bt-random');
+  if (!host || !last?.rnd) return;
+  const sum = randomSummary(last.rnd);
+  if (!sum?.all) { host.innerHTML = ''; return; }
+  const st = style, nit = await loadResultWait(keyOf(st, 4), 8000);
+  if (!$('bt-random') || st !== style) return;
+  const mk = (r) => `${r.label.split(' · ')[0]}|${r.total ?? r.runs?.length ?? ''}`;
+  const same = nit && mk(nit) === mk(last) ? nit : null;
+  const sp = same ? splitPeriods(same.trades, same.from, same.to) : null, sm = same ? summarize(same.trades) : null;
+  const rule = sp ? { all: sm.avgR, dev: sp.dev.avgR, conf: sp.conf.avgR } : null;
+  const v = rule ? randomVerdict(sum, rule) : null;
+  const span = (x) => (x ? `${R(x.min)} bis ${R(x.max)}` : '–');
+  const mark = (key) => (!v ? '' : v.above[key] ? ' ✓' : v.below[key] ? ' ✗' : ' ·');
+  const row = (name, key) => `<div class="bt-row" role="row"><span><b>${name}</b></span><span class="${cls(sum[key]?.mean)}">${R(sum[key]?.mean)}</span><span>${span(sum[key])}</span><span class="${cls(rule?.[key])}">${rule ? R(rule[key]) + (key === 'all' ? '' : mark(key)) : '–'}</span></div>`;
+  let text;
+  if (!rule) text = `„Neu im Trend“ ist für ${CONFIG.signals.modes[st].label} auf diesen Märkten noch nicht gerechnet${nit ? ' (der gespeicherte Lauf nutzt andere Märkte)' : ''}. Rechne es, dann erscheint hier der Vergleich.`;
+  else if (v.pass) text = '„Neu im Trend“ liegt in beiden Zeiträumen über der Spanne der Zufalls-Einstiege. Die Regel leistet mehr als die Marktrichtung.';
+  else text = `„Neu im Trend“ liegt ${!v.above.dev && !v.above.conf ? 'in keinem Zeitraum' : !v.above.dev ? 'in der Entwicklung nicht' : 'in der Bestätigung nicht'} über der Spanne der Zufalls-Einstiege. Nach der vorab festgelegten Messlatte gilt der Vorteil damit als Marktrichtung, nicht als Leistung der Regel.`;
+  const stale = same && !(same.fundingPctDay > 0) ? ' Achtung: Der gespeicherte Lauf von „Neu im Trend“ ist noch ohne Funding gerechnet.' : '';
+  host.innerHTML = `${tipHead('Regel oder nur Marktrichtung?', `Zufällige Einstiege, nur Long, mit demselben Stop (2 × Tages-ATR), denselben Zielen, demselben Zeit-Ausstieg (60 Setup-Kerzen) und denselben Kosten wie „Neu im Trend“. ${sum.draws} Durchgänge mit festem Startwert: Dieselbe Kerze wird in jedem Lauf gleich gewürfelt, das Ergebnis ist also wiederholbar. Die Spanne reicht vom schwächsten bis zum stärksten Durchgang, je Durchgang im Schnitt ${Math.round(sum.all.n)} Trades. Messlatte, vorab festgelegt: „Neu im Trend“ muss in beiden Zeiträumen über der Spanne liegen. ✓ = darüber, ✗ = darunter, · = innerhalb. Die Kennzahlen weiter unten zeigen nur den ersten Durchgang als Beispiel.`)}
+    <div class="bt-table" role="table"><div class="bt-row head" role="row"><span>Zeitraum</span><span>Zufall Ø</span><span>Spanne</span><span>Neu im Trend</span></div>
+      ${row('Gesamt', 'all')}${row('Entwicklung', 'dev')}${row('Bestätigung', 'conf')}</div>
+    <p class="bt-verdict ${v?.pass ? 'ok' : 'warn'}">${text}${stale}</p>`;
 }
 
 // 8c: Marktphasen-Schalter (nur Messung): dieselben Trades, einmal alle, einmal nur wenn BTC beim Einstieg im Trend war
@@ -194,10 +222,11 @@ function renderResult() {
   }
   const v = verdict(sm);
   // 8b1: Der Maßstab hat weder Score noch Siegel noch mehrere Ereignisse; diese Blöcke wären dort leer gedroschen
-  const plain = last.engine === 3 || last.engine === 4 || last.engine === 5;
+  const plain = last.engine === 3 || last.engine === 4 || last.engine === 5 || last.engine === 6;
   const pareto = paretoShare(trades), hold = avgHoldDays(trades);
   const perCoin = runs.length > 1 ? runs.map((r) => ({ coin: r.coin, ...summarize(r.trades), err: r.error })) : [];
   box.innerHTML = `<h3 class="sub-h" style="margin-top:4px">${esc(label)}</h3>
+    ${last.engine === 6 ? '<div id="bt-random"><p class="empty" style="font-size:13px">Zufalls-Vergleich wird geladen …</p></div>' : ''}
     <p class="bt-verdict ${v.cls}">${esc(v.text)}</p>
     <div class="kv">
       <div><span class="k">Trades</span><span class="v">${sm.n}</span></div>
@@ -234,6 +263,7 @@ function renderResult() {
     ${table(['Datum', 'Markt', 'Ausgang', 'R'], trades.slice(-8).reverse().map((t) => `<div class="bt-row" role="row"><span>${date(t.time)}</span><span>${esc(dn(t.coin))} <small class="${t.dir}">${t.dir === 'long' ? 'L' : 'S'}</small></span><span class="muted">${OUT[t.outcome] || t.outcome}${t.hits ? ` · TP${t.hits}` : ''}</span><span class="${cls(t.r)}">${R(t.r)}</span></div>`))}
     <div class="empty" style="font-size:12.5px;margin-top:12px">So wurde gerechnet ${tipInline(`1R = Abstand Einstieg bis Stop, also der Verlust bei vollem Stop. Regeln wie im Ausstiegsplan: Teilverkäufe an TP1–TP4, ab TP2 Stop auf Einstieg, Runner nachgezogen. Gebühren abgezogen (${f.pct(BT.feePct, 3)} je Seite)${last.fundingPctDay > 0 ? `, dazu Funding für Longs als Schätzung (${String(last.fundingPctDay).replace('.', ',')} % je Tag Haltedauer; der echte Satz schwankt je Coin)` : ', Funding nicht (Lauf von vor 8d)'}. Slippage ist nicht eingerechnet.${last.engine === 5 ? ' Donchian: Einstieg zum Tagesschluss über dem 20-Tage-Hoch, Stop 2 × ATR, Ausstieg bei Tagesschluss unter dem 10-Tage-Tief, keine Ziele und kein Zeitlimit.' : ''} Berühren Stop und Ziel dieselbe Kerze, zählt der Stop. ${missed} Signale kamen nicht zum Einstieg. Vergangene Ergebnisse garantieren keine zukünftigen.`)}</div>`;
   fillCompare();
+  fillRandom();
 }
 
 // resume: gespeicherter Zwischenstand (6a) – macht beim nächsten fehlenden Coin weiter
@@ -270,7 +300,7 @@ async function start(resume = null) {
     try {
       status(pre + 'lade Kursdaten …', (i) / coins.length);
       const series = await loadHistory(coin, style);
-      const res = await runBacktest(coin, style, series, { engine, regime,
+      const res = await (engine === 6 ? runRandomBase : runBacktest)(coin, style, series, { engine, regime,
         onProgress: (x) => status(pre + 'spiele Signale nach …', (i + x) / coins.length),
         shouldStop: () => stopFlag,
       });
@@ -284,7 +314,7 @@ async function start(resume = null) {
   }
   const label = `${sel === ALL ? 'Watchlist' : sel === TRADE ? 'Handelbare Märkte' : sel === SAMPLE ? 'Stichprobe' : dn(sel)} · ${CONFIG.signals.modes[style].label} · ${BT.days[style]} Tage${ENG_TAG[engine] || ''}`;
   const complete = !stopFlag && runs.length === coins.length;
-  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missedN ?? r.missed?.length ?? 0), 0), complete, done: runs.length, total: coins.length, engine, fundingPctDay: FUNDING.pctPerDay,
+  last = { label, runs, trades: runs.flatMap((r) => r.trades).sort((a, b) => a.time - b.time), missed: runs.reduce((n, r) => n + (r.missedN ?? r.missed?.length ?? 0), 0), complete, done: runs.length, total: coins.length, engine, fundingPctDay: FUNDING.pctPerDay, ...(engine === 6 ? { rnd: sumDraws(runs.map((r) => r.rnd)) } : {}),
     from: Math.min(...runs.map((r) => r.from).filter(Boolean)), to: Math.max(...runs.map((r) => r.to).filter(Boolean)) };
   saveBacktest(last, keyOf(style, engine)); // für „Daten für Claude“
   await saving;
@@ -299,8 +329,8 @@ async function start(resume = null) {
 }
 
 // Eine Zeile unter dem Start-Knopf: unterbrochener Lauf (Weitermachen) und gespeicherte Ergebnisse je Stil
-const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm', 'swing:bf', 'intraday:bf', 'scalp:bf', 'swing:dc'];
-const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : k.endsWith(':bf') ? ' Neu im Trend' : k.endsWith(':dc') ? ' Donchian' : '');
+const BT_STYLES = ['swing', 'intraday', 'scalp', 'swing:e2', 'intraday:e2', 'scalp:e2', 'swing:bm', 'intraday:bm', 'scalp:bm', 'swing:bf', 'intraday:bf', 'scalp:bf', 'swing:dc', 'swing:rn', 'intraday:rn', 'scalp:rn'];
+const keyLabel = (k) => CONFIG.signals.modes[k.split(':')[0]].label + (k.endsWith(':e2') ? ' E2' : k.endsWith(':bm') ? ' Maßstab' : k.endsWith(':bf') ? ' Neu im Trend' : k.endsWith(':dc') ? ' Donchian' : k.endsWith(':rn') ? ' Zufall' : '');
 let indexChecked = false;
 // 8b1: Gespeichertes Ergebnis zu einer Auswahl zeigen (Knopf in der Liste oder Tipp auf Stil bzw. Engine)
 const note = (txt) => { $('bt-status').innerHTML = `<p class="empty" style="font-size:13px;margin:10px 0 0">${esc(txt)}</p>`; };

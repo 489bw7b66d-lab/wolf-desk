@@ -43,7 +43,7 @@ export const kvKeys = () => withTimeout(kvKeysRaw(), LIMIT, []);
 // Kompakt speichern (7a): je Coin nur, was die Auswertung braucht – deutlich kleiner und schneller
 const KEEP = ['adx', 'time', 'dir', 'score', 'method', 'events', 'seal', 'gate', 'filled', 'entryPx', 'fillTime', 'exitTime', 'R', 'hits', 'outcome', 'grossR', 'r', 'alt', 'coin', 'ex', 'btc'];
 export const compactTrade = (t) => Object.fromEntries(KEEP.filter((k) => t[k] !== undefined).map((k) => [k, t[k]]));
-export const compactRun = (r) => ({ coin: r.coin, trades: (r.trades || []).map(compactTrade), missed: [], missedN: r.missedN ?? r.missed?.length ?? 0, error: r.error, from: r.from, to: r.to });
+export const compactRun = (r) => ({ coin: r.coin, trades: (r.trades || []).map(compactTrade), missed: [], missedN: r.missedN ?? r.missed?.length ?? 0, error: r.error, from: r.from, to: r.to, ...(r.rnd ? { rnd: r.rnd } : {}) }); // rnd (8f): Durchgänge des Zufalls-Maßstabs
 
 // ---- Zwischenstand eines laufenden Backtests ----
 const RUN = 'bt:run';
