@@ -625,9 +625,7 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 /* 7a: Engine 2 */
 .e2-line { margin: 6px 0 12px; font-size: 14px; color: var(--muted); line-height: 1.4; }
 .e2-line .long { color: var(--ok); } .e2-line .short { color: var(--bad); }
-#bt-engine { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } /* 8b1: vier Engines als 2 × 2 */
-#bt-engine button { width: 100%; }
-/* 8f: sechs Engines als 3 × 2 (die Sonderregel für fünf Knöpfe aus 8d entfällt) */
+/* 8g: Regel als Auswahlfeld, gespeicherte Läufe zum Aufklappen */
 
 /* ===== 8a: Bedienung ===== */
 /* Blätter: Griff oben, nach unten wegwischen, Zurück-Pfeil */
@@ -688,3 +686,11 @@ button.pos-row:first-of-type { border-top: 0; }
 .update-note li { margin: 2px 0; }
 .update-note span { display: block; color: var(--muted, #a9a39a); }
 .update-note button { margin-top: 10px; width: 100%; }
+
+.bt-saved-box { margin-top: 12px; }
+.bt-saved-box > summary { list-style: none; cursor: pointer; color: var(--muted); font-size: 13.5px; font-weight: 700; padding: 6px 0; }
+.bt-saved-box > summary::-webkit-details-marker { display: none; }
+.bt-saved-box > summary::after { content: ' ▾'; }
+.bt-saved-box[open] > summary::after { content: ' ▴'; }
+.bt-span { white-space: nowrap; font-size: 12.5px; }
+#h-bt .tip-i { font-size: 15px; font-weight: 400; }

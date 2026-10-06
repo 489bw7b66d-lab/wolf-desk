@@ -1,5 +1,6 @@
 // Tests für core-randombase.js (8f: Zufalls-Maßstab, nur Messung)
-import { RND, mulberry32, hashStr, drawSeed, rollAt, randomPlan, runRandomBase, sumDraws, randomSummary, randomVerdict } from './core-randombase.js';
+import { RND, mulberry32, hashStr, drawSeed, rollAt, randomPlan, randomDonchianPlan, runRandomBase, sumDraws, randomSummary, randomVerdict, benchmarks, MIN_TRADES } from './core-randombase.js';
+import { donchianSignal, DC } from './core-donchian.js';
 import { benchmarkFromSlices, BT } from './core-backtest.js';
 import { compactRun } from './core-btstore.js';
 import { btDigest } from './ui-export.js';
@@ -18,6 +19,9 @@ const flatDays = [...Array(120)].map((_, i) => ({ t: i * DAY, T: (i + 1) * DAY -
 const S = series();
 const A = await runRandomBase('TST', 'swing', S), B = await runRandomBase('TST', 'swing', S), C = await runRandomBase('ANDERS', 'swing', S);
 const N = await runRandomBase('TST', 'swing', [S[0].slice(-60), S[1], S[2]]);
+// 8g: Zufalls-Vergleich mit Donchian-Ausstieg
+const DA = await runRandomBase('TST', 'swing', S, { engine: 7 }), DB = await runRandomBase('TST', 'swing', S, { exit: 'donchian' });
+const SUM = randomSummary([[10, 1, 5, 0, 5, 1], [10, 3, 5, 1, 5, 2]]); // Entw. 0 bis 0,2 · Best. 0,2 bis 0,4
 
 export const tests = [
   ['Zufall: festgelegt sind 20 Durchgänge, Stop 2 × ATR 14, Ziele 2R / 3R / 4R / 6R, mind. 110 Tage Historie', () => RND.draws === 20 && RND.atrMult === 2 && RND.atrPeriod === 14 && RND.tps.join() === '2,3,4,6' && RND.minDays === 110],
@@ -50,4 +54,23 @@ export const tests = [
   ['Urteil: ohne Vergleichswerte keines', () => randomVerdict(null, { dev: 1, conf: 1 }) === null && randomVerdict(randomSummary([[10, 1, 5, 0, 5, 1]]), { dev: null, conf: 1 }) === null],
   ['Speicher: Durchgänge bleiben beim Zwischenspeichern erhalten, andere Läufe bekommen kein leeres Feld', () => compactRun({ coin: 'A', trades: [], rnd: [[1, 2, 3, 4, 5, 6]] }).rnd[0].join() === '1,2,3,4,5,6' && !('rnd' in compactRun({ coin: 'A', trades: [] }))],
   ['Export: Zufalls-Maßstab steht mit Schnitt und Spanne in der Zusammenfassung', () => { const d = btDigest({ trades: [{ time: 1, r: 1, coin: 'A', dir: 'long' }], from: 0, to: 6, rnd: [[10, 5, 5, 5, 5, 0], [10, -5, 5, -5, 5, 0]] }, 'swing:rn'); return d.random.draws === 2 && near(d.random.all.max, 0.5) && btDigest({ trades: [], from: 0, to: 6 }, 'swing').random === null; }],
+  // ---- 8g: Zufalls-Vergleich zu Donchian und beide Messlatten ----
+  ['Zufall Donchian: derselbe Stop wie ein Donchian-Signal am selben Tag, keine Ziele', () => {
+    const D = [...Array(60)].map((_, i) => ({ t: i * DAY, T: (i + 1) * DAY - 1, o: 100 + i, h: 102 + i, l: 99 + i, c: 101 + i }));
+    D.at(-1).c += 5; D.at(-1).h += 5; // letzter Tag schließt über dem 20-Tage-Hoch, damit Donchian ein Signal hat
+    const p = randomDonchianPlan(D), d = donchianSignal(D, D.at(-1).T + 1, 4 * H);
+    return d && near(p.stop, d.stop) && near(p.entry, d.entry) && p.tps.length === 0 && randomDonchianPlan(D.slice(0, 10)) === null;
+  }],
+  ['Zufall Donchian: 20 Durchgänge, wiederholbar, als Engine 7 gekennzeichnet', () => DA.rnd.length === 20 && DA.engine === 7 && JSON.stringify(DA.rnd) === JSON.stringify(DB.rnd) && DA.rnd.every((a) => a[0] === a[2] + a[4])],
+  ['Zufall Donchian: würfelt anders als der Zufall mit Zeit-Ausstieg', () => JSON.stringify(DA.rnd) !== JSON.stringify(A.rnd)],
+  ['Zufall Donchian: etwa so viele Trades wie Donchian (rund 3 je Markt), nur Long, mit Funding', () => { const n = DA.rnd.reduce((s, a) => s + a[0], 0) / 20; return n > 1 && n < 6 && DA.trades.every((t) => t.dir === 'long' && t.r < t.grossR && t.hits === 0); }],
+  ['Zufall Donchian: Einstieg nur direkt nach einem Tagesschluss', () => DA.trades.length > 0 && DA.trades.every((t) => ((t.time + 1) % DAY) < 4 * H)],
+  ['Zufall Donchian: Ausstieg nur über Stop, Kanal oder Ende der Daten (kein Zeitlimit)', () => DA.trades.every((t) => ['stop', 'kanal', 'offen'].includes(t.outcome))],
+  ['Messlatten: A und B bestanden = scharf', () => { const b = benchmarks(SUM, { all: 0.4, dev: 0.3, conf: 0.5, n: 400 }); return b.A.pass && b.B.pass && b.pass && b.A.dev === 'above'; }],
+  ['Messlatten: über der Spanne, aber in der Entwicklung im Minus = A ja, B nein', () => { const s = randomSummary([[10, -6, 5, -4, 5, -2], [10, -4, 5, -3, 5, -1]]); const b = benchmarks(s, { all: 0.1, dev: -0.3, conf: 0.5, n: 400 }); return b.A.pass && !b.B.pass && !b.pass && b.B.dev === false && b.B.conf === true; }],
+  ['Messlatten: im Plus, aber innerhalb der Spanne = B ja, A nein', () => { const b = benchmarks(SUM, { all: 0.2, dev: 0.1, conf: 0.3, n: 400 }); return !b.A.pass && b.B.pass && !b.pass && b.A.dev === 'inside' && b.A.conf === 'inside'; }],
+  ['Messlatten: unter der Spanne wird als „darunter“ erkannt', () => benchmarks(SUM, { all: 0.1, dev: -0.3, conf: 0.5, n: 400 }).A.dev === 'below'],
+  ['Messlatten: zu wenige Trades = B nicht bestanden', () => { const b = benchmarks(SUM, { all: 0.4, dev: 0.3, conf: 0.5, n: MIN_TRADES - 1 }); return !b.B.pass && b.B.enough === false && MIN_TRADES === 300; }],
+  ['Messlatten: ohne Zufalls-Lauf gibt es B, aber kein A; ohne Regel gar nichts', () => { const b = benchmarks(null, { all: 0.4, dev: 0.3, conf: 0.5, n: 400 }); return b.A === null && b.B.pass && b.pass === false && benchmarks(SUM, null) === null; }],
+  ['Zufall Donchian: Häufigkeit ist vorab festgelegt (1 Einstieg je 40 freien Tagen)', () => RND.everyDays === 40 && DC.exit === 10],
 ];
