@@ -2,6 +2,7 @@
 // Persönliche Daten (Einstellungen, Watchlist, handelbare Märkte, Einschätzungen, Ziele, Chart-Linien, manuelle Stops,
 // Wallet-Adresse) werden hier NIE gelöscht. Backtests räumen sich ohnehin selbst auf (je Stil nur der letzte Lauf).
 import { clearAll, approxSize, clearRun } from './core-btstore.js';
+import { loadMeta, metaBytes } from './core-binance.js';
 
 const $ = (id) => document.getElementById(id);
 const CACHE_KEYS = ['wolfdesk.universe', 'wolfdesk.autoplans', 'wolfdesk.patience']; // wird bei Bedarf neu berechnet
@@ -10,7 +11,7 @@ const fmtSize = (b) => (b >= 1e6 ? (b / 1e6).toFixed(1).replace('.', ',') + ' MB
 export function storageBlock(open) {
   return `<details class="set-group" data-group="storage"${open ? ' open' : ''}>
     <summary><span>Speicher</span><b class="set-badge" id="st-size">…</b></summary>
-    <p class="set-hint">Backtests räumen sich selbst auf: je Stil bleibt nur der letzte Lauf. Deine Einstellungen, Listen, Einschätzungen, Ziele und Chart-Linien werden hier nie gelöscht.</p>
+    <p class="set-hint">Backtests räumen sich selbst auf: je Stil bleibt nur der letzte Lauf. Deine Einstellungen, Listen, Einschätzungen, Ziele und Chart-Linien werden hier nie gelöscht. Auch die lange Historie von Binance und ihr Stichtag bleiben.</p>
     <div class="mk-actions">
       <button type="button" class="small-btn ghost" id="st-bt">Backtest-Daten löschen</button>
       <button type="button" class="small-btn ghost" id="st-cache">Zwischenspeicher leeren</button>
@@ -22,6 +23,7 @@ export function storageBlock(open) {
 export async function refreshSize() {
   let bytes = 0;
   try { bytes += await approxSize(); } catch { /* egal */ }
+  try { bytes += metaBytes(loadMeta()); } catch { /* egal */ } // 8h: lange Historie (eigene Datenbank, aus dem Protokoll gerechnet)
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); bytes += (k.length + (localStorage.getItem(k) || '').length) * 2; } } catch { /* egal */ }
   if ($('st-size')) $('st-size').textContent = fmtSize(bytes);
 }

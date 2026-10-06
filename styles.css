@@ -694,3 +694,9 @@ button.pos-row:first-of-type { border-top: 0; }
 .bt-saved-box[open] > summary::after { content: ' ▴'; }
 .bt-span { white-space: nowrap; font-size: 12.5px; }
 #h-bt .tip-i { font-size: 15px; font-weight: 400; }
+
+/* 8h: Lange Historie (Binance) */
+#bn-area .mk-actions { margin-top: 8px; }
+#bn-area .set-hint { margin: 8px 0 0; }
+.bn-list { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.5; max-height: 320px; overflow-y: auto; }
+.bn-list li { padding: 5px 0; border-top: 1px solid var(--line); }
