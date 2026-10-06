@@ -15,6 +15,7 @@ import { initMarket } from './ui-market.js';
 import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
 import { initBinance } from './ui-binance.js';
+import { initLongTest } from './ui-longtest.js';
 import { initSettings } from './ui-settings.js';
 import { initFeed, renderFeedLive, renderFeed } from './ui-feed.js';
 import { loadFunding, ratesFrom } from './core-fees.js';
@@ -205,6 +206,7 @@ initHome(getState, openTrade, openFull, openCoin);
 initMarket();
 initBacktest(getState);
 initBinance(); // 8h: lange Historie von Binance
+initLongTest(); // 8i: Testplan-Läufe auf der langen Historie
 initSettings(getState);
 initFeed(getState, openTrade, openCoin);
 initViews(getState, () => { renderFeed(); renderHome(getState()); });
