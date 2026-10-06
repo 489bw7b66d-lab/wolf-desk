@@ -106,9 +106,9 @@
     0.1022625105688653,
     0.11428457312258247
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "tp1",
+   "r": 1.0776519513024676,
+   "doneAt": 1791266399999,
    "events": [
     "EMA 21/55 Kreuzung aufwärts",
     "Starkes Momentum",
@@ -711,6 +711,23 @@
    "zoneH": 0,
    "mfe": 0.41,
    "mae": 1
+  },
+  {
+   "key": "SAND|long|1790988989547",
+   "id": 5,
+   "coin": "SAND",
+   "dir": "long",
+   "style": "swing",
+   "score": 80,
+   "seal": true,
+   "at": 1790988989547,
+   "status": "tp1",
+   "r": 1.0776519513024676,
+   "doneAt": 1791266399999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 1.53,
+   "mae": 0.31
   },
   {
    "key": "XRP|long|1791159029049",
