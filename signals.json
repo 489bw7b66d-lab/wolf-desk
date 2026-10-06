@@ -105,9 +105,9 @@
     0.007613057105702597,
     0.008160841966538808
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "tp1",
+   "r": 0.7387723099365404,
+   "doneAt": 1791311481878,
    "events": [
     "EMA 21/55 Kreuzung aufwärts",
     "Starkes Momentum",
@@ -756,6 +756,23 @@
    "zoneH": 0,
    "mfe": 1.53,
    "mae": 0.31
+  },
+  {
+   "key": "PUMP|long|1791051449120",
+   "id": 6,
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "intraday",
+   "score": 82,
+   "seal": true,
+   "at": 1791051449120,
+   "status": "tp1",
+   "r": 0.7387723099365404,
+   "doneAt": 1791311481878,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 1.21,
+   "mae": 0.04
   },
   {
    "key": "XRP|long|1791159029049",
