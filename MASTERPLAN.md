@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 06.10.2026 (nachts) · Code: Etappe 8h · 795 Tests · auf dem iPhone geprüft bis 8g (Testseite), 8h noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
+Stand: 06.10.2026 (nachts) · Code: Etappe 8h1 · 800 Tests · auf dem iPhone geprüft bis 8h (Testseite 795 von 795 und Verbindungstest am 06.10. um 23:33), 8h1 noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
 
 Dieses Dokument ersetzt den Masterplan „Stand 05.10. · 8b1" und den „Nachtrag 8c". Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -52,7 +52,7 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8h` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8h1` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -108,7 +108,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 41 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8h">` und eine Import-Liste mit `?v=8h` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8h1">` und eine Import-Liste mit `?v=8h1` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -284,6 +284,7 @@ jobs:
 - **Gegenprobe:** Tagesschluss zwei Tage vor der Tresor-Grenze bei Hyperliquid und Binance, höchstens 5 % Abweichung; sonst scheidet der Markt aus („anderer Coin?“). War der Coin damals bei Hyperliquid noch nicht gelistet, steht „ohne Gegenprobe“ in der Liste: **vor dem Einfrieren von Hand ansehen.** Namens-Ausnahmen kommen in `OVERRIDE` und `SKIP` in `core-binance.js`.
 - **Daten:** Spot-Kerzen 1d und 4h ab 01.01.2020 von `data-api.binance.vision`, Form wie Hyperliquid (t, T, o, h, l, c, v; Tageskerzen zusätzlich Umsatz q), UTC, k-Coins mal 1000. Kompakt in Spalten gespeichert (rund 0,6 MB je Markt), eigene Datenbank, „Backtest-Daten löschen“ fasst sie nicht an. Lücken je Markt werden gezählt. Für die Regeln: `candlesOf('4h', coin)` und `candlesOf('1d', coin)`.
 - 38 neue Tests (795). Geprüft: Tests auch mit acht verstellten Einstellungen, Testseite und kompletter Ablauf im Browser in iPhone-Größe mit nachgebildetem Binance, Wächter-Start (Testlauf und zweimal normal; der Wächter ist unverändert, ein Signal wurde nicht nachgespielt).
+- **8h1 (06.10., 23:45, Korrektur):** Auf dem iPhone blieb „Märkte prüfen“ nach 24 von 175 Märkten mit „nicht erreichbar“ stehen, „Weitermachen“ half nicht. Stichtag ist damit der **06.10.2026**. Vermutete Ursache (nicht nachprüfbar, hier kein Internet): Für unbekannte Märkte schickt Binance eine Fehlerantwort, die der Browser nicht durchlässt, und das sieht aus wie „kein Netz“. Lösung: Scheitert ein Markt zweimal, während die BTC-Probe dazwischen klappt, gilt er als „nicht bei Binance“; scheitert auch die Probe, wird angehalten. Das Protokoll listet diese Märkte namentlich („Nicht bei Binance: …“), **vor dem Einfrieren ansehen, ob ein bekannter Binance-Coin darunter ist.** 5 neue Tests (800). Lehre: Fehlerantworten fremder Dienste im Browser immer mit durchspielen.
 - **Nicht getestet:** der echte Abruf von Binance aus der App (hier kein Internet). Scheitert der Verbindungstest auf dem iPhone, holt der Wächter die Kerzen (eigenes Paket mit einem Tag Abstand). Ebenfalls ungeprüft: ob jeder Hyperliquid-Name bei Binance denselben Coin meint (dafür Gegenprobe und Vorschau).
 - **Offen beim Nutzer:** Verbindung testen, Märkte prüfen, Vorschau kopieren und an Claude geben, erst danach einfrieren.
 - **Für das Engine-Paket vormerken:** Simulation auf 4H-Kerzen; im Code nachsehen, dass bei Stop und Ziel in derselben Kerze der Stop zählt; Vergleichsregeln (auch Donchian) laufen im gemeinsamen Rahmen mit Zeit-Ausstieg nach 10 Tagen, sonst reicht die Sperrfrist nicht; Regel 5 richtet die Tagesschlüsse nach Zeitstempel aus und mittelt über die Märkte, die es am jeweiligen Tag gab; Wochen beginnen montags UTC, Monate am Ersten UTC.
@@ -547,4 +548,4 @@ Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; gerechnet w
 3. Falls vorhanden: den letzten Export („📤 Daten für Claude") und das Wolfskopf-Bild müssen nicht mehr mit, die Icons liegen im Repository.
 4. Diesen Text als erste Nachricht:
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk" gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter, wie es in Abschnitt 2 steht. Hol dir zuerst Datum und Uhrzeit von der Uhr, prüf dann, ob die Versionsnummer im Code zum Masterplan passt (8h), und lass die Tests laufen (795). Der Testplan ist bestätigt und fest; bitte nichts daran ändern. Danach geht es nach der Reihenfolge in Abschnitt 12 weiter (nächster Schritt: die sechs Regeln aus dem Testplan auf der langen Historie): erst den Bestand prüfen und mir kurz sagen, was du vorhast. Aussagen über die App bitte nur, nachdem du im Code nachgesehen hast. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle.
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk" gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter, wie es in Abschnitt 2 steht. Hol dir zuerst Datum und Uhrzeit von der Uhr, prüf dann, ob die Versionsnummer im Code zum Masterplan passt (8h1), und lass die Tests laufen (800). Der Testplan ist bestätigt und fest; bitte nichts daran ändern. Danach geht es nach der Reihenfolge in Abschnitt 12 weiter (nächster Schritt: die sechs Regeln aus dem Testplan auf der langen Historie): erst den Bestand prüfen und mir kurz sagen, was du vorhast. Aussagen über die App bitte nur, nachdem du im Code nachgesehen hast. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle.

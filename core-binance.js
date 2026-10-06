@@ -97,7 +97,9 @@ async function getJson(url, fetchFn) {
   }
   // „Load failed“ / „Failed to fetch“: kein Netz oder der Abruf aus der App ist nicht erlaubt
   const blocked = /load failed|failed to fetch|networkerror/i.test(lastErr?.message || '');
-  throw new Error(blocked ? 'Binance ist aus der App nicht erreichbar (kein Netz oder Abruf nicht erlaubt)' : lastErr.message);
+  const err = new Error(blocked ? 'Binance ist aus der App nicht erreichbar (kein Netz oder Abruf nicht erlaubt)' : lastErr.message);
+  err.blocked = blocked;
+  throw err;
 }
 
 // Eine ganze Reihe laden (in Häppchen von 1000 Kerzen). Gibt null zurück, wenn es den Markt bei Binance nicht gibt.
@@ -257,7 +259,17 @@ export async function scanMarket(coin, meta, { fetchFn = globalThis.fetch, hlClo
   const s = bnSymbol(coin);
   if (!s) return { none: true };
   const end = loadEnd(meta), vaultFrom = end + 1;
-  const daily = await loadSeries(s.symbol, s.mult, '1d', BN.from, end, fetchFn);
+  // 8h1: Für unbekannte Märkte schickt Binance eine Fehlerantwort, die der Browser nicht durchlässt; in der App sieht das
+  // aus wie „kein Netz“. Deshalb: Scheitert ein Markt, während Binance selbst erreichbar ist (BTC-Probe), und scheitert er
+  // danach noch einmal, gibt es ihn bei Binance nicht. Scheitert auch die Probe, ist es wirklich das Netz: anhalten.
+  let daily;
+  try { daily = await loadSeries(s.symbol, s.mult, '1d', BN.from, end, fetchFn); }
+  catch (e) {
+    if (!e.blocked) throw e;
+    await pingBinance(fetchFn);
+    try { daily = await loadSeries(s.symbol, s.mult, '1d', BN.from, end, fetchFn); }
+    catch (e2) { if (!e2.blocked) throw e2; await pingBinance(fetchFn); return { none: true, symbol: s.symbol, blocked: true }; }
+  }
   if (!daily || !daily.length) return { none: true, symbol: s.symbol };
   const info = { symbol: s.symbol, mult: s.mult, first: daily[0].t, last: daily[daily.length - 1].t, n: daily.length, vol: Math.round(volumeBefore(daily, vaultFrom)), gap: gaps(daily, DAY).missing };
   if (rejectReason({ ...info, alive: true }, meta.stichtag) !== null) return info; // fällt ohnehin raus: Rest sparen
@@ -302,6 +314,7 @@ export function protocolText(m) {
     `Tresor: ${d(p.vault[0])} bis ${d(p.vault[1] - 1)} (${m.vaultOpened ? 'GEÖFFNET' : 'nicht geladen'})`,
     `Geprüft: ${m.candidates.length} handelbare Märkte · erfüllen alle Bedingungen: ${nSel} · ausgewählt: ${list.length}`,
     `Ausgeschieden: ${Object.entries(rej).map(([r, n]) => `${n} × ${r}`).join(' · ') || 'keine'}`,
+    `Nicht bei Binance: ${m.candidates.filter((c) => m.scanned[c]?.none).join(', ') || 'keine'}`,
     `Auswahl nach Binance-Umsatz der 30 Tage vor der Tresor-Grenze:`,
     ...list.map((c, i) => { const s = m.scanned[c], h = m.h4?.[c]; return `${i + 1}. ${c} = ${s.symbol}${s.mult > 1 ? ' × ' + s.mult : ''} · ab ${d(s.first)} · Gegenprobe ${s.cross === 'ok' ? 'ok' : 'nicht möglich'} · Lücken 1d ${s.gap}${h ? ', 4h ' + h.gap : ''}`; }),
   ].join('\n');

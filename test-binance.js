@@ -46,6 +46,13 @@ const PING = await pingBinance(fake);
 const BLOCK = await pingBinance(async () => { throw new TypeError('Load failed'); }).then(() => 'ok', (e) => e.message);
 const LIMIT = await loadSeries('BTCUSDT', 1, '1d', BN.from, VAULT - 1, async () => ({ status: 429, ok: false })).then(() => 'ok', (e) => e.message);
 const NOSAVE = await getSeries('1d', 'FALSCH');
+// 8h1: Im Browser kommt die Fehlerantwort für unbekannte Märkte nicht durch, der Abruf scheitert wie ohne Netz
+const browser = async (url) => { if (!LIST[new URL(url).searchParams.get('symbol')]) throw new TypeError('Load failed'); return fake(url); };
+const B_NONE = await scanMarket('FEHLT', META(), { fetchFn: browser, hlClose });
+const B_BTC = await scanMarket('BTC', META(), { fetchFn: browser, hlClose });
+const B_OFF = await scanMarket('FEHLT', META(), { fetchFn: async () => { throw new TypeError('Load failed'); }, hlClose }).then(() => 'ok', (e) => e.message);
+let flaky = 0; // ein einzelner Aussetzer bei einem echten Markt darf ihn nicht aus der Auswahl werfen
+const B_FLAKY = await scanMarket('BTC', META(), { fetchFn: async (url) => { if (url.includes('2019') === false && flaky++ < 3) throw new TypeError('Load failed'); return fake(url); }, hlClose });
 const mkC = (ts) => ts.map((t) => ({ t, T: t + DAY - 1, o: 1, h: 2, l: 0.5, c: 1.5, v: 10, q: 15 }));
 
 export const tests = [
@@ -86,5 +93,10 @@ export const tests = [
   ['Binance: Ablauf (neu → prüfen → Vorschau → laden → fertig)', () => phaseOf(null) === 'neu' && phaseOf(META()) === 'pruefen' && phaseOf(M) === 'vorschau' && phaseOf({ ...M2, h4: {} }) === 'laden' && phaseOf(M2) === 'fertig' && scanLeft(M).length === 0 && h4Left(M2).length === 0],
   ['Binance: Platzbedarf wird aus dem Protokoll gerechnet', () => packedBytes(1000) === 44000 && packedBytes(1000, true) === 48000 && metaBytes(M2) === packedBytes(M.scanned.BTC.n + M.scanned.kPEPE.n, true) + packedBytes(M2.h4.BTC.n + M2.h4.kPEPE.n) && metaBytes(null) === 0],
   ['Binance: Protokoll nennt Stichtag, Zeiträume, Liste und Ausgeschiedene', () => { const t = protocolText(M2); return t.includes('Stichtag: 06.10.2026') && t.includes('Tresor: 06.10.2025 bis 05.10.2026 (nicht geladen)') && t.includes('Einstiege bis 25.09.2025') && t.includes('kPEPE = PEPEUSDT × 1000') && t.includes('eingefroren am 06.10.2026') && /1 × Kurs passt nicht/.test(t) && PREVIEW.includes('VORSCHAU'); }],
+  ['Binance 8h1: unbekannter Markt im Browser gilt als „nicht bei Binance“ statt als Netzfehler', () => B_NONE.none === true && B_NONE.blocked === true && rejectReason(B_NONE, STICH) === 'nicht bei Binance'],
+  ['Binance 8h1: echte Märkte laufen im Browser normal durch', () => rejectReason(B_BTC, STICH) === null && B_BTC.n === M.scanned.BTC.n],
+  ['Binance 8h1: ohne Netz wird angehalten und kein Markt abgelehnt', () => /nicht erreichbar/.test(B_OFF)],
+  ['Binance 8h1: ein kurzer Aussetzer wirft einen echten Markt nicht raus', () => rejectReason(B_FLAKY, STICH) === null && B_FLAKY.n === M.scanned.BTC.n],
+  ['Binance 8h1: Protokoll nennt die Märkte, die es bei Binance nicht gibt', () => protocolText(M2).includes('Nicht bei Binance: FEHLT, xyz:GOLD')],
   ['Binance: Protokoll enthält keine Beträge, Adressen oder Schlüssel', () => { const t = protocolText(M2); return !/0x[0-9a-fA-F]{8}/.test(t) && !/\$|USD\b|key|token/i.test(t.replace(/USDT/g, '')); }],
 ];

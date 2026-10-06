@@ -77,7 +77,7 @@ async function doFreeze() {
 
 async function work(fn) {
   if (busy) return;
-  busy = true; stop = false; paint();
+  busy = true; stop = false; note = 'Läuft …'; paint();
   try { await fn(); } catch (e) { note = `Unterbrochen: ${e.message}. Schon Geladenes bleibt, „Weitermachen“ setzt fort.`; }
   busy = false; paint();
 }
