@@ -56,7 +56,8 @@ function blindBlock() {
   const ok = blindOk(rule);
   return `<div class="lt-per"><h4>Blindprobe · ${esc(RULES[rule].label)}</h4>
     <p class="set-hint">${blind.total ? `Fünf zufällig gezogene Einstiege aus der Entwicklung (von ${blind.total}). Ohne Coin, ohne Datum, ohne Ergebnis und ohne die Kerzen danach. Trifft das, was du meinst?` : 'Die Regel feuert in der Entwicklung kein einziges Mal.'}</p>
-    ${blind.cards.map((c, k) => `<div class="lt-bcard"><b>Nr. ${k + 1}</b>${c}</div>`).join('')}
+    ${rule === 'r1' ? '<p class="set-hint">Im Tagesbild: • = Berührung (eine Körperkante liegt in der Zone) · × = nur ein Docht tippt die Zone an, das zählt nicht · A = Ausbruchstag.</p>' : ''}
+    ${blind.cards.map((c, k) => `<div class="lt-bcard"><b>Nr. ${k + 1}${blind.extra[k] ? ' · gezielt gewählt: Docht ohne Körper (×)' : ''}</b>${c}</div>`).join('')}
     <div class="mk-actions">${ok ? '<span class="long">Bestätigt ✓</span>' : '<button type="button" class="small-btn" id="lt-bok">Das ist, was ich meine</button>'}
       <button type="button" class="small-btn ghost" id="lt-bno">Nein: Rückmeldung kopieren</button>
       <button type="button" class="small-btn ghost" id="lt-bclose">Schließen</button></div></div>`;
@@ -115,7 +116,7 @@ async function showBlind() {
     const L = gapLoader(), { Ms } = await loadMarkets(m, { load: L.load, pause: tick, onProgress: progress });
     L.done();
     const b = blindSample(my, Ms, m.stichtag);
-    blind = { rule: my, total: b.total, cards: b.items.map(blindHtml), codes: b.items.map((x) => btoa(`${x.coin}|${x.t}`)) };
+    blind = { rule: my, total: b.total, cards: b.items.map(blindHtml), extra: b.items.map((x) => !!x.extra), codes: b.items.map((x) => btoa(`${x.coin}|${x.t}`)) };
     note = '';
   } catch (e) { note = `Abgebrochen: ${e.message}`; }
   busy = false; paint();

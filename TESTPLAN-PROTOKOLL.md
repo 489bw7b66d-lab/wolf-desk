@@ -138,17 +138,17 @@ Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian 
 **Lesart 11, für alle fünf Regeln**
 - Tages-ATR, EMA und Level stammen vom letzten Tag, dessen Schluss nicht nach dem Schluss der 4H-Signalkerze liegt (die Kerze, die um 00:00 UTC schließt, nutzt den eben beendeten Tag).
 - Der Tagestrend (Tages-EMA 20 über EMA 100) wird an der Signalkerze geprüft, mit derselben Funktion wie beim gewürfelten Markt des Vergleichs.
-- Swing-Punkt: strikt höher bzw. tiefer als die 5 Kerzen (Tage) davor und die 5 danach; bei Gleichstand kein Swing. Er zählt erst nach seiner Bestätigung (5 Kerzen bzw. 5 Tage später). Ausnahme für Körper-Swings in Regel 2, siehe Änderung 2.
+- Swing-Punkt aus Dochten (4H-Swings der Regeln 4 und 6): strikt höher bzw. tiefer als die 5 Kerzen davor und die 5 danach; bei Gleichstand kein Swing. Körper-Swings (Tages-Swings der Regeln 1 und 2): siehe Änderung 2. Jeder Swing zählt erst nach seiner Bestätigung (5 Kerzen bzw. 5 Tage später).
 - Setups laufen weiter, während im Markt ein Trade offen ist. Ein dadurch verpasster Einstieg ist verbraucht und wird gezählt („Signale verfallen“).
 - Fallen an einer Kerze mehrere Level, Tiefs oder Blöcke zusammen, ist das ein Einstieg.
 
 **Lesart 12, Regel 1 (Key-Level, Ausbruch mit Retest)**
-- Mögliche Level: bestätigte Tages-Swing-Hochs und -Tiefs (aus Tageshoch und Tagestief) der bis zu 180 Tage vor dem Ausbruchstag, am Vortag schon bestätigt. Zone = Level plus und minus ¼ ATR. *(Level aus Swing-Punkten: Festlegung, nicht im Plan.)*
+- Mögliche Level: bestätigte **Körper-Swings** im Tageschart (Körper-Hochs und Körper-Tiefs, Änderung 2) der bis zu 180 Tage vor dem Ausbruchstag, am Vortag schon bestätigt. Zone = Level plus und minus ¼ ATR. *(Level aus Swing-Punkten: Festlegung, nicht im Plan.)*
 - Ein ATR für Zonenbreite und Wegdrehen: der des Tages vor dem Ausbruch.
-- Berührung = Tageshoch oder Tagestief in der Zone; aufeinanderfolgende Tage in der Zone sind eine Berührung. Sie zählt nur, wenn danach innerhalb von 10 Tagen ein Tagesschluss mindestens 1 ATR jenseits der Zone liegt, zurück auf der Seite, von der der Kurs kam (Seite = Tagesschluss vor der Berührung, unter oder über dem Level). Ein Durchlauf ist keine Berührung. *(10 Tage: Festlegung, nicht im Plan.)*
+- Berührung = **eine Körperkante einer Tageskerze liegt in der Zone; ein Docht allein zählt nicht** (Änderung 2). Aufeinanderfolgende Tage mit Körperkante in der Zone sind eine Berührung. Sie zählt nur, wenn danach innerhalb von 10 Tagen ein Tagesschluss mindestens 1 ATR jenseits der Zone liegt, zurück auf der Seite, von der der Kurs kam (Seite = Tagesschluss vor der Berührung, unter oder über dem Level). Ein Durchlauf ist keine Berührung. *(10 Tage: Festlegung, nicht im Plan.)*
 - Jede Berührung samt Wegdrehen ist vor dem Ausbruchstag abgeschlossen. Mindestens drei Berührungen, zwischen erster und letzter mindestens 28 Tage.
 - Ausbruch = der erste Tagesschluss über der Zone (der Schluss davor lag nicht darüber).
-- Retest = ein 4H-Tief erreicht die Zonen-Oberkante, in den 4H-Kerzen nach dem Ausbruchstag und innerhalb von 10 Tagen. Einstieg = der erste 4H-Schluss über der Zone ab der Retest-Kerze, ohne eigene Frist.
+- Retest = **die Körper-Unterkante einer 4H-Kerze** erreicht die Zonen-Oberkante (Änderung 2), in den 4H-Kerzen nach dem Ausbruchstag und innerhalb von 10 Tagen. Einstieg = der erste 4H-Schluss über der Zone ab der Retest-Kerze, ohne eigene Frist.
 - Ein Tagesschluss unter der Zone beendet das Setup. *(Festlegung, nicht im Plan.)*
 - Überlappende Zonen: keine wird verworfen; die Merker kommen von der Zone mit den meisten Berührungen, bei Gleichstand von der höheren.
 - Merker: Zahl der Berührungen · Alter des Levels (erste Berührung bis Ausbruch, in Wochen).
@@ -162,7 +162,7 @@ Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian 
 
 **Lesart 14, Regel 3 (VWAP)**
 - Level = VWAP-Schlusswerte (HLC3 mal Binance-Volumen, aus Tageskerzen) der letzten vier abgelaufenen Wochen (ab Montag UTC) und der letzten zwei abgelaufenen Monate (ab dem Ersten UTC). Nur vollständige Wochen und Monate; eine unvollständige wird nicht durch eine ältere ersetzt.
-- „Von oben“: Das Tief der Kerze davor lag mehr als ½ ATR über dem Level, das Tief dieser Kerze nicht mehr.
+- „Von oben“: **Die Körper-Unterkante** der Kerze davor lag mehr als ½ ATR über dem Level, die dieser Kerze nicht mehr (Änderung 2). Ein Docht allein ist keine Annäherung.
 - Einstieg = die erste 4H-Kerze ab der Annäherung, die über dem Level schließt (das kann die Annäherungskerze selbst sein). Danach braucht es eine neue Annäherung von oben.
 - Die Annäherung verfällt, wenn eine 4H-Kerze mehr als ½ ATR unter dem Level schließt oder die Woche bzw. der Monat wechselt. *(Festlegung, nicht im Plan.)*
 - **Das Urteil gilt für „Annäherung an ein VWAP-Level“:** Der Plan verlangt kein Unterschreiten. Berichtet wird die Zahl der Einstiege je Markt und Jahr.
@@ -184,31 +184,40 @@ Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian 
 
 **Zusätzliche Merker gegenüber dem Testplan (nur beschreibend):** Regel 2 erster oder wiederholter Einstieg · Regel 4 erster oder wiederholter Sweep · Regel 6 Alter des Blocks. Aus Merkern wird ohne neuen Testplan keine Regel abgeleitet.
 
-## Änderung 2 (07.10.2026): Regel 2 misst an Kerzenkörpern
+## Änderung 2 (07.10.2026): Grundsatz Körper
 
-**Von Jensen am 07.10.2026 um 09:53 ausdrücklich bestätigt („ja mach alles so“). Vor dem ersten Lauf eines der Kandidaten 1, 2, 3, 4, 6; von Regel 2 war keine Zahl bekannt. Gerechnet wird nur diese eine Variante, die Docht-Variante läuft nicht mit. Die zweite Meinung zu Änderung 2 steht noch aus und wird vor dem ersten Lauf von Regel 2 eingeholt.**
+**Von Jensen am 07.10.2026 bestätigt: um 09:53 für Regel 2 („ja mach alles so“), um 11:19 und 11:25 als Grundsatz für alle Regeln („immer mit dem Kerzenkörper rechnen“; Sweep bleibt beim Docht, Key-Level-Berührung nur mit Körper). Ausgearbeitet von der zweiten Meinung (Nachtrag vom 07.10., 11:25), von Claude gegen den Code geprüft. Vor dem ersten Lauf eines der Kandidaten 1, 2, 3, 4, 6; von keiner dieser Regeln war eine Zahl bekannt. Gerechnet wird nur diese eine Fassung, eine Docht-Fassung läuft nicht mit. Damit ist die Frage Körper oder Docht für alle Regeln abgeschlossen.**
 
-**Grund:** Jensen legt seine Fib-Level im Chart an den Kerzenkörpern an (Erfahrung aus seinem Handel). Der Wortlaut des Testplans misst den Impuls von Tageshoch zu Tagestief und würde damit etwas prüfen, das er so nicht handelt. Eine kurze Recherche am 07.10. fand keine Studie, die Körper und Docht direkt vergleicht; die Änderung stützt sich auf seine Handschrift, nicht auf einen Beleg.
+**Grund:** Jensens Erfahrung aus dem eigenen Handel: Kerzenkörper liefern bei Strukturbrüchen, Ausbrüchen und vor allem bei Fib-Leveln die besseren Ergebnisse. Eine kurze Recherche am 07.10. fand keine Studie, die Körper und Docht direkt vergleicht; die Änderung stützt sich auf seine Handschrift, nicht auf einen Beleg. Der Test soll prüfen, was er handelt.
 
-**Was sich ändert (nur Regel 2):**
-- Swing-Hoch und Swing-Tief des Impulses kommen aus den Körpern der Tageskerzen (Körper-Oberkante bzw. -Unterkante).
-- „In der Zone“ wird an der Körper-Unterkante der Umkehrkerze geprüft statt an ihrem Tief. Danach richtet sich auch der Merker für die Teilzone.
-- Gleichstand bei Körper-Swings: strikt höher (tiefer) als die 5 Tage davor, höher (tiefer) oder gleich die 5 danach; es zählt der frühere Tag. Grund: Ohne Kurslücke ist die Eröffnung eines Tages der Schluss des Vortags, zwei Nachbartage teilen sich dann dieselbe Körperkante, und mit „strikt auf beiden Seiten“ gäbe es fast nie einen Körper-Swing. *(Technische Festlegung von Claude, ohne Wahl nach Ergebnis.)*
+**Grundsatz:** Wo ein Level liegt und wann der Kurs es erreicht, entscheidet die Körperkante (Oberkante = das Größere aus Eröffnung und Schluss, Unterkante = das Kleinere). Dochte zählen nur dort, wo sie zum Wesen der Regel gehören.
 
-**Was bleibt:** alles andere im Testplan. Berührungen in Regel 1 (Tageshoch und Tagestief), der Sweep in Regel 4 (Docht) und die Unterscheidung von Körper und Docht in Regel 6. Ausbruch, Bestätigung und „ungültig“ laufen bei allen Regeln ohnehin über den Schlusskurs.
+**Was sich gegenüber dem Wortlaut des Testplans ändert:**
+- **Regel 1:** Mögliche Level sind bestätigte Körper-Swings im Tageschart. Berührung = eine Körperkante einer Tageskerze liegt in der Zone, ein Docht allein zählt nicht (Testplan: Tageshoch oder Tagestief). Retest auf 4H = die Körper-Unterkante erreicht die Zonen-Oberkante. Wegdrehen, Ausbruch und Einstieg laufen über Schlusskurse und bleiben; Zonenbreite, Fristen, vier Wochen und überlappende Zonen bleiben.
+- **Regel 2:** Swing-Hoch und Swing-Tief des Impulses kommen aus den Körpern der Tageskerzen (Testplan: Tageshoch und Tagestief). „In der Zone“ wird an der Körper-Unterkante der Umkehrkerze geprüft; danach richtet sich auch der Merker für die Teilzone.
+- **Regel 3:** Die Annäherung wird an der Körper-Unterkante gemessen. Einstieg und Verfall laufen über Schlusskurse und bleiben.
+- **Gleichstand bei Körper-Swings (Regel 1 und 2):** strikt höher (tiefer) als die 5 Tage davor, höher (tiefer) oder gleich die 5 danach; es zählt der frühere Tag. Grund: Ohne Kurslücke ist die Eröffnung eines Tages der Schluss des Vortags, zwei Nachbartage teilen sich dann dieselbe Körperkante, und mit „strikt auf beiden Seiten“ gäbe es fast nie einen Körper-Swing. Eröffnet der zweite Tag einen Tick höher, zählt der zweite. *(Technische Festlegung von Claude, ohne Wahl nach Ergebnis; per Test abgesichert: Plateau und Tick-Fall ergeben je genau einen Swing.)*
+
+**Bewusst unverändert:**
+- **Regel 4 (Sweep):** Ein Sweep ist ein Docht unter ein Tief mit Schluss darüber. Das Swing-Tief bleibt das Docht-Tief, weil dort die Stops liegen. Von Jensen am 07.10. um 11:19 bestätigt.
+- **Regel 6 (Order Block):** Körper und Docht sind dort auf Jensens Wunsch schon getrennt. Das 4H-Swing-Hoch bleibt das Docht-Hoch; überschritten wird es per Schlusskurs.
+- **Gemeinsamer Rahmen und Zufalls-Vergleich:** Die ATR bleibt die normale mit Dochten, der Stop bleibt 2 × Tages-ATR.
+
+**Folge, vor dem ersten Lauf benannt (aus Zufallskursen, keine echten Kerzen):** Mit Körper-Berührungen feuert Regel 1 deutlich seltener als in der Docht-Fassung, auf Zufallskursen je nach Kursmodell um 40 bis 60 % weniger. Regel 2 feuert dort unter einmal je Markt und Jahr. Ob beide die 300 Trades erreichen, ist offen. Die Blindprobe nennt die Zahl der Einstiege in der Entwicklung, bevor ein Ergebnis bekannt ist. Erreicht eine Regel die 300 nicht, besteht sie B nicht; gelockert wird nichts.
 
 ## Blindprobe vor dem ersten Lauf (07.10.2026, Vorschlag der zweiten Meinung, von Jensen bestätigt)
 
 - Je Regel zeigt die App fünf zufällig gezogene Einstiege der Entwicklung als Kerzenbild: Level oder Zone und die Signalkerze. Ohne Coin, ohne Datum, ohne Kurse, ohne Ergebnis und ohne eine Kerze nach dem Einstieg. Dabei wird kein Trade gerechnet.
 - Jensen sagt je Regel „Das ist, was ich meine“ oder „Nein, weil …“. Erst nach der Bestätigung gibt die App „Entwicklung rechnen“ für diese Regel frei.
-- Bei „Nein“ wird Code oder Lesart berichtigt, bevor eine Zahl bekannt ist; die Fassung der Regeln steigt (zurzeit Fassung 1) und die Blindprobe gilt neu.
+- Bei „Nein“ wird Code oder Lesart berichtigt, bevor eine Zahl bekannt ist; die Fassung der Regeln steigt und die Blindprobe gilt neu. **Zurzeit Fassung 2 (Grundsatz Körper, App 8k1).** Fassung 1 (App 8k, Regel 1 und 3 noch mit Dochten) wurde nie gerechnet.
+- Regel 1: Im Tagesbild steht • für eine Berührung (Körperkante in der Zone) und × für einen Tag, an dem nur ein Docht die Zone antippt (zählt nicht). Zeigt keines der fünf Bilder ein ×, kommt gezielt ein sechstes dazu, das eines zeigt.
 - Zweck: prüfen, ob der Code die Lesart trifft und die Lesart Jensens Handschrift.
 
 **Stand der Blindproben:** (wird ergänzt)
 
-## Nachweis für die fünf Regeln an Zufallskursen (07.10.2026, App 8k, keine echten Kerzen)
+## Nachweis für die fünf Regeln an Zufallskursen (07.10.2026, App 8k1, Fassung 2 der Regeln, keine echten Kerzen)
 
-Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) liegen die Regeln im festen Zufalls-Vergleich im Schnitt bei diesen Plätzen: Regel 1 bei 55 %, Regel 2 bei 50 %, Regel 3 bei 38 %, Regel 4 bei 46 %, Regel 6 bei 58 %, zum Vergleich „Neu im Trend“ 53 % und Donchian 46 %. Der Vergleich zieht also keine der Regeln systematisch nach oben oder unten. Am Vergleich wurde nichts geändert.
+Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) liegen die Regeln im festen Zufalls-Vergleich im Schnitt bei diesen Plätzen: Regel 1 bei 47 %, Regel 2 bei 50 %, Regel 3 bei 44 %, Regel 4 bei 46 %, Regel 6 bei 58 %. Der Vergleich zieht also keine der Regeln systematisch nach oben oder unten. Am Vergleich wurde nichts geändert.
 
 ## Läufe
 

@@ -315,7 +315,8 @@ export function verdict(rule, dev, check) {
 // ---- Ablage der Ergebnisse (klein, im normalen Speicher). Die Prüfung wird je Regel nur EINMAL gerechnet und dann nur noch gezeigt. ----
 const KEY = 'wolfdesk.lt';
 // Ergebnisse mit dem alten Zufalls-Vergleich (8i) werden nicht mehr gezeigt: Sie sind laut Protokoll ungültig.
-export const validResults = (r) => Object.fromEntries(Object.entries(r && typeof r === 'object' ? r : {}).filter(([, v]) => v && v.cmp === LT.cmp));
+// 8k1: Ergebnisse der Regeln 1, 2, 3, 4, 6 gelten nur für die Fassung der Regeln, mit der sie gerechnet wurden.
+export const validResults = (r) => Object.fromEntries(Object.entries(r && typeof r === 'object' ? r : {}).filter(([, v]) => v && v.cmp === LT.cmp && (v.dev?.rv == null || v.dev.rv === LTR.ver)));
 export function loadResults() { try { return validResults(JSON.parse(globalThis.localStorage?.getItem(KEY) || 'null')); } catch { return {}; } }
 export function saveResults(r) { try { globalThis.localStorage?.setItem(KEY, JSON.stringify(r)); return true; } catch { return false; } }
 
@@ -383,7 +384,13 @@ export function blindSample(rule, Ms, stichtag, k = 5) {
   Ms.forEach((M, m) => { for (const [i, s] of signalsOf(rule, M)) if (periodOf(entryTime(M, i), stichtag) === 'dev' && canEnter(M, i)) all.push({ m, i, s }); });
   const rng = mulberry32((LT.seed ^ hashStr('blind|' + rule) ^ LTR.ver) >>> 0), pick = [];
   for (let n = Math.min(k, all.length); pick.length < n;) { const x = all[Math.floor(rng() * all.length)]; if (!pick.includes(x)) pick.push(x); }
-  return { total: all.length, items: pick.map((x) => ({ coin: Ms[x.m].coin, i: x.i, t: entryTime(Ms[x.m], x.i), mk: x.s.mk, viz: x.s.viz, M: Ms[x.m] })) };
+  // 8k1, nur Regel 1: Zeigt keines der fünf Bilder einen Tag, an dem bloß ein Docht die Zone antippt (zählt nicht als Berührung),
+  // kommt gezielt ein sechstes dazu, das so einen Tag zeigt. Jensen soll sehen, was der Grundsatz Körper ausschließt.
+  const hasWick = (x) => (x.s.viz?.d?.marks || []).some((m) => m.x);
+  let extra = null;
+  if (rule === 'r1' && pick.length && !pick.some(hasWick)) { const cand = all.filter((x) => hasWick(x) && !pick.includes(x)); if (cand.length) extra = cand[Math.floor(rng() * cand.length)]; }
+  const item = (x, ex) => ({ coin: Ms[x.m].coin, i: x.i, t: entryTime(Ms[x.m], x.i), mk: x.s.mk, viz: x.s.viz, M: Ms[x.m], ...(ex ? { extra: true } : {}) });
+  return { total: all.length, items: [...pick.map((x) => item(x, false)), ...(extra ? [item(extra, true)] : [])] };
 }
 const BKEY = 'wolfdesk.ltblind';
 export function loadBlind() { try { return JSON.parse(globalThis.localStorage?.getItem(BKEY) || '{}') || {}; } catch { return {}; } }

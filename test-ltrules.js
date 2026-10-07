@@ -1,6 +1,6 @@
 // Tests für core-ltrules.js (8k: Regeln 1, 2, 3, 4 und 6 des Testplans, nur Messung) und ihren Anschluss an die Messmaschine
-import { LTR, NEW_RULES, trendUp, signalsOf, countTouches, weekKey, monthKey, markerTable, gapTimes } from './core-ltrules.js';
-import { LT, RULES, prepare, runRule, fireOf, preOf, canEnter, entryTime, randomSameCandle, periodResult, verdict, resultText, blindSample, blindOk, marketYears, fireFlip } from './core-longtest.js';
+import { LTR, NEW_RULES, trendUp, signalsOf, countTouches, wickOnlyDays, bodyTopAt, bodyBottomAt, weekKey, monthKey, markerTable, gapTimes } from './core-ltrules.js';
+import { LT, RULES, prepare, runRule, fireOf, preOf, canEnter, entryTime, randomSameCandle, periodResult, verdict, resultText, blindSample, blindOk, marketYears, fireFlip, validResults } from './core-longtest.js';
 import { mulberry32 } from './core-randombase.js';
 import { pack, periods, periodOf } from './core-binance.js';
 import { reversalPoint } from './core-engine2.js';
@@ -38,8 +38,8 @@ function causal(rule, m = X) {
     const cut = Math.floor(m.G.length * q), G = m.G.slice(0, cut), D = m.D.filter((d) => d.t + DAY <= G[cut - 1].t + H4);
     const part = signalsOf(rule, prepare(m.coin, D, pack(G))), full = sig(rule, m);
     const a = [...part.entries()].map(([i, s]) => i + JSON.stringify(s.mk)).join('|'), b = [...full.entries()].filter(([i]) => i < cut).map(([i, s]) => i + JSON.stringify(s.mk)).join('|');
-    return part.size > 0 && a === b;
-  });
+    return a === b;
+  }) && sig(rule, m).size > 0;
 }
 
 // ---- Kleine handgebaute Märkte (nur 4H; Tagestrend, ATR künstlich) ----
@@ -148,24 +148,36 @@ function vwapCase(tail, extraDays = 0, plusDaily = 0) {
 const hiC = [110, 110, 109, 110];
 
 // ---- Regel 1: jedes Signal gegen die Definition geprüft ----
-const keyOk = ALLM.every((m) => [...sig('r1', m).entries()].every(([i, s]) => {
-  const { M, D } = m, g = M.g, [zl, zh] = s.viz.d.bands[0], marks = s.viz.d.marks, A = marks[marks.length - 1].k, t = marks.slice(0, -1).map((x) => x.k), a = M.atr[A - 1];
+// Regel 1 feuert mit dem Grundsatz Körper selten: für diese Prüfung mehr und längere Märkte
+const KEYM = [...ALLM, ...[101, 202, 303, 404, 505, 606].map((s, k) => mk('K' + k, s * 7919 + 13, Date.UTC(2024, 0, 1)))];
+const bodyIn = (c, zl, zh) => { const a = Math.max(c.o, c.c), b = Math.min(c.o, c.c); return (a >= zl && a <= zh) || (b >= zl && b <= zh); };
+const keyOk = KEYM.every((m) => [...sig('r1', m).entries()].every(([i, s]) => {
+  const { M, D } = m, g = M.g, [zl, zh] = s.viz.d.bands[0], all = s.viz.d.marks, marks = all.filter((x) => !x.x), A = marks[marks.length - 1].k, t = marks.slice(0, -1).map((x) => x.k), a = M.atr[A - 1];
+  const P = (zl + zh) / 2, onBody = D.slice(Math.max(0, A - 180), A).some((c) => near(Math.max(c.o, c.c), P, 1e-7) || near(Math.min(c.o, c.c), P, 1e-7));
+  const wicksOk = all.filter((x) => x.x).every((x) => !bodyIn(D[x.k], zl, zh) && ((D[x.k].h >= zl && D[x.k].h <= zh) || (D[x.k].l >= zl && D[x.k].l <= zh))) && t.every((k) => bodyIn(D[k], zl, zh));
   const tEnd = D[A].t + DAY;
-  let re = -1; for (let k = 0; k <= i; k++) if (g.t[k] >= tEnd && g.t[k] < tEnd + 10 * DAY && g.l[k] <= zh) { re = k; break; }
+  let re = -1; for (let k = 0; k <= i; k++) if (g.t[k] >= tEnd && g.t[k] < tEnd + 10 * DAY && Math.min(g.o[k], g.c[k]) <= zh) { re = k; break; }
   let firstClose = -1; if (re >= 0) for (let k = re; k <= i; k++) if (g.c[k] > zh) { firstClose = k; break; }
   let killed = false; for (let k = A + 1; k <= M.dOf[i]; k++) if (D[k].c < zl) killed = true;
   return near(zh - zl, 0.5 * a, 1e-7) && t.length >= 3 && t[t.length - 1] - t[0] >= 28 && t.every((k) => k < A && k >= A - 180) && D[A].c > zh && D[A - 1].c <= zh
-    && countTouches(D, (zl + zh) / 2, a, A - 180, A - 1).join() === t.join() && firstClose === i && !killed && trendUp(M, i);
+    && countTouches(D, P, a, A - 180, A - 1).join() === t.join() && firstClose === i && !killed && trendUp(M, i) && onBody && wicksOk;
 }));
-const keyCount = ALLM.reduce((a, m) => a + sig('r1', m).size, 0);
+const keyCount = KEYM.reduce((a, m) => a + sig('r1', m).size, 0);
 // Berührungen handgebaut: Level 100, ATR 2 → Zone 99,5 bis 100,5; „1 ATR weg“ = Schluss ≤ 97,5 (von unten) bzw. ≥ 102,5 (von oben)
-const dd = (rows) => rows.map(([h, l, c], k) => ({ t: T0 + k * DAY, o: c, h, l, c, v: 1 }));
-const lowDay = [96, 94, 95], hiDay = [106, 104, 105];
-const touchUp = dd([lowDay, [100, 96, 97], lowDay, lowDay]);                     // von unten berührt, Schluss 97 → dreht weg
-const touchThrough = dd([lowDay, [100, 96, 99], hiDay, hiDay]);                  // von unten berührt, danach Schluss weit DARÜBER → Durchlauf
-const touchDown = dd([hiDay, [104, 100, 103], hiDay]);                           // von oben berührt, Schluss 103 → dreht weg
-const touchRun = dd([lowDay, [100, 96, 99], [100.4, 97, 99], [99.8, 96, 97], lowDay]); // drei Tage in der Zone = eine Berührung
-const touchLate = dd([lowDay, [100, 96, 99], ...Array.from({ length: 10 }, () => [99, 98, 98.5]), lowDay]); // Wegdrehen erst am 11. Tag
+const dd = (rows) => rows.map(([o, h, l, c], k) => ({ t: T0 + k * DAY, o, h, l, c, v: 1 }));
+const lowDay = [95, 96, 94, 95], hiDay = [105, 106, 104, 105];
+const touchUp = dd([lowDay, [96, 100.2, 96, 100], [98, 98.5, 96.5, 97], lowDay]);          // Körper-Oberkante 100 in der Zone, danach Schluss 97 → dreht weg
+const touchWick = dd([lowDay, [96, 100, 96, 98], [98, 98.5, 96.5, 97], lowDay]);           // nur der Docht (Hoch 100) tippt die Zone an, Körper bis 98
+const touchThrough = dd([lowDay, [96, 100.2, 96, 100], hiDay, hiDay]);                     // Körper in der Zone, danach Schluss weit DARÜBER → Durchlauf
+const touchDown = dd([hiDay, [104, 104, 99.8, 100], [102, 103.5, 101.5, 103]]);            // von oben: Körper-Unterkante 100, Schluss 103 → dreht weg
+const touchRun = dd([lowDay, [96, 100.2, 96, 100], [100, 100.4, 97, 99.6], [99.6, 99.8, 96, 97], lowDay]); // drei Tage mit Körperkante in der Zone = eine Berührung
+const touchLate = dd([lowDay, [96, 100.2, 96, 100], ...Array.from({ length: 10 }, () => [98.5, 99, 98, 98.5]), lowDay]); // Wegdrehen erst am 11. Tag
+// Körper-Swings: Plateau (zwei Nachbartage teilen sich die Körperkante) und Tick-Fall (der zweite Tag eröffnet einen Tick höher)
+const rise = (top) => [[90, 91, 89.5, 91], [91, 92, 90.5, 92], [92, 93, 91.5, 93], [93, 94, 92.5, 94], [94, 95, 93.5, 95], [95, top + 0.3, 94.5, top]];
+const fall = (from) => [[from - 1, from - 0.8, 96, 97], [97, 97.2, 95, 96], [96, 96.2, 94, 95], [95, 95.2, 93, 94], [94, 94.2, 92, 93]];
+const plateau = dd([...rise(100), [100, 100.5, 98, 99], ...fall(99)]);        // Tag 5 schließt bei 100, Tag 6 eröffnet bei 100 und fällt
+const tickCase = dd([...rise(100), [100.01, 100.5, 98, 99], ...fall(99)]);    // Tag 6 eröffnet einen Tick höher
+const swingDays = (D) => D.map((_, k) => k).filter((k) => bodyTopAt(D, k)).join();
 
 // ---- Anschluss an die Messmaschine ----
 const TR = Object.fromEntries(NEW_RULES.map((r) => [r, ALLM.map((m) => runRule(m.M, fireOf(r), STICH, ['dev', 'check']))]));
@@ -212,6 +224,7 @@ export const tests = [
   ['Regel 3: die Annäherungskerze feuert selbst, wenn sie über dem Level schließt', () => { const h = vwapCase([hiC, [110, 110, 100.8, 100.5]]); return h.length === 1 && h[0][0] === 1 && h[0][1].Nachbarn === 'weitere Level nah'; }],
   ['Regel 3: schließt sie darunter, feuert der erste spätere Schluss über dem Level', () => { const h = vwapCase([hiC, [110, 110, 99.4, 99.6], [99.6, 100.4, 99.5, 100.2]]); return h.length === 1 && h[0][0] === 2; }],
   ['Regel 3: Schluss mehr als ½ ATR unter dem Level lässt die Annäherung verfallen', () => vwapCase([hiC, [110, 110, 97.5, 98], [98, 100.4, 98, 100.2]]).length === 0],
+  ['Regel 3: ein Docht allein ist keine Annäherung (Körper-Unterkante bleibt mehr als ½ ATR über dem Level)', () => vwapCase([hiC, [110, 110, 100.5, 102]]).length === 0 && vwapCase([hiC, [110, 110, 100.5, 100.9]]).length === 1],
   ['Regel 3: ohne Annäherung von oben kein Signal', () => vwapCase([[100, 100.6, 99.8, 100.5], [100.5, 100.9, 100.2, 100.8]]).length === 0 && vwapCase([hiC, [110, 110, 101.2, 101.5]]).length === 0],
   ['Regel 3: nach einem Signal braucht es eine neue Annäherung von oben', () => vwapCase([hiC, [110, 110, 100.8, 100.5], [100.5, 100.9, 100.2, 100.8], hiC, [110, 110, 100.9, 100.6]]).map((x) => x[0]).join() === '1,4'],
   ['Regel 3: beim Wochenwechsel verfällt eine offene Annäherung', () => {
@@ -227,13 +240,17 @@ export const tests = [
   ['Regel 2: jede Teilzone liegt zwischen 0,382 und 0,65, der Zähler beginnt je Impuls bei „erster“', () => ALLM.every((m) => [...sig('r2', m).values()].every((s) => ['0,382 bis 0,5', '0,5 bis 0,618', 'Golden Pocket'].includes(s.mk.Teilzone) && ['erster aus dem Impuls', 'wiederholter'].includes(s.mk.Einstieg))) && ALLM.some((m) => [...sig('r2', m).values()].some((s) => s.mk.Einstieg === 'erster aus dem Impuls'))],
   ['Regel 2: der Impuls misst Körper, nicht Dochte (Hoch und Tief der Zeichnung liegen auf Körperkanten)', () => ALLM.every((m) => [...sig('r2', m).values()].every((s) => { const [T, H] = s.viz.d.marks, L = s.viz.d.lines; return near(L[0].y, bh(m.D, H.k)) && near(L[1].y, bl(m.D, T.k)) && T.k < H.k; }))],
 
-  ['Regel 1: Berührung von unten zählt, wenn der Kurs 1 ATR nach unten wegdreht', () => countTouches(touchUp, 100, 2, 0, 3).join() === '1'],
+  ['Regel 1: Körper-Berührung von unten zählt, wenn der Kurs 1 ATR nach unten wegdreht', () => countTouches(touchUp, 100, 2, 0, 3).join() === '1'],
+  ['Regel 1: ein Docht ohne Körper in der Zone ist keine Berührung und wird für das Bild vermerkt', () => countTouches(touchWick, 100, 2, 0, 3).length === 0 && wickOnlyDays(touchWick, 100, 2, 0, 3).join() === '1' && wickOnlyDays(touchUp, 100, 2, 0, 3).length === 0],
+  ['Körper-Swing, Plateau: teilen sich zwei Nachbartage die Körperkante, zählt der frühere Tag, und nur er', () => swingDays(plateau) === '5'],
+  ['Körper-Swing, Tick-Fall: eröffnet der zweite Tag einen Tick höher, zählt der zweite, und nur er', () => swingDays(tickCase) === '6'],
+  ['Körper-Swing: Dochte spielen keine Rolle (höheres Hoch am Nachbartag ändert nichts)', () => { const D = plateau.map((c) => ({ ...c })); D[4].h = 120; D[7].l = 50; return swingDays(D) === '5' && [...Array(D.length).keys()].filter((k) => bodyBottomAt(D, k)).length === 0; }],
   ['Regel 1: ein Durchlauf nach oben ist keine Berührung', () => countTouches(touchThrough, 100, 2, 0, 3).length === 0],
   ['Regel 1: Berührung von oben zählt, wenn der Kurs 1 ATR nach oben wegdreht', () => countTouches(touchDown, 100, 2, 0, 2).join() === '1'],
   ['Regel 1: aufeinanderfolgende Tage in der Zone sind eine Berührung', () => countTouches(touchRun, 100, 2, 0, 4).join() === '1'],
   ['Regel 1: das Wegdrehen muss innerhalb von 10 Tagen und vor dem Ausbruchstag liegen', () => countTouches(touchLate, 100, 2, 0, 12).length === 0 && countTouches(touchUp, 100, 2, 0, 1).length === 0 && countTouches(touchUp, 100, 2, 0, 2).length === 1],
-  ['Regel 1: jedes Signal erfüllt die Definition (Zone ½ ATR, 3 Berührungen über 4 Wochen, erster Tagesschluss darüber, Retest in 10 Tagen, erster 4H-Schluss über der Zone)', () => keyOk && keyCount > 10],
-  ['Regel 1: Merker nennen Berührungen und Alter des Levels', () => ALLM.every((m) => [...sig('r1', m).values()].every((s) => ['3', '4', '5 und mehr'].includes(s.mk['Berührungen']) && /Wochen/.test(s.mk.Alter)))],
+  ['Regel 1: jedes Signal erfüllt die Definition (Level auf einer Körperkante, Zone ½ ATR, 3 Körper-Berührungen über 4 Wochen, erster Tagesschluss darüber, Körper-Retest in 10 Tagen, erster 4H-Schluss über der Zone)', () => keyOk && keyCount > 10],
+  ['Regel 1: Merker nennen Berührungen und Alter des Levels', () => KEYM.every((m) => [...sig('r1', m).values()].every((s) => ['3', '4', '5 und mehr'].includes(s.mk['Berührungen']) && /Wochen/.test(s.mk.Alter)))],
 
   ['Messmaschine 8k: Merker hängen an jedem Trade der neuen Regeln', () => NEW_RULES.every((r) => allTrades(r).length > 0 && allTrades(r).every((t) => t.mk && Object.keys(t.mk).length >= 1 && Number.isFinite(t.r)))],
   ['Messmaschine 8k: Signale bei offenem Trade verfallen und werden gezählt', () => NEW_RULES.every((r) => ALLM.every((m, k) => { const l = TR[r][k]; let n = 0; for (const i of keys(r, m)) if (['dev', 'check'].includes(periodOf(entryTime(m.M, i), STICH)) && canEnter(m.M, i)) n++; return l.length + (l.missed.dev || 0) + (l.missed.check || 0) >= n && l.length <= n; }))],
@@ -252,10 +269,12 @@ export const tests = [
   ['Messmaschine 8k: Text der alten Regeln bleibt ohne Zusatzzeilen', () => { const mine = runRule(X.M, fireOf('flip'), STICH, ['dev']).map((t) => ({ ...t, coin: 'AAA' })); const txt = resultText('flip', { dev: periodResult(mine, randomSameCandle(Ms, mine, preOf('flip'), ['dev'], 10).dev, P.dev, 0) }, '8k'); return !/Merker|verfallen/.test(txt) && txt.split('\n').length === 7; }],
   ['Messmaschine 8k: ein neuer Kandidat, der in der Entwicklung bei A und B durchfällt, ist abgelegt', () => verdict('r1', { n: 400, avg: -0.1, pct: 10 }, null).dropped === true && verdict('r1', { n: 400, avg: 0.1, pct: 10 }, null).canCheck === true],
 
-  ['Blindprobe: höchstens fünf Einstiege je Regel, nur aus der Entwicklung, ohne Ergebnis', () => NEW_RULES.every((r) => { const b = blind[r]; return b.items.length === Math.min(5, b.total) && b.items.every((x) => periodOf(x.t, STICH) === 'dev' && !('r' in x) && !('x' in x) && x.viz && x.mk); })],
+  ['Blindprobe: höchstens fünf zufällige Einstiege je Regel, nur aus der Entwicklung, ohne Ergebnis', () => NEW_RULES.every((r) => { const b = blind[r]; return b.items.filter((x) => !x.extra).length === Math.min(5, b.total) && b.items.every((x) => periodOf(x.t, STICH) === 'dev' && !('r' in x) && !('x' in x) && x.viz && x.mk); })],
   ['Blindprobe: fester Würfel (dieselben fünf bei jedem Aufruf), keine doppelt', () => NEW_RULES.every((r) => { const a = blind[r].items.map((x) => x.coin + x.i), b = blindSample(r, Ms, STICH).items.map((x) => x.coin + x.i); return a.join() === b.join() && new Set(a).size === a.length; })],
   ['Blindprobe: rechnet keinen einzigen Trade', () => { const fresh = ALLM.map((m) => prepare(m.coin, m.D, pack(m.G))); NEW_RULES.forEach((r) => blindSample(r, fresh, STICH)); return fresh.every((M) => M.sims.size === 0); }],
   ['Blindprobe: die Zeichenhilfe endet an der Signalkerze (nichts danach)', () => NEW_RULES.every((r) => blind[r].items.every((x) => ['d', 'h'].every((tf) => !x.viz[tf] || (x.viz[tf].marks || []).every((m) => m.k <= (tf === 'h' ? x.i : x.M.dOf[x.i])))))],
+  ['Blindprobe Regel 1: fehlt in den fünf Bildern ein Docht-Tag (×), kommt gezielt ein sechstes mit ×; sonst keines', () => { const b = blindSample('r1', KEYM.map((m) => m.M), STICH), x = (it) => it.viz.d.marks.some((m) => m.x), rnd = b.items.filter((it) => !it.extra), ex = b.items.filter((it) => it.extra); return rnd.length === 5 && ex.length <= 1 && (ex.length === 0 || (x(ex[0]) && !rnd.some(x) && periodOf(ex[0].t, STICH) === 'dev')) && NEW_RULES.filter((r) => r !== 'r1').every((r) => blind[r].items.every((it) => !it.extra)); }],
+  ['Messmaschine 8k1: Ergebnisse einer älteren Fassung der Regeln werden nicht mehr gezeigt', () => { const v = validResults({ r1: { cmp: LT.cmp, dev: { n: 1, rv: LTR.ver - 1 } }, r4: { cmp: LT.cmp, dev: { n: 1, rv: LTR.ver } }, flip: { cmp: LT.cmp, dev: { n: 1 } } }); return Object.keys(v).join() === 'r4,flip'; }],
   ['Blindprobe: neue Regeln sind gesperrt, bis sie für diese Fassung bestätigt sind', () => !blindOk('r1', {}) && !blindOk('r1', { r1: { ok: true, rv: LTR.ver + 1 } }) && !blindOk('r1', { r1: { ok: false, rv: LTR.ver } }) && blindOk('r1', { r1: { ok: true, rv: LTR.ver } }) && !blindOk('r2', { r1: { ok: true, rv: LTR.ver } })],
   ['Blindprobe: die alten Regeln brauchen keine', () => blindOk('flip', {}) && blindOk('donch', {}) && blindOk('r5', {})],
 
