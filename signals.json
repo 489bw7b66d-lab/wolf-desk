@@ -337,9 +337,9 @@
     0.29627722190062444,
     0.3187091825714331
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791341999999,
    "events": [
     "Volumen-Spike",
     "EMA 8/21 Kreuzung aufwärts",
@@ -654,6 +654,23 @@
    "zoneH": 0,
    "mfe": 0.81,
    "mae": 0.2
+  },
+  {
+   "key": "XLM|long|1790647603098",
+   "id": "XLM|long|1790647603098",
+   "coin": "XLM",
+   "dir": "long",
+   "style": "swing",
+   "score": 81,
+   "seal": true,
+   "at": 1790647603098,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791341999999,
+   "sf": "aus",
+   "zoneH": 0,
+   "mfe": 0.47,
+   "mae": 1
   },
   {
    "key": "ETH|long|1790683820436",
