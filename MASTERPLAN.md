@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 07.10.2026, 17:00 · Code: Etappe 8l · 963 Tests · auf dem iPhone geprüft bis 8k2 (933 von 933 am 07.10. um 14:33), 8l noch nicht · **Testplan 1 abgeschlossen: kein Kandidat besteht. Richtungsentscheidung vom 07.10., 16:11: keine weiteren Einstiegsregeln auf Vorteil testen, die App wird zum Setup-Finder (Hinweisgeber)**
+Stand: 07.10.2026, 20:15 · Code: Etappe 8l1 · 993 Tests · auf dem iPhone geprüft bis 8l (963 von 963 am 07.10. um 16:46), 8l1 noch nicht · **Testplan 1 abgeschlossen: kein Kandidat besteht. Richtungsentscheidung vom 07.10., 16:11: keine weiteren Einstiegsregeln auf Vorteil testen, die App wird zum Setup-Finder (Hinweisgeber)**
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -22,7 +22,7 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine
 - Hyperliquid ist aus Claudes Arbeitsumgebung nicht erreichbar (wie Binance). **Aktuelle Funde kann Claude nicht selbst zeichnen; die Vorschau muss in der App laufen.**
 
 **Nächste Schritte:**
-1. **Paket 8l „Setup-Finder, Vorschau“ ist gebaut** (Abschnitt 9), noch nicht auf dem iPhone. Jensen spielt es ein, tippt im Tab Signale auf „Märkte durchsuchen“ und sagt je Baustein, ob die Funde und die roten Sell-Blöcke passen (Screenshots helfen). **Das ist die Abnahme; erst danach geht es an Telegram.**
+1. **Paket 8l lief am 07.10. auf dem iPhone, Jensens Rückmeldung auf echten Kursen ist in 8l1 eingearbeitet** (Abschnitt 9). 8l1 ist gebaut, noch nicht auf dem iPhone. Jensen spielt es ein und sieht sich die Liste noch einmal an: Stimmen Fib-Lage und RSI mit seinem Chart überein (HBAR war sein Beispiel), ist die Liste „ab 2 Bausteinen“ kurz genug, passt die Trade-Karte aus dem Finder? **Erst nach dieser Abnahme geht es an Telegram.**
 2. Offene Punkte aus der Abnahme einarbeiten (eine Korrekturrunde je Punkt).
 3. Danach „Umstellen“ (fasst den Wächter an, ein Tag Abstand): Telegram und Heiße Coins melden „Beobachtung“, Erinnerung zum Zeit-Ausstieg, Meldung nach einer Pause. Dabei messen, ob der Wächter die längeren 4H-Reihen schafft.
 4. Testplan 2 mit den Einwänden der zweiten Meinung festschreiben und einmal durchlaufen; Ergebnis wird eine Ampel als Anzeige.
@@ -37,13 +37,13 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Der Zufalls-Vergleich wird nicht mehr angefasst.** Fällt eine Regel durch, wird nicht am Würfel und nicht an der Lesart gedreht.
 - Vor der Lieferung wie immer: alle Tests, verstellte Einstellungen, Sichtprüfung in iPhone-Größe, Wächter, Zeile „nicht getestet“.
 
-**Offen beim Nutzer:** 8l einspielen und die Funde ansehen (Schritt 1) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
+**Offen beim Nutzer:** 8l1 einspielen und die Liste ansehen (Schritt 1) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
 
 **Sachlicher Hinweis zum Konto (Export vom 07.10., 00:43, ohne Beträge):** Das Gesamt-Risiko bis zu den Stops lag bei rund 20 % vom Konto (Budget 6 %), der Tagesverlust bei rund 10 % (Grenze 5 %), bei zwei Positionen lag die Liquidation weniger als 1 % hinter dem Stop. Claude hat es am 07.10. dreimal angesprochen (zuletzt zum Export von 12:57: Gesamt-Risiko weiter rund 20 %, Tagesverlust rund 16 %, bei einer Position die Liquidation 0,1 % hinter dem Stop); Jensen hat nicht darauf geantwortet. Das ist das Muster aus der Selbstanalyse (Hebel zu hoch im Verhältnis zum Stop); der Hebel dagegen ist die Positionsgröße, nicht ein engerer Stop.
 
 **Erste Nachricht für den neuen Chat:**
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang: MASTERPLAN.md, TESTPLAN.md, TESTPLAN-PROTOKOLL.md und der aktuelle Code als ZIP. Bitte lies die drei Dokumente ganz, zuerst den Abschnitt „Übergabe“ im Masterplan, und arbeite genau so weiter, wie es in Abschnitt 2 steht (Ton, Regeln, Lehren). Hol dir Datum und Uhrzeit von der Uhr, prüf, ob die Versionsnummer im Code zum Masterplan passt (8l), und lass alle Tests laufen (963). Sag mir kurz, was du vorgefunden hast und was du vorhast, bevor du baust. Stand: 8k2 ist eingespielt, Testplan 1 ist abgeschlossen (kein Kandidat besteht), seit der Richtungsentscheidung vom 07.10. wird die App zum Setup-Finder, die lange Historie von Binance ist geladen und eingefroren, Regel 5 ist in der Prüfung durchgefallen. Der Testplan ist seit 06.10.2026 fest, der Zufalls-Vergleich seit Änderung 1 und die Lesarten 11 bis 16 samt Änderung 2 (Grundsatz Körper) und Änderung 3 (Regel 1) seit 07.10.: bitte an allem nichts ändern. Nächster Schritt: siehe „Nächste Schritte“ in der Übergabe (Paket 8l, Setup-Finder als Vorschau). Aussagen über die App nur nach einem Blick in den Code. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle. Keine Beträge oder Zugangsdaten in Dateien fürs Repository. Ich bin Buddy2, du bist Buddy1, und wir berichten dem Chef. 🐺
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang: MASTERPLAN.md, TESTPLAN.md, TESTPLAN-PROTOKOLL.md und der aktuelle Code als ZIP. Bitte lies die drei Dokumente ganz, zuerst den Abschnitt „Übergabe“ im Masterplan, und arbeite genau so weiter, wie es in Abschnitt 2 steht (Ton, Regeln, Lehren). Hol dir Datum und Uhrzeit von der Uhr, prüf, ob die Versionsnummer im Code zum Masterplan passt (8l1), und lass alle Tests laufen (993). Sag mir kurz, was du vorgefunden hast und was du vorhast, bevor du baust. Stand: 8l ist eingespielt, 8l1 gebaut, Testplan 1 ist abgeschlossen (kein Kandidat besteht), seit der Richtungsentscheidung vom 07.10. wird die App zum Setup-Finder, die lange Historie von Binance ist geladen und eingefroren, Regel 5 ist in der Prüfung durchgefallen. Der Testplan ist seit 06.10.2026 fest, der Zufalls-Vergleich seit Änderung 1 und die Lesarten 11 bis 16 samt Änderung 2 (Grundsatz Körper) und Änderung 3 (Regel 1) seit 07.10.: bitte an allem nichts ändern. Nächster Schritt: siehe „Nächste Schritte“ in der Übergabe (Abnahme von 8l1, danach „Umstellen“). Aussagen über die App nur nach einem Blick in den Code. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle. Keine Beträge oder Zugangsdaten in Dateien fürs Repository. Ich bin Buddy2, du bist Buddy1, und wir berichten dem Chef. 🐺
 
 ---
 
@@ -70,7 +70,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8l). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8l1). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -95,7 +95,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8l` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8l1` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -151,7 +151,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 44 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8l">` und eine Import-Liste mit `?v=8l` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8l1">` und eine Import-Liste mit `?v=8l1` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -391,6 +391,22 @@ jobs:
 - **Nicht enthalten, mit Absicht:** Telegram, Heiße Coins, Tagebuch. Das ist Schritt 2 („Umstellen“) und fasst den Wächter an.
 - 30 neue Tests (963). Geprüft: alle Tests, Testseite und kompletter Ablauf im Browser in iPhone-Größe mit nachgebildetem Hyperliquid (Marktliste, Tageskerzen, lange 4H-Reihen, laufende Kerze wird verworfen). Wächter: keine seiner Dateien berührt.
 - **Nicht getestet:** der echte Abruf von Hyperliquid (hier nicht erreichbar): ob 200 Tage 4H-Kerzen in einem Abruf kommen, wie lange der Durchlauf auf dem iPhone dauert (mit 1,3 Sekunden Abstand je Abruf: bei 175 Märkten grob 4 Minuten für die Tageskerzen, wenn sie nicht schon im Zwischenspeicher liegen), wie viele Funde es gibt und wie die Bilder auf echten Kursen aussehen. Bei kürzerer Historie als im Test (200 statt 2.000 Tage) können einzelne Funde abweichen, vor allem bei alten Order Blocks.
+
+**Etappe 8l1 „Setup-Finder, Überarbeitung nach der ersten Abnahme“ (07.10., 20:15, reines Anzeige-Paket):**
+
+Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im Tagestrend aufwärts, 60 von 65 geprüften mit Fund („der spuckt immer weiter aus“); VWAP 47, Sweep 27, Order Block 14, Key-Level 4, Fib 0. Der Wochen-Sell-Block verdeckte das Bild. Einzelne Funde waren vom Kurs schon überholt. Zu den Key-Level-Funden: TIA „würde ich auch so setzen“; ASTER unter einem Tages-Sell-Block eher Short; JTO kein Trade (ABC-Korrektur); VIRTUAL nur mit engem Stop; DOT hängt an der Wellenzählung. HBAR: bei ihm Golden Pocket plus Buy-Block = klarer Long, die App zeigte keinen Fib-Fund, weil Regel 2 auf das bestätigte Hoch und eine Reaktion wartet. Sein Wunsch für die Vorsortierung: RSI mit Divergenzen und die Lage des Kurses in den Fib-Levels.
+
+- **Nur noch gültige Funde** (`stillValid`): Ein Fund ist überholt, wenn nach der Signalkerze gilt: Order Block = 4H-Schluss unter dem Tief des Blocks · Sweep = 4H-Schluss unter dem Sweep-Tief · VWAP = 4H-Schluss mehr als ½ Tages-ATR unter dem auslösenden Level · Key-Level = Tagesschluss unter dem Band · Fib = Tagesschluss unter 0,786. Überholte Funde werden gezählt und als Zeile genannt, nicht gezeigt. **Die Regeln selbst sind unberührt** (`core-ltrules.js` nicht angefasst).
+- **Ansicht „Alle / ab 2 Bausteinen / ab 3“, Voreinstellung ab 2** (Jensens Wahl). Hinweis „Marktbewegung“, wenn ein Baustein bei mehr als einem Drittel der geprüften Märkte gleichzeitig auslöst.
+- **„Platz nach oben“ je Zeitebene** (Woche · Tag · 4H, die höhere zuerst; Jensen: höhere Zeitebenen wirken stärker). **Im Bild nur noch 4H-Sell-Blöcke** (die nächsten zwei, höchstens 3 R über dem Kurs); Tag und Woche stehen als Text.
+- **Bild:** Beschriftungen werden auseinandergeschoben, wenn sie übereinander lägen; im VWAP-Bild trägt nur das auslösende Level einen Namen; je Fund „seit der Signalkerze ±x R“.
+- **Fib-Lage (nur Information und Filter, kein Baustein):** Tageschart, Anker an den Kerzenkörpern (von Jensen am 07.10. so festgelegt: unten der tiefste Punkt des Körpers, oben der höchste Punkt des Körpers). Anstieg = vom jüngsten bestätigten Körper-Swing-Tief zur höchsten Körper-Oberkante seither, mindestens 6 Tages-ATR; sonst das Swing-Tief davor (höchstens 4 Schritte). Zeile „Fib: Kurs bei 0,64 des letzten Anstiegs · Golden Pocket“ (0,618 bis 0,65). Anders als Regel 2 ein **Zustand**, kein Auslöser. Die 6 ATR und die 4 Schritte hat Claude gewählt; Jensen hat sie noch nicht am Bild gesehen.
+- **RSI (nur Information und Filter):** RSI 14 auf Tag und 4H, Tag zuerst (Jensen bewertet den Tag stärker), überverkauft unter 30, überkauft über 70. Divergenz aus den Schlusskursen der letzten beiden bestätigten Swing-Punkte (5 Kerzen davor und danach, jüngster höchstens 30 Kerzen alt): tieferes Tief im Kurs, höheres im RSI = bullisch; Hochs gespiegelt = bärisch. „Im Entstehen“: Der Schluss von jetzt liegt unter dem letzten Swing-Tief, der RSI darüber.
+- **Filter** Golden Pocket, RSI überverkauft, bullische Divergenz: zeigen **alle geprüften Märkte im Tagestrend aufwärts**, auch ohne Baustein. Fib-Lage, RSI und Platz nach oben gehen nicht in die Reihenfolge ein.
+- **Knopf „In Trade-Karte übernehmen“** (Jensens Wunsch, 07.10. abends) im aufgeklappten Eintrag: öffnet die Trade-Karte als Long zum Live-Kurs, Stop 2 × Tages-ATR darunter, Ziele bei 2R / 3R / 4R / 6R wie beim Maßstab (`tradeResult` in `core-finder.js`). Die Karte heißt dann „Beobachtung · Setup-Finder“, trägt einen Hinweis mit den Bausteinen und hat keinen Score; der Knopf „Vollanalyse“ fehlt dort (die alte Analyse kennt diese Form nicht). Risiko-Budget, Abkühlphase und Hebel-Grenzen der Trade-Karte gelten unverändert. Dafür zwei Zeilen in `ui-trade.js` (nur Anzeige).
+- **Fehler gefunden beim Schreiben der Tests:** `rsiInfo` lieferte bei zu wenig Kerzen „überverkauft“ statt nichts. Behoben, Test dazu.
+- 30 neue Tests (993). Geprüft: alle Tests, die Tests von Messmaschine, Regeln und Finder mit vier Sätzen verstellter Einstellungen, Testseite und kompletter Ablauf im Browser in iPhone-Größe mit nachgebildetem Hyperliquid (Liste, Umschalter, Bild, Trade-Karte aus dem Finder, „Im Rechner anpassen“). Wächter: keine seiner Dateien berührt (`ui-trade.js`, `core-finder.js` und `core-sellblock.js` lädt er nicht).
+- **Nicht getestet:** alles auf echten Kursen. Ob Fib-Lage und RSI-Divergenz mit Jensens Chart übereinstimmen (HBAR), ob die Schwelle von 6 Tages-ATR den Anstieg trifft, den er zeichnen würde, wie lang die Liste „ab 2 Bausteinen“ wirklich wird, und die Trade-Karte aus dem Finder mit echtem Konto.
 
 **Kleinigkeiten, die noch offen sind:** `startCapital: 1500` in `config.js` ist ein Platzhalter (geklärt am 07.10. über den Export: Der Nutzer hat einen eigenen Wert als Abweichung gespeichert, er liegt nur auf dem iPhone und geht nicht an den Wächter); die Zeile bleibt, wie sie ist · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
 

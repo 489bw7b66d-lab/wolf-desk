@@ -208,7 +208,7 @@ initMarket();
 initBacktest(getState);
 initBinance(); // 8h: lange Historie von Binance
 initLongTest(); // 8i: Testplan-Läufe auf der langen Historie
-initFinder(getState); // 8l: Setup-Finder (Vorschau), reine Anzeige
+initFinder(getState, openTrade); // 8l: Setup-Finder (Vorschau), reine Anzeige
 initSettings(getState);
 initFeed(getState, openTrade, openCoin);
 initViews(getState, () => { renderFeed(); renderHome(getState()); });

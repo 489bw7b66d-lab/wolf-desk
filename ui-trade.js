@@ -75,13 +75,14 @@ function render() {
   $('sheet-body').innerHTML = `
     <div class="sheet-head">
       <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${coinIcon(r.coin, 28)}${esc(dn(r.coin))}</h2>
-      <span class="meta">${r.total[p.dir] > 0 ? `${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]}` : 'Trendfolge · Maßstab'} · ${r.fromSignal ? `Signal ${ago(r.fromSignal.at)}` : esc(p.entryMode)}</span></div>
+      <span class="meta">${r.finder ? 'Beobachtung · Setup-Finder' : r.total[p.dir] > 0 ? `${CONFIG.signals.modes[r.mode].label} · Score ${r.total[p.dir]}` : 'Trendfolge · Maßstab'} · ${r.fromSignal ? `Signal ${ago(r.fromSignal.at)}` : r.finder ? 'Einstieg zum Kurs' : esc(p.entryMode)}</span></div>
       ${badge(p.dir)}
     </div>
     ${sum && sum.equity > 0 && (sum.available / sum.equity) * 100 < (CONFIG.rules.freeCapitalMinPct ?? 2)
       ? `<p class="cap-note bad">Kein Kapital frei (${f.pct(Math.max(0, (sum.available / sum.equity) * 100), 1)}). Dieser Plan ist nur zur Beobachtung, erst eine Position schließen oder verkleinern.</p>` : ''}
     ${coolBox()}
     ${r.fromSignal && ['gedreht', 'weg'].includes(r.fromSignal.check.state) ? `<p class="sig-note">${esc(r.fromSignal.check.text)}</p>` : ''}
+    ${r.finder ? `<p class="sig-note">Aus dem Setup-Finder übernommen${r.blocks?.length ? ` (${esc(r.blocks.join(', '))})` : ''}. Das ist eine Beobachtung, kein geprüftes Signal. Stop und Ziele sind der feste Rahmen: 2 × Tages-ATR und Vielfache davon.</p>` : ''}
     ${seal(r)}
     ${viewBox(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
@@ -114,7 +115,7 @@ function render() {
     ${p.warnings.map((w) => `<p class="warnline" style="color:var(--warn)">${esc(w.text)}${w.price ? ` (${f.price(w.price)})` : ''}</p>`).join('')}
     <div class="sheet-actions">
       <button type="button" id="sheet-copy">Plan kopieren</button>
-      <button type="button" id="sheet-full" class="ghost">Vollanalyse</button>
+      ${r.finder ? '' : '<button type="button" id="sheet-full" class="ghost">Vollanalyse</button>'}
       <button type="button" id="sheet-calc" class="ghost span-2">Im Rechner anpassen</button>
     </div>
     <p class="empty" style="font-size:12px;margin-top:10px">Regelbasierter Vorschlag, keine Anlageberatung.</p>`;

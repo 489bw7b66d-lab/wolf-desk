@@ -51,3 +51,20 @@ export function roomText(room) {
   const r = room.r == null ? '–' : (Math.round(room.r * 10) / 10).toFixed(1).replace('.', ',');
   return `Platz nach oben: ${r} R bis Sell-Block (${room.tf})`;
 }
+
+// 8l1: je Zeitebene getrennt, die höhere zuerst (Jensen: höhere Zeitebenen wirken stärker; ein Wochen-Block darf die
+// genaueren 4H-Blöcke nicht verdecken). Ergebnis: [{ tf, state, r, bottom, top, t }] in der Reihenfolge Woche, Tag, 4H.
+export const TF_ORDER = ['Woche', 'Tag', '4H'];
+export function roomByTf(price, sets, R) {
+  return TF_ORDER.map((tf) => ({ tf, ...roomAbove(price, (sets || []).filter((s) => s.tf === tf), R) }));
+}
+const rTxt = (r) => (r == null ? '–' : (Math.round(r * 10) / 10).toFixed(1).replace('.', ',') + ' R');
+export function roomsText(rooms) {
+  if (!rooms?.length) return '';
+  if (rooms.every((x) => x.state === 'frei')) return 'Platz nach oben: frei (kein Sell-Block über dem Kurs)';
+  return 'Platz nach oben · ' + rooms.map((x) => `${x.tf}: ${x.state === 'frei' ? 'frei' : x.state === 'im' ? 'Kurs im Block' : rTxt(x.r)}`).join(' · ');
+}
+// Die nächsten Sell-Blöcke einer Zeitebene über dem Kurs (für die Zeichnung), nächster zuerst
+export function blocksAbove(price, blocks, max = 2) {
+  return (blocks || []).filter((b) => b.top > price).sort((a, b) => Math.max(0, a.bottom - price) - Math.max(0, b.bottom - price)).slice(0, max);
+}

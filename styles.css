@@ -723,3 +723,8 @@ button.pos-row:first-of-type { border-top: 0; }
 .fd-coin { font-size: 15px; } .fd-coin .muted { font-size: 13px; }
 .fd-room { font-size: 13px; }
 .fd-detail { padding-bottom: 10px; }
+.fd-room.gold { color: var(--gold); }
+.fd-crowd { color: var(--gold); }
+.fd-filter .chip-btn { height: 32px; font-size: 12.5px; }
+
+.fd-take { margin-top: 8px; width: 100%; }
