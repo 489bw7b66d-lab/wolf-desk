@@ -710,3 +710,10 @@ button.pos-row:first-of-type { border-top: 0; }
 .lt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; font-size: 14px; }
 .lt-grid .k { display: block; margin-bottom: 2px; }
 .lt-verdict { margin: 14px 0 0; font-size: 14px; line-height: 1.7; }
+/* 8k: Merker und Blindprobe */
+.lt-mks { margin-top: 12px; font-size: 13.5px; }
+.lt-mk { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 6px 0; border-top: 1px solid var(--line); }
+.lt-mk .k { flex-basis: 100%; }
+.lt-bcard { margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.lt-cap { margin: 8px 0 2px; color: var(--muted); font-size: 12.5px; }
+.lt-svg { display: block; width: 100%; height: auto; }

@@ -3,11 +3,13 @@
 // Gemeinsamer Rahmen für ALLE Einstiege: nur Long · Einstieg zum Schluss der 4H-Signalkerze · Stop 2 x ATR(14) der Tageskerzen ·
 // Teilverkäufe bei 2R / 3R / 4R, Rest läuft · Zeit-Ausstieg nach 10 Tagen · ein offener Trade je Markt · Gebühren und Funding.
 // Zufalls-Vergleich seit 8j („Änderung 1“ im Protokoll): zur selben Kerze ein zufälliger zulässiger Markt; Regel 5 gepaart an gegen aus.
-// Enthalten: die Vergleichsregeln „Neu im Trend“ und Donchian 20/10 sowie Regel 5 (Marktphasen-Schalter).
+// Enthalten: die Vergleichsregeln „Neu im Trend“ und Donchian 20/10, Regel 5 (Marktphasen-Schalter) und seit 8k die Regeln 1, 2, 3, 4
+// und 6 (core-ltrules.js). Am Zufalls-Vergleich hat 8k nichts geändert.
 import { simulateTrade } from './core-backtest.js';
 import { ema, atr } from './core-indicators.js';
 import { mulberry32, hashStr } from './core-randombase.js';
 import { BN, periods, periodOf, unpack } from './core-binance.js';
+import { trendUp, signalsOf, markerTable, NEW_RULES, LTR } from './core-ltrules.js';
 
 const DAY = 864e5, H4 = 4 * 36e5;
 // Feste Werte des Tests. Bewusst NICHT aus den Einstellungen der App: Wer später seinen Ausstiegsplan ändert, ändert den Test nicht.
@@ -34,6 +36,11 @@ export const RULES = {
   flip: { label: 'Neu im Trend', kind: 'vergleich', sub: 'Vergleichsregel' },
   donch: { label: 'Donchian 20/10', kind: 'vergleich', sub: 'Vergleichsregel, im gemeinsamen Rahmen' },
   r5: { label: 'Regel 5 · Marktphasen-Schalter', kind: 'kandidat', sub: 'Schalter an gegen aus' },
+  r1: { label: 'Regel 1 · Key-Level mit Retest', kind: 'kandidat', sub: 'Kandidat', blind: true },
+  r2: { label: 'Regel 2 · Fibonacci-Rücklauf', kind: 'kandidat', sub: 'Kandidat, Körper (Änderung 2)', blind: true },
+  r3: { label: 'Regel 3 · VWAP', kind: 'kandidat', sub: 'Kandidat, Annäherung an ein Level', blind: true },
+  r4: { label: 'Regel 4 · Liquidity Sweep', kind: 'kandidat', sub: 'Kandidat', blind: true },
+  r6: { label: 'Regel 6 · Order Block', kind: 'kandidat', sub: 'Kandidat', blind: true },
 };
 
 // ---- Markt vorbereiten ----
@@ -88,7 +95,8 @@ export const fireDonch = (M, i) => {
   const d = M.dOf[i];
   return d >= LT.donchian && M.daily[d].t + DAY === M.g.t[i] + H4 && M.daily[d].c > M.hi[d];
 };
-export const fireOf = (rule) => (rule === 'flip' ? fireFlip : fireDonch);
+// Regeln 1, 2, 3, 4, 6 (8k): Die Regel liefert ihre Merker statt true; die Vorbedingung (Tagestrend) prüft sie selbst.
+export const fireOf = (rule) => (rule === 'flip' ? fireFlip : rule === 'donch' ? fireDonch : (M, i) => signalsOf(rule, M).get(i) || false);
 
 // Schalter für Regel 5: gleichgewichteter Schnitt der 28-Tage-Veränderung aller Märkte, die es an dem Tag (und 28 Tage davor) gab.
 // dailyByCoin: { coin: Tageskerzen }. Ergebnis: Map Tagesbeginn → true (Schnitt im Plus) / false.
@@ -109,14 +117,17 @@ export function marketSwitch(dailyByCoin) {
 // allowed: Zeiträume, die gerechnet werden dürfen (['dev'] oder ['dev', 'check']). Alles andere wird nicht einmal simuliert.
 export function runRule(M, fire, stichtag, allowed = ['dev']) {
   const trades = []; let busy = -Infinity;
+  trades.missed = {}; // 8k: Signale, die verfielen, weil im Markt noch ein Trade offen war (je Zeitraum, nur gezählt)
   for (let i = 0; i < M.n; i++) {
     const t = entryTime(M, i);
-    if (t < busy) continue;
     const per = periodOf(t, stichtag);
-    if (!allowed.includes(per) || !fire(M, i)) continue;
+    if (!allowed.includes(per)) continue;
+    const f = fire(M, i);
+    if (!f) continue;
+    if (t < busy) { trades.missed[per] = (trades.missed[per] || 0) + 1; continue; }
     const s = simAt(M, i);
     if (!s) continue;
-    trades.push({ ...s, per }); busy = s.x;
+    trades.push(f === true ? { ...s, per } : { ...s, per, mk: f.mk }); busy = s.x;
   }
   return trades;
 }
@@ -163,7 +174,7 @@ export function randomMatchedOld(M, ruleTrades, stichtag, allowed = ['dev'], dra
 // ---- Zufalls-Vergleich (8j, Änderung 1): zur selben Kerze ein zufälliger zulässiger Markt ----
 // Frage: Ist DIESER Markt an DIESER Stelle besser als ein beliebiger zulässiger Markt zur selben Zeit?
 // Nutzt nur Wissen, das zum Einstieg vorlag; die Marktphase ist für Regel und Zufall exakt gleich.
-const trendUp = (M, i) => { const d = M.dOf[i]; return d >= 0 && M.fast[d] > 0 && M.slow[d] > 0 && M.fast[d] > M.slow[d]; };
+// trendUp steht seit 8k in core-ltrules.js (dieselbe Funktion für Regel und gewürfelten Markt).
 // Gemeinsame Vorbedingung je Regel (gilt auch für den gewürfelten Markt). Donchian hat keine.
 export const preOf = (rule) => (rule === 'donch' || rule === 'r5' ? () => true : trendUp);
 // Kann an Kerze i überhaupt eingestiegen werden? (dieselben Bedingungen wie simAt, ohne zu rechnen)
@@ -309,10 +320,9 @@ export function loadResults() { try { return validResults(JSON.parse(globalThis.
 export function saveResults(r) { try { globalThis.localStorage?.setItem(KEY, JSON.stringify(r)); return true; } catch { return false; } }
 
 // ---- Ganzer Lauf über alle Märkte. load(tf, coin) liefert die gespeicherten Spalten (core-binance getSeries). ----
-export async function runLongTest(rule, meta, { withCheck = false, load, onProgress = null, pause = async () => {} } = {}) {
-  const allowed = withCheck ? ['dev', 'check'] : ['dev'];
-  const P = periods(meta.stichtag), coins = meta.markets, range = { dev: P.dev, check: [P.check[0], P.lastEntry] };
-  const dailies = {}, Ms = [];
+// Märkte laden und vorbereiten (gemeinsam für Läufe und Blindprobe)
+export async function loadMarkets(meta, { load, onProgress = null, pause = async () => {} } = {}) {
+  const coins = meta.markets, dailies = {}, Ms = [];
   let k = 0;
   for (const c of coins) {
     dailies[c] = unpack(await load('1d', c), DAY);
@@ -323,6 +333,19 @@ export async function runLongTest(rule, meta, { withCheck = false, load, onProgr
     if (onProgress) onProgress(++k, coins.length);
     await pause();
   }
+  return { dailies, Ms };
+}
+// Markt-Jahre eines Zeitraums: wie lange konnten die Märkte zusammen überhaupt handeln? (für „Einstiege je Markt und Jahr“)
+export function marketYears(Ms, stichtag, per) {
+  let n = 0;
+  for (const M of Ms) for (let i = 0; i < M.n; i++) if (periodOf(entryTime(M, i), stichtag) === per && canEnter(M, i)) n++;
+  return n / (6 * 365);
+}
+
+export async function runLongTest(rule, meta, { withCheck = false, load, onProgress = null, pause = async () => {} } = {}) {
+  const allowed = withCheck ? ['dev', 'check'] : ['dev'];
+  const P = periods(meta.stichtag), range = { dev: P.dev, check: [P.check[0], P.lastEntry] };
+  const { dailies, Ms } = await loadMarkets(meta, { load, onProgress, pause });
   const res = {};
   if (rule === 'r5') {
     const sw = marketSwitch(dailies), acc = pairedSwitch(Ms, sw, meta.stichtag, allowed);
@@ -330,20 +353,69 @@ export async function runLongTest(rule, meta, { withCheck = false, load, onProgr
     for (const p of allowed) res[p] = pairResult(acc[p], days.filter((t) => t >= range[p][0] && t < range[p][1]).map((t) => sw.get(t)));
     return res;
   }
-  const fire = fireOf(rule), trades = [];
-  for (const M of Ms) for (const t of runRule(M, fire, meta.stichtag, allowed)) trades.push({ coin: M.coin, t: t.t, x: t.x, r: t.r, per: t.per });
+  const fire = fireOf(rule), trades = [], missed = {};
+  for (const M of Ms) {
+    const list = runRule(M, fire, meta.stichtag, allowed);
+    for (const t of list) trades.push({ coin: M.coin, t: t.t, x: t.x, r: t.r, per: t.per, mk: t.mk });
+    for (const p of allowed) missed[p] = (missed[p] || 0) + (list.missed[p] || 0);
+    await pause();
+  }
   trades.sort((a, b) => a.t - b.t || (a.coin < b.coin ? -1 : 1));
   await pause();
   const rnd = randomSameCandle(Ms, trades, preOf(rule), allowed);
   await pause();
   const plain = plainFrame(Ms, meta.stichtag, allowed);
-  for (const p of allowed) res[p] = periodResult(trades.filter((t) => t.per === p), rnd[p], range[p], plain[p]);
+  for (const p of allowed) {
+    const mine = trades.filter((t) => t.per === p);
+    res[p] = periodResult(mine, rnd[p], range[p], plain[p]);
+    if (NEW_RULES.includes(rule)) { // 8k: Merker (nur beschreibend), verfallene Signale, Einstiege je Markt und Jahr
+      const my = marketYears(Ms, meta.stichtag, p);
+      res[p].mk = markerTable(mine); res[p].missed = missed[p] || 0; res[p].perMY = my > 0 ? mine.length / my : null; res[p].rv = LTR.ver;
+    }
+  }
   return res;
+}
+
+// ---- Blindprobe (8k): je Regel fünf zufällige Einstiege der Entwicklung zum Ansehen, OHNE Ergebnis ----
+// Es wird kein Trade simuliert. Gezogen wird mit festem Würfel (dieselben fünf bei jedem Aufruf), nur aus der Entwicklung.
+export function blindSample(rule, Ms, stichtag, k = 5) {
+  const all = [];
+  Ms.forEach((M, m) => { for (const [i, s] of signalsOf(rule, M)) if (periodOf(entryTime(M, i), stichtag) === 'dev' && canEnter(M, i)) all.push({ m, i, s }); });
+  const rng = mulberry32((LT.seed ^ hashStr('blind|' + rule) ^ LTR.ver) >>> 0), pick = [];
+  for (let n = Math.min(k, all.length); pick.length < n;) { const x = all[Math.floor(rng() * all.length)]; if (!pick.includes(x)) pick.push(x); }
+  return { total: all.length, items: pick.map((x) => ({ coin: Ms[x.m].coin, i: x.i, t: entryTime(Ms[x.m], x.i), mk: x.s.mk, viz: x.s.viz, M: Ms[x.m] })) };
+}
+const BKEY = 'wolfdesk.ltblind';
+export function loadBlind() { try { return JSON.parse(globalThis.localStorage?.getItem(BKEY) || '{}') || {}; } catch { return {}; } }
+export function saveBlind(b) { try { globalThis.localStorage?.setItem(BKEY, JSON.stringify(b)); return true; } catch { return false; } }
+// Darf die Regel gerechnet werden? Regeln mit Blindprobe erst, wenn Jensen sie für diese Fassung der Regeln bestätigt hat.
+export const blindOk = (rule, b = loadBlind()) => !RULES[rule]?.blind || (b[rule]?.ok === true && b[rule]?.rv === LTR.ver);
+
+// Fehlende 4H-Kerzen (8k): beim Laden mitgezählt, damit das Datum der Lücke im Protokoll stehen kann. { Öffnungszeit: Zahl der Märkte }
+const GKEY = 'wolfdesk.ltgaps';
+export function loadGaps() { try { return JSON.parse(globalThis.localStorage?.getItem(GKEY) || 'null'); } catch { return null; } }
+export function saveGaps(x) { try { globalThis.localStorage?.setItem(GKEY, JSON.stringify(x)); return true; } catch { return false; } }
+export function gapsText(x = loadGaps()) {
+  if (!x) return '';
+  const rows = Object.entries(x).map(([t, n]) => [Number(t), n]).sort((a, b) => a[0] - b[0]);
+  if (!rows.length) return 'Fehlende 4H-Kerzen: keine';
+  const iso = (t) => { const d = new Date(t).toISOString(); return `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)} ${d.slice(11, 16)} UTC`; };
+  return 'Fehlende 4H-Kerzen: ' + rows.slice(0, 12).map(([t, n]) => `${iso(t)} (${n} ${n === 1 ? 'Markt' : 'Märkte'})`).join(' · ') + (rows.length > 12 ? ` · und ${rows.length - 12} weitere` : '');
 }
 
 // ---- Text zum Kopieren ----
 const R2 = (v) => { if (v == null || !Number.isFinite(v)) return '–'; const x = Math.round(v * 100) / 100; return (x > 0 ? '+' : x < 0 ? '−' : '±') + Math.abs(x).toFixed(2).replace('.', ',') + 'R'; };
 export const fmtR = R2;
+// 8k: Zusatzzeilen für die Regeln 1, 2, 3, 4, 6 (alles nur beschreibend)
+function extraLines(rec) {
+  const out = [];
+  for (const [name, r] of [['Entwicklung', rec.dev], ['Prüfung', rec.check]]) {
+    if (!r || !r.mk) continue;
+    out.push(`${name}, beschreibend: ${r.perMY == null ? '–' : r.perMY.toFixed(1).replace('.', ',')} Einstiege je Markt und Jahr · ${r.missed} Signale verfallen (Trade war offen)`);
+    for (const [k, rows] of Object.entries(r.mk)) out.push(`${name}, Merker ${k}: ` + rows.map((x) => `${x.v} ${x.n} (Ø ${R2(x.avg)})`).join(' · '));
+  }
+  return out;
+}
 export function resultText(rule, rec, version = '') {
   if (!rec?.dev) return '';
   const v = verdict(rule, rec.dev, rec.check || null);
@@ -356,6 +428,7 @@ export function resultText(rule, rec, version = '') {
     line('Entwicklung', rec.dev),
     rec.check ? line('Prüfung', rec.check) : 'Prüfung: noch nicht angesehen',
     `${aText}: Entwicklung ${v.A.dev ? 'ja' : 'nein'}${rec.check ? ' · Prüfung ' + (v.A.check ? 'ja' : 'nein') : ''}`,
+    ...extraLines(rec),
     `B (im Plus nach Kosten): Entwicklung ${v.B.dev ? 'ja' : 'nein'}${rec.check ? ' · Prüfung ' + (v.B.check ? 'ja' : 'nein') : ''} · Trades gesamt ${v.nAll} (nötig ${LT.minTrades})`,
     RULES[rule].kind === 'vergleich' ? `Stand: Vergleichsregel, zählt nicht als Kandidat${v.done ? '' : ' · Prüfung offen'}` : v.dropped ? 'Stand: in der Entwicklung bei A und B durchgefallen → abgelegt' : v.done ? `Stand: ${v.passed ? 'A und B bestanden → darf einmal in den Tresor' : 'nicht bestanden'}` : 'Stand: Prüfung offen',
     'Tresor: gesperrt',

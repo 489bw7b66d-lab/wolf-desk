@@ -1,6 +1,6 @@
 # Wolf Desk – Protokoll zum Testplan
 
-Dieses Protokoll hält fest, was beim Laden der langen Historie festgelegt wurde. Der Testplan selbst (`TESTPLAN.md`, Fassung 3) ist unverändert. Enthält nur öffentliche Marktdaten.
+Dieses Protokoll hält fest, was beim Laden der langen Historie und vor den Läufen festgelegt wurde. Der Testplan selbst (`TESTPLAN.md`, Fassung 3) ist unverändert; Änderungen daran stehen hier (Änderung 1 und 2). Enthält nur öffentliche Marktdaten.
 
 ## Präzisierungen (06.10.2026, von Jensen bestätigt, von der zweiten Meinung geprüft)
 
@@ -129,6 +129,102 @@ Von Claude zusätzlich festgelegt (technisch, ohne Wahl nach Ergebnis):
 
 Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian hängen nicht am Vergleich und bleiben gültig.
 
+## Lesarten 11 bis 16 für die Regeln 1, 2, 3, 4 und 6 (07.10.2026)
+
+**Vor dem ersten Lauf eines der fünf Kandidaten festgeschrieben. Von Jensen am 07.10.2026 um 09:53 bestätigt („ja mach alles so“), nach Prüfung durch zwei zweite Meinungen (08:03 und 08:10). Bis dahin war von diesen Regeln keine Zahl bekannt. Danach nur noch Fehlerkorrekturen, wenn der Code von der geschriebenen Lesart abweicht, mit Eintrag hier. Keine Änderung einer Lesart nach Sicht von Ergebnissen. Kommt eine Regel nicht auf 300 Trades, besteht sie B nicht; es wird nichts gelockert.**
+
+„Festlegung, nicht im Plan“ heißt: Der Testplan lässt die Stelle offen, ohne Festlegung wäre die Regel nicht rechenbar.
+
+**Lesart 11, für alle fünf Regeln**
+- Tages-ATR, EMA und Level stammen vom letzten Tag, dessen Schluss nicht nach dem Schluss der 4H-Signalkerze liegt (die Kerze, die um 00:00 UTC schließt, nutzt den eben beendeten Tag).
+- Der Tagestrend (Tages-EMA 20 über EMA 100) wird an der Signalkerze geprüft, mit derselben Funktion wie beim gewürfelten Markt des Vergleichs.
+- Swing-Punkt: strikt höher bzw. tiefer als die 5 Kerzen (Tage) davor und die 5 danach; bei Gleichstand kein Swing. Er zählt erst nach seiner Bestätigung (5 Kerzen bzw. 5 Tage später). Ausnahme für Körper-Swings in Regel 2, siehe Änderung 2.
+- Setups laufen weiter, während im Markt ein Trade offen ist. Ein dadurch verpasster Einstieg ist verbraucht und wird gezählt („Signale verfallen“).
+- Fallen an einer Kerze mehrere Level, Tiefs oder Blöcke zusammen, ist das ein Einstieg.
+
+**Lesart 12, Regel 1 (Key-Level, Ausbruch mit Retest)**
+- Mögliche Level: bestätigte Tages-Swing-Hochs und -Tiefs (aus Tageshoch und Tagestief) der bis zu 180 Tage vor dem Ausbruchstag, am Vortag schon bestätigt. Zone = Level plus und minus ¼ ATR. *(Level aus Swing-Punkten: Festlegung, nicht im Plan.)*
+- Ein ATR für Zonenbreite und Wegdrehen: der des Tages vor dem Ausbruch.
+- Berührung = Tageshoch oder Tagestief in der Zone; aufeinanderfolgende Tage in der Zone sind eine Berührung. Sie zählt nur, wenn danach innerhalb von 10 Tagen ein Tagesschluss mindestens 1 ATR jenseits der Zone liegt, zurück auf der Seite, von der der Kurs kam (Seite = Tagesschluss vor der Berührung, unter oder über dem Level). Ein Durchlauf ist keine Berührung. *(10 Tage: Festlegung, nicht im Plan.)*
+- Jede Berührung samt Wegdrehen ist vor dem Ausbruchstag abgeschlossen. Mindestens drei Berührungen, zwischen erster und letzter mindestens 28 Tage.
+- Ausbruch = der erste Tagesschluss über der Zone (der Schluss davor lag nicht darüber).
+- Retest = ein 4H-Tief erreicht die Zonen-Oberkante, in den 4H-Kerzen nach dem Ausbruchstag und innerhalb von 10 Tagen. Einstieg = der erste 4H-Schluss über der Zone ab der Retest-Kerze, ohne eigene Frist.
+- Ein Tagesschluss unter der Zone beendet das Setup. *(Festlegung, nicht im Plan.)*
+- Überlappende Zonen: keine wird verworfen; die Merker kommen von der Zone mit den meisten Berührungen, bei Gleichstand von der höheren.
+- Merker: Zahl der Berührungen · Alter des Levels (erste Berührung bis Ausbruch, in Wochen).
+
+**Lesart 13, Regel 2 (Fibonacci-Rücklauf), zusammen mit Änderung 2**
+- Impuls = das letzte bestätigte Swing-Hoch und das letzte bestätigte Swing-Tief davor. Kleiner als 6 ATR (ATR am Tag des Hochs): kein Setup, es wird nicht weiter zurück gesucht.
+- Einstieg = Schluss der Bestätigungskerze der Umkehrpunkt-Regel (`reversalPoint` der App, unverändert: Doji, Dragonfly Doji, Hammer, Bullish Engulfing; die Bestätigungskerze ist grün und schließt über dem Körper der Kerze vor der Umkehrkerze).
+- Das Setup endet bei einem Tagesschluss unter 0,786, bei einem Tagesschluss über dem Swing-Hoch *(Festlegung, nicht im Plan)* oder wenn ein neues Swing-Hoch bestätigt ist. Einmal ungültig bleibt ungültig.
+- Mehrere Einstiege aus demselben Impuls sind erlaubt.
+- Merker: Teilzone (0,382 bis 0,5 · 0,5 bis 0,618 · Golden Pocket) · erster oder wiederholter Einstieg aus dem Impuls.
+
+**Lesart 14, Regel 3 (VWAP)**
+- Level = VWAP-Schlusswerte (HLC3 mal Binance-Volumen, aus Tageskerzen) der letzten vier abgelaufenen Wochen (ab Montag UTC) und der letzten zwei abgelaufenen Monate (ab dem Ersten UTC). Nur vollständige Wochen und Monate; eine unvollständige wird nicht durch eine ältere ersetzt.
+- „Von oben“: Das Tief der Kerze davor lag mehr als ½ ATR über dem Level, das Tief dieser Kerze nicht mehr.
+- Einstieg = die erste 4H-Kerze ab der Annäherung, die über dem Level schließt (das kann die Annäherungskerze selbst sein). Danach braucht es eine neue Annäherung von oben.
+- Die Annäherung verfällt, wenn eine 4H-Kerze mehr als ½ ATR unter dem Level schließt oder die Woche bzw. der Monat wechselt. *(Festlegung, nicht im Plan.)*
+- **Das Urteil gilt für „Annäherung an ein VWAP-Level“:** Der Plan verlangt kein Unterschreiten. Berichtet wird die Zahl der Einstiege je Markt und Jahr.
+- Merker: welches Level (Woche oder Monat, wie viele Perioden zurück; bei mehreren das nächstgelegene) · ob weitere Level innerhalb von ½ ATR liegen.
+
+**Lesart 15, Regel 4 (Liquidity Sweep)**
+- Swing-Tiefs im 4H-Chart aus den Tiefs der Kerzen, höchstens 20 Tage alt.
+- Es zählen nur Tiefs, unter denen seit ihrer Bestätigung noch keine 4H-Kerze geschlossen hat. *(Festlegung, nicht im Plan; von Jensen am 07.10. bestätigt.)* Tiefs, die nur per Docht unterschritten wurden, zählen weiter.
+- Signalkerze: eröffnet über dem Tief *(Festlegung, nicht im Plan)*, Tief darunter, Schluss darüber.
+- Merker: erster oder wiederholter Sweep dieses Tiefs (bei mehreren Tiefs das jüngste).
+
+**Lesart 16, Regel 6 (Order Block als Unterstützung)**
+- Swing-Hochs im 4H-Chart aus den Hochs der Kerzen. Ereignis = der erste 4H-Schluss über dem jüngsten bestätigten Swing-Hoch, über dem noch keine 4H-Kerze geschlossen hat. *(Wahl des Swing-Hochs: Festlegung, nicht im Plan.)*
+- Block = die letzte fallende 4H-Kerze vor dieser Kerze: Körper von der Eröffnung bis zum Schluss, Docht vom Schluss bis zum Tief.
+- Der Rücklauf zählt ab der Kerze nach dem Ereignis. Nur der erste Rücklauf zählt (zusammenhängende Kerzen mit Tief im Block). Einstieg = die erste davon, die über der Körpermitte schließt.
+- Eine Kerze mit Tief unter dem Block ist keine Einstiegskerze und beendet den ersten Rücklauf. Ein 4H-Schluss unter dem Block macht ihn ungültig.
+- Keine Altersgrenze (der Plan nennt keine).
+- Merker: Rücklauf nur in den Körper oder bis in den Docht · Alter des Blocks.
+
+**Zusätzliche Merker gegenüber dem Testplan (nur beschreibend):** Regel 2 erster oder wiederholter Einstieg · Regel 4 erster oder wiederholter Sweep · Regel 6 Alter des Blocks. Aus Merkern wird ohne neuen Testplan keine Regel abgeleitet.
+
+## Änderung 2 (07.10.2026): Regel 2 misst an Kerzenkörpern
+
+**Von Jensen am 07.10.2026 um 09:53 ausdrücklich bestätigt („ja mach alles so“). Vor dem ersten Lauf eines der Kandidaten 1, 2, 3, 4, 6; von Regel 2 war keine Zahl bekannt. Gerechnet wird nur diese eine Variante, die Docht-Variante läuft nicht mit. Die zweite Meinung zu Änderung 2 steht noch aus und wird vor dem ersten Lauf von Regel 2 eingeholt.**
+
+**Grund:** Jensen legt seine Fib-Level im Chart an den Kerzenkörpern an (Erfahrung aus seinem Handel). Der Wortlaut des Testplans misst den Impuls von Tageshoch zu Tagestief und würde damit etwas prüfen, das er so nicht handelt. Eine kurze Recherche am 07.10. fand keine Studie, die Körper und Docht direkt vergleicht; die Änderung stützt sich auf seine Handschrift, nicht auf einen Beleg.
+
+**Was sich ändert (nur Regel 2):**
+- Swing-Hoch und Swing-Tief des Impulses kommen aus den Körpern der Tageskerzen (Körper-Oberkante bzw. -Unterkante).
+- „In der Zone“ wird an der Körper-Unterkante der Umkehrkerze geprüft statt an ihrem Tief. Danach richtet sich auch der Merker für die Teilzone.
+- Gleichstand bei Körper-Swings: strikt höher (tiefer) als die 5 Tage davor, höher (tiefer) oder gleich die 5 danach; es zählt der frühere Tag. Grund: Ohne Kurslücke ist die Eröffnung eines Tages der Schluss des Vortags, zwei Nachbartage teilen sich dann dieselbe Körperkante, und mit „strikt auf beiden Seiten“ gäbe es fast nie einen Körper-Swing. *(Technische Festlegung von Claude, ohne Wahl nach Ergebnis.)*
+
+**Was bleibt:** alles andere im Testplan. Berührungen in Regel 1 (Tageshoch und Tagestief), der Sweep in Regel 4 (Docht) und die Unterscheidung von Körper und Docht in Regel 6. Ausbruch, Bestätigung und „ungültig“ laufen bei allen Regeln ohnehin über den Schlusskurs.
+
+## Blindprobe vor dem ersten Lauf (07.10.2026, Vorschlag der zweiten Meinung, von Jensen bestätigt)
+
+- Je Regel zeigt die App fünf zufällig gezogene Einstiege der Entwicklung als Kerzenbild: Level oder Zone und die Signalkerze. Ohne Coin, ohne Datum, ohne Kurse, ohne Ergebnis und ohne eine Kerze nach dem Einstieg. Dabei wird kein Trade gerechnet.
+- Jensen sagt je Regel „Das ist, was ich meine“ oder „Nein, weil …“. Erst nach der Bestätigung gibt die App „Entwicklung rechnen“ für diese Regel frei.
+- Bei „Nein“ wird Code oder Lesart berichtigt, bevor eine Zahl bekannt ist; die Fassung der Regeln steigt (zurzeit Fassung 1) und die Blindprobe gilt neu.
+- Zweck: prüfen, ob der Code die Lesart trifft und die Lesart Jensens Handschrift.
+
+**Stand der Blindproben:** (wird ergänzt)
+
+## Nachweis für die fünf Regeln an Zufallskursen (07.10.2026, App 8k, keine echten Kerzen)
+
+Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) liegen die Regeln im festen Zufalls-Vergleich im Schnitt bei diesen Plätzen: Regel 1 bei 55 %, Regel 2 bei 50 %, Regel 3 bei 38 %, Regel 4 bei 46 %, Regel 6 bei 58 %, zum Vergleich „Neu im Trend“ 53 % und Donchian 46 %. Der Vergleich zieht also keine der Regeln systematisch nach oben oder unten. Am Vergleich wurde nichts geändert.
+
 ## Läufe
 
 (wird nach jedem gültigen Lauf ergänzt: Datum, Regel, Zeitraum, Ergebnis)
+
+### 07.10.2026, 00:38 · App 8j · Zufalls-Vergleich Fassung 2 · Entwicklung (2020 bis 2023)
+
+- **Neu im Trend (Vergleichsregel):** 935 Trades · Ø +0,13R (Spanne ±0,00R bis +0,25R, 48 Monate) · Treffer 48 % · Zufall selbe Kerze Ø +0,14R (+0,11R bis +0,18R, 200 Durchgänge, je rund 935 Trades) · besser als 28 % der Durchgänge · Rahmen allein Ø +0,09R · A nein · B ja
+- **Donchian 20/10 (Vergleichsregel):** 883 Trades · Ø +0,26R (Spanne +0,07R bis +0,43R, 48 Monate) · Treffer 47 % · Zufall selbe Kerze Ø +0,21R (+0,18R bis +0,25R, 200 Durchgänge, je rund 882 Trades, 1 ausgelassen) · besser als 99 % der Durchgänge · Rahmen allein Ø +0,09R · A ja · B ja
+- **Regel 5, Marktphasen-Schalter (Kandidat):** Schalter an Ø +0,16R (rund 350 Trades je Durchgang) · aus Ø +0,02R (rund 309) · Differenz Ø +0,14R (+0,01R bis +0,26R) · über 0 in 96 % der 200 Durchgänge · Schalter an 56 % der 1.433 Tage, 86 Wechsel · A ja · B ja · Trades 350 (nötig 300)
+
+**Stand danach:** Regel 5 hat die Entwicklung bestanden und darf einmal in die Prüfung. Die Prüfung ist bei keiner Regel angesehen (Stand 07.10.2026, 00:45). Tresor gesperrt. Die Kandidaten 1, 2, 3, 4 und 6 sind noch nicht gelaufen.
+
+### 07.10.2026, 00:53 · App 8j · Zufalls-Vergleich Fassung 2 · Prüfung von Regel 5 (einmalig geöffnet)
+
+- **Regel 5, Prüfung (2024 bis 25.09.2025):** Schalter an Ø +0,05R (rund 259 Trades je Durchgang) · aus Ø −0,01R (rund 275) · Differenz Ø +0,06R (−0,07R bis +0,19R) · über 0 in 78 % der 200 Durchgänge · Schalter an 49 % der 634 Tage, 59 Wechsel
+- A: Entwicklung ja · Prüfung nein · B: Entwicklung ja · Prüfung ja · Trades gesamt 609 (nötig 300)
+
+**Urteil: Regel 5 nicht bestanden.** Sie geht nicht in den Tresor und wird nicht nachgebessert. Der Blick in die Prüfung ist für Regel 5 verbraucht. Die Prüfung der Vergleichsregeln ist nicht angesehen. Tresor gesperrt.

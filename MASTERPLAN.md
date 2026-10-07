@@ -1,9 +1,42 @@
 # Wolf Desk – Masterplan
 
-Stand: 07.10.2026 (nachts) · Code: Etappe 8j · 852 Tests · auf dem iPhone geprüft bis 8i (838 von 838, drei Entwicklungs-Läufe), 8j noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
+Stand: 07.10.2026, 10:15 · Code: Etappe 8k · 923 Tests · auf dem iPhone geprüft bis 8j (852 von 852 am 07.10. um 00:38), 8k noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
 
-Dieses Dokument ersetzt den Masterplan „Stand 05.10. · 8b1" und den „Nachtrag 8c". Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
+Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
+
+---
+
+## Übergabe (07.10.2026, 10:15, nach dem Bau von 8k)
+
+**Was am 07.10. vormittags geschah:**
+- **Lesarten 11 bis 16** für die Regeln 1, 2, 3, 4 und 6 geschrieben, von zwei zweiten Meinungen geprüft (ein Blick in die Zukunft in Lesart 12 gefunden und behoben), von Jensen um 09:53 bestätigt. Wortlaut im `TESTPLAN-PROTOKOLL.md`.
+- **Änderung 2:** Regel 2 (Fibonacci) misst an Kerzenkörpern, weil Jensen seine Fib-Level so anlegt. Nur Regel 2, nur diese eine Variante. Von Jensen bestätigt; **die zweite Meinung dazu steht noch aus und kommt vor dem ersten Lauf von Regel 2.**
+- **Blindprobe** (Vorschlag der zweiten Meinung, von Jensen bestätigt): Vor dem ersten Lauf zeigt die App je Regel fünf Einstiege ohne Coin, Datum und Ergebnis. Erst nach „Das ist, was ich meine“ wird „Entwicklung rechnen“ für diese Regel frei.
+- **Reihenfolge entschieden (Jensen, 08:29):** erst 8k, dann Testplan 2 „Marktphase“, danach „Umstellen“.
+- **Paket 8k gebaut** (Abschnitt 9). Noch nicht auf dem iPhone.
+
+**Nächste Schritte:**
+1. 8k einspielen, Testseite: 923 von 923.
+2. Zweite Meinung zu Änderung 2 einholen (samt der Gleichstands-Regel für Körper-Swings).
+3. Je Regel die Blindprobe ansehen und bestätigen oder mit „Nein: Rückmeldung kopieren“ an Claude geben. **Bei „Nein“ wird nichts gerechnet**, erst wird Code oder Lesart berichtigt (Fassung der Regeln steigt, Blindprobe gilt neu).
+4. Erst alle fünf Regeln in der Entwicklung rechnen, Ergebnisse („Ergebnis kopieren“) an Claude. Prüfung nur für Regeln, die in der Entwicklung nicht bei A und B durchfallen, je Regel ein einziges Mal. Tresor nur mit A und B in beiden Zeiträumen und 300 Trades.
+5. Danach: Testplan 2 „Marktphase“ schreiben (Abschnitt 12).
+
+Hinweise für den Bau (alles zuerst im Code nachprüfen):
+- `core-ltrules.js`: je Regel eine Zustandsmaschine mit `day(d)` (ein neuer Tag ist abgeschlossen) und `candle(i, d, up)` (4H-Kerze i, `up` = Tagestrend). `signalsOf(rule, M)` liefert eine Map 4H-Index → `{ mk: Merker, viz: Zeichenhilfe }`. Feste Werte in `LTR`; **`LTR.ver` erhöhen, sobald sich der Code einer Regel ändert** (dann gelten die Blindproben nicht mehr). `trendUp` steht jetzt dort und wird vom Vergleich mitbenutzt.
+- `core-longtest.js`: `RULES` (mit `blind: true` für die fünf neuen), `fireOf`, `runRule` (zählt verfallene Signale in `trades.missed`), `loadMarkets`, `marketYears`, `blindSample`, `blindOk`, `loadBlind` / `saveBlind` (`wolfdesk.ltblind`), Lücken (`wolfdesk.ltgaps`), `resultText` mit Merker-Zeilen.
+- `ui-blindchart.js` zeichnet die Blindprobe als SVG-Text. `ui-longtest.js` sperrt „Entwicklung rechnen“, bis `blindOk` gilt.
+- **Der Zufalls-Vergleich wird nicht mehr angefasst.** Fällt eine Regel durch, wird nicht am Würfel und nicht an der Lesart gedreht.
+- Vor der Lieferung wie immer: alle Tests, verstellte Einstellungen, Sichtprüfung in iPhone-Größe, Wächter, Zeile „nicht getestet“.
+
+**Offen beim Nutzer:** die Schritte 1 bis 4 oben. Freiwillig: Prüfung der beiden Vergleichsregeln ansehen.
+
+**Sachlicher Hinweis zum Konto (Export vom 07.10., 00:43, ohne Beträge):** Das Gesamt-Risiko bis zu den Stops lag bei rund 20 % vom Konto (Budget 6 %), der Tagesverlust bei rund 10 % (Grenze 5 %), bei zwei Positionen lag die Liquidation weniger als 1 % hinter dem Stop. Claude hat es am 07.10. zweimal angesprochen; Jensen hat nicht darauf geantwortet. Das ist das Muster aus der Selbstanalyse (Hebel zu hoch im Verhältnis zum Stop); der Hebel dagegen ist die Positionsgröße, nicht ein engerer Stop.
+
+**Erste Nachricht für den neuen Chat:**
+
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang: MASTERPLAN.md, TESTPLAN.md, TESTPLAN-PROTOKOLL.md und der aktuelle Code als ZIP. Bitte lies die drei Dokumente ganz, zuerst den Abschnitt „Übergabe“ im Masterplan, und arbeite genau so weiter, wie es in Abschnitt 2 steht (Ton, Regeln, Lehren). Hol dir Datum und Uhrzeit von der Uhr, prüf, ob die Versionsnummer im Code zum Masterplan passt (8k), und lass alle Tests laufen (923). Sag mir kurz, was du vorgefunden hast und was du vorhast, bevor du baust. Stand: 8k ist gebaut (Regeln 1, 2, 3, 4, 6 mit Blindprobe), die lange Historie von Binance ist geladen und eingefroren, Regel 5 ist in der Prüfung durchgefallen. Der Testplan ist seit 06.10.2026 fest, der Zufalls-Vergleich seit Änderung 1 und die Lesarten 11 bis 16 samt Änderung 2 seit 07.10.: bitte an allem nichts ändern. Nächster Schritt: siehe „Nächste Schritte“ in der Übergabe. Aussagen über die App nur nach einem Blick in den Code. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle. Keine Beträge oder Zugangsdaten in Dateien fürs Repository. Ich bin Buddy2, du bist Buddy1, und wir berichten dem Chef. 🐺
 
 ---
 
@@ -30,7 +63,7 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8g). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8k). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -41,7 +74,10 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine
 - **Tempo-Regel (von Jensen am 05.10. festgelegt, jederzeit widerrufbar):** Reine Mess- und Anzeige-Pakete dürfen am selben Tag aufeinander folgen. Jedes Paket, das Wächter, Telegram oder Einstellungen anfasst, bekommt einen Tag Abstand zum vorigen. In beiden Fällen ist das vorige Paket auf dem iPhone geprüft (Testseite grün, einmal benutzt), bevor das nächste gebaut wird. Bei jedem Paket steht die Zeile „auf dem iPhone geprüft am …".
 - **Zweite Meinung:** Jensen holt sich im alten Chat hin und wieder eine zweite Meinung zum Stand und bringt sie ein. Claude prüft sie, auch gegen den Code, und ordnet sie ein.
 - **Dateien für Claude:** in der Dateien-App lange drücken → Teilen → Claude. Kopieren und Einfügen überträgt nur die Adresse. Den ZIP-Link kann Claude nicht selbst laden; einzelne Dateien nur über Adressen, die der Nutzer in den Chat schreibt (Claudes Abruf kann eine veraltete Kopie liefern).
+- **Claudes Arbeitsumgebung kann mitten im Chat neu starten** (so geschehen am 07.10. gegen 00:44): Die entpackte Code-Kopie ist dann weg, gelieferte Dateien bleiben. Vor dem nächsten Bau braucht Claude dann das aktuelle ZIP.
 - **Umziehen in einen neuen Chat erst bei rund 90 % Füllstand** (von Jensen am 07.10. festgelegt; häufiges Umziehen nervt). Claude sieht keine Anzeige und schätzt deshalb vor jedem Bau-Paket in einer Zeile, ob es noch passt; „umziehen“ sagt Claude erst, wenn ein Paket voraussichtlich nicht mehr ganz hineinpasst, und nennt den Grund. Eine Warnung der App zur Chat-Länge geht vor.
+
+**Lehre vom 07.10.:** Eine Lesart mit einer Frist „danach“ immer darauf prüfen, ob die Bestätigung nach dem Einstieg liegen kann (Lesart 12, von der zweiten Meinung gefunden) · im selben Chat lag schon ein Entwurf von 8k in der Arbeitskopie, an den Claude keine Erinnerung hatte: nicht übernommen, sondern Zeile für Zeile gegen die Lesarten gelesen und neu geprüft.
 
 **Lehren aus Fehlern (05. und 06.10.):** Datum aus dem Masterplan abgeleitet statt von der Uhr → zu Unrecht gebremst · Lage eines Bildmotivs geschätzt statt gemessen → Icon saß schief · fast zum Icon-Tausch geraten, ohne auf den möglichen Datenverlust hinzuweisen · „bestätigt" geschrieben, wo nur „bisher nicht widerlegt" stimmte · einen zugesagten Punkt (Erinnerung zum Zeit-Ausstieg) verschoben: nicht noch einmal.
 
@@ -52,7 +88,7 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8j` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8k` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -90,7 +126,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 ---
 
-## 5. Aufbau der App (141 Dateien, fast alle im Hauptordner)
+## 5. Aufbau der App (144 Dateien, fast alle im Hauptordner)
 
 **Einstellungen:** `config.js` (Empfehlungen) · `ledger-markets.js` (Ledger-Märkte, Standard für „Handelbare Märkte") · `my-settings.js` (nur die **Abweichungen** von der Empfehlung, dazu Watchlist und handelbare Märkte; von der App erzeugt, gilt auch für den Wächter). **Wichtig:** Ändert ein Paket eine Empfehlung in `config.js`, gilt der neue Wert sofort überall, wo der Nutzer keine eigene Abweichung gespeichert hat.
 
@@ -99,18 +135,18 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 - Risiko: `core-risk` (Regeln, Ausstiegsplan, Hebel), `core-guard` (Stop-Check gegen ATR, Abkühlphase), `core-trail` (Stop nachziehen nach Struktur), `core-levpreview` (Hebel-Vorschau), `core-totalrisk` (Summe, wenn alle Stops greifen), **`core-riskbudget`** (8e: Ampel fürs Gesamt-Risiko, Budget für neue Trades), `core-exitcalc` (Ausstiegsrechner)
 - Handel und Auswertung: `core-trades`, `core-performance` (Gewinn aus Hyperliquids PnL-Verlauf, größter Rückgang), `core-fees`, `core-patience`
 - Signale: `core-indicators`, `core-signals`, `core-scanner`, `core-fib`, `core-elliott`, `core-patterns`, `core-candlesticks`, `core-confirm`, `core-trendgate` (Short-Filter), `core-feedplan`, `core-reasons`, `core-engine2`, `core-benchmark` (Maßstab als Signalgeber, Haltedauer, Tagebuch-Fenster), `core-bmtext` (Telegram-Text)
-- Backtest: `core-backtest` (Simulation, Lauf), `core-btstore` (Speicher; Feldlisten `KEEP` je Trade und `compactRun` je Markt: **neue Felder müssen dort eingetragen werden, sonst gehen sie beim Speichern verloren**), `core-regime` (8c: BTC-Merker), `core-exitcompare` (8c: Ausstiegs-Varianten), `core-donchian` (8d), `core-btmetrics` (8d: Funding-Schätzung, Pareto, Haltedauer), `core-randombase` (8f: Zufalls-Maßstab), **`core-binance`** (8h: lange Historie von Binance, eigene Datenbank `wolfdesk-bn`, Protokoll in `wolfdesk.bn`), **`core-longtest`** (8i: Messmaschine für den Testplan, Ergebnisse in `wolfdesk.lt`)
+- Backtest: `core-backtest` (Simulation, Lauf), `core-btstore` (Speicher; Feldlisten `KEEP` je Trade und `compactRun` je Markt: **neue Felder müssen dort eingetragen werden, sonst gehen sie beim Speichern verloren**), `core-regime` (8c: BTC-Merker), `core-exitcompare` (8c: Ausstiegs-Varianten), `core-donchian` (8d), `core-btmetrics` (8d: Funding-Schätzung, Pareto, Haltedauer), `core-randombase` (8f: Zufalls-Maßstab), **`core-binance`** (8h: lange Historie von Binance, eigene Datenbank `wolfdesk-bn`, Protokoll in `wolfdesk.bn`), **`core-longtest`** (8i: Messmaschine für den Testplan, Ergebnisse in `wolfdesk.lt`), **`core-ltrules`** (8k: die Regeln 1, 2, 3, 4, 6 des Testplans)
 - Märkte: `core-universe`, `core-hotscan`, `core-market`, `core-watchlist`, `core-tradeable`
 - Positionen: `core-path` (Trade-Weg), `core-plans`, `core-autoplan`, `core-planstate` (Plan-Ampel)
 - Sonstiges: `core-settings`, `core-views`, `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-journalmeasure`, `core-gesture`, `core-privacy`, `core-format`
 
-**Anzeige (`ui-*.js`):** `ui-chart` + `ui-chartview`, `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade` (Trade-Karte mit Risiko-Budget), `ui-coin`, `ui-position`, `ui-performance`, `ui-testpage`, `ui-risk`, `ui-backtest`, **`ui-binance`** (8h: Zeile „Lange Historie“ im Backtest), **`ui-longtest`** (8i: Zeile „Testplan-Läufe“), `ui-settings`, `ui-storage`, `ui-tradeable`, `ui-export`, `ui-watchlist-edit`, `ui-sheet`, `ui-swipe`, **`ui-notice`** (8e: einmaliger Hinweis nach einem Update), `ui-parts`
+**Anzeige (`ui-*.js`):** `ui-chart` + `ui-chartview`, `ui-home`, `ui-market`, `ui-feed`, `ui-views`, `ui-signals`, `ui-trade` (Trade-Karte mit Risiko-Budget), `ui-coin`, `ui-position`, `ui-performance`, `ui-testpage`, `ui-risk`, `ui-backtest`, **`ui-binance`** (8h: Zeile „Lange Historie“ im Backtest), **`ui-longtest`** (8i: Zeile „Testplan-Läufe“), **`ui-blindchart`** (8k: Kerzenbild der Blindprobe), `ui-settings`, `ui-storage`, `ui-tradeable`, `ui-export`, `ui-watchlist-edit`, `ui-sheet`, `ui-swipe`, **`ui-notice`** (8e: einmaliger Hinweis nach einem Update), `ui-parts`
 
-**Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 42 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
+**Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 43 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8j">` und eine Import-Liste mit `?v=8j` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8k">` und eine Import-Liste mit `?v=8k` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
-**Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
+**Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
 ---
 
@@ -300,7 +336,7 @@ jobs:
 - 38 neue Tests (838). Geprüft: alle Tests, die neuen auch mit vier verstellten Einstellungen (der Test hängt nicht an den Einstellungen), Testseite und Ablauf im Browser in iPhone-Größe, Wächter-Start (unverändert).
 - **Nicht getestet:** Tempo und Speicher auf dem iPhone mit den echten 50 Märkten; die Ergebnisse auf echten Kerzen (hier nur nachgebildete Kurse).
 - **Offen beim Nutzer:** Entwicklung für alle drei Regeln rechnen und die Ergebnisse an Claude geben. **Die Prüfung von Regel 5 noch nicht öffnen**, bis die Maschine an den beiden Vergleichsregeln plausibel aussieht (ein Fehler in der Maschine würde sonst einen Blick in die Prüfung verbrauchen).
-- **Für 8j vormerken:** Regeln 1, 2, 3, 4, 6 als weitere `fire`-Funktionen; Wochen beginnen montags UTC, Monate am Ersten UTC (VWAP); Datum der fehlenden 4H-Kerze nachsehen.
+- **Für 8k vormerken:** Regeln 1, 2, 3, 4, 6 als weitere `fire`-Funktionen; Wochen beginnen montags UTC, Monate am Ersten UTC (VWAP); Datum der fehlenden 4H-Kerze nachsehen.
 
 **Etappe 8j „Änderung 1: neuer Zufalls-Vergleich“ (07.10. nachts, reines Mess-Paket):**
 - **Anlass:** Die ersten Läufe mit 8i (Neu im Trend +0,13R, Platz 7 % · Donchian +0,26R, Platz 0 % · Regel 5 +0,24R, Platz 42 %) zeigten zwei Fehler im Vergleich; die zweite Meinung hat beide bestätigt. (1) Angleichen je Markt und Monat wählt Markt-Monate im Nachhinein aus: Der Zufall darf vor dem Auslöser einsteigen (verzerrt gegen Ausbruch- und Trendregeln, für Rücksetzer-Regeln). (2) Regel 5 ist ein Zeit-Filter und wurde gegen fast dieselben Tage gemessen. **Die drei Ergebnisse sind ungültig; daraus keine Schlüsse ziehen.** Die App zeigt sie nicht mehr an.
@@ -311,9 +347,20 @@ jobs:
 - **Von Jensen am 07.10. ausdrücklich bestätigt. Danach wird am Würfel nichts mehr geändert, egal wie die Regeln abschneiden.** Eingetragen als „Änderung 1“ im `TESTPLAN-PROTOKOLL.md` (der Testplan selbst bleibt unverändert).
 - Außerdem: „−0,00R“ behoben. 14 neue Tests (852). Geprüft: alle Tests, Testseite und Ablauf im Browser in iPhone-Größe. Wächter unverändert (keine Datei des Wächters berührt), diesmal nicht erneut gestartet.
 - **Nicht getestet:** Ergebnisse und Tempo auf dem iPhone mit echten Kerzen.
-- **Offen beim Nutzer:** Entwicklung für alle drei Regeln neu rechnen und die Texte an Claude geben. Prüfung von Regel 5 erst öffnen, wenn Claude die Maschine freigibt.
+- **Erledigt (07.10., 00:38):** Entwicklung für alle drei Regeln mit dem neuen Vergleich gerechnet (Zahlen in Abschnitt 10 und im Protokoll). Lauf auf dem iPhone unter einer Sekunde. **Claude hat die Maschine freigegeben:** Der Zufall kommt auf dieselbe Zahl an Trades wie die Regel, „Rahmen allein“ ist in beiden Läufen gleich, die Zahlen der Regeln selbst sind dieselben wie in 8i.
+- **Erledigt (07.10., 00:53):** Prüfung von Regel 5 einmal geöffnet. **Nicht bestanden** (A in der Prüfung: 78 % statt 95 %). Regel 5 geht nicht in den Tresor und wird nicht nachgebessert. Zahlen in Abschnitt 10 und im Protokoll.
 
-**Kleinigkeiten, die noch offen sind:** `config.js` enthält seit der ersten Version `startCapital: 1500` (Jensen klärt, ob Platzhalter oder echter Betrag) · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
+**Etappe 8k „Die fünf Regeln“ (07.10. vormittags, reines Mess-Paket):**
+- **Regeln 1, 2, 3, 4 und 6** des Testplans in der neuen Datei `core-ltrules.js`, nach den Lesarten 11 bis 16 und Änderung 2 (Wortlaut im Protokoll). Jede Regel läuft einmal vorwärts über die Kerzen und benutzt an einer Kerze nur, was bei ihrem Schluss bekannt war. Die Vorbedingung (Tagestrend) prüft dieselbe Funktion wie beim gewürfelten Markt.
+- **Am Zufalls-Vergleich nichts geändert.** Nachweis an Zufallskursen ohne Vorteil (30 Sätze mit je 10 Märkten): Die fünf Regeln liegen im Schnitt zwischen 38 % und 58 % der Durchgänge, die beiden Vergleichsregeln bei 53 % und 46 %.
+- **Blindprobe:** Knopf „Blindprobe ansehen“ je Regel, fünf Einstiege der Entwicklung als Kerzenbild (Tages- und 4H-Bild bei den Regeln 1 und 2, sonst 4H), ohne Coin, Datum, Kurse, Ergebnis und ohne Kerzen danach; es wird kein Trade gerechnet. „Das ist, was ich meine“ gibt „Entwicklung rechnen“ frei, „Nein: Rückmeldung kopieren“ lässt die Regel gesperrt.
+- **Merker** je Trade (nur beschreibend) in Anzeige und Text, dazu „Einstiege je Markt und Jahr“ und „Signale verfallen (Trade war offen)“.
+- **Kleinigkeiten:** Testplan-Läufe, Stand der Blindproben und das Datum fehlender 4H-Kerzen stehen im Export „Daten für Claude“; das Datum der Lücke erscheint unter den Testplan-Läufen, sobald einmal geladen wurde.
+- 71 neue Tests (923), darunter je Regel „schaut nicht in die Zukunft“ (Signale auf abgeschnittener Reihe = Signale auf voller Reihe) und Gegenrechnungen von Grund auf für die Regeln 2, 4 und 6. Geprüft: alle Tests, die Tests der Messmaschine und der Regeln mit vier Sätzen verstellter Einstellungen, Testseite und kompletter Ablauf im Browser in iPhone-Größe mit nachgebildeten Kursen (Blindprobe, Sperre, Bestätigung, Lauf, Export). Wächter: keine seiner 34 Dateien berührt, nicht erneut gestartet.
+- **Nicht getestet:** alles auf echten Kerzen (hier gibt es keine): wie oft die Regeln feuern, wie die Blindprobe-Bilder auf echten Kursen aussehen, Tempo auf dem iPhone. Auf Zufallskursen feuert Regel 2 selten (unter einem Einstieg je Markt und Jahr); erreicht sie keine 300 Trades, besteht sie B nicht, und es wird nichts gelockert.
+- **Bekannt, kosmetisch:** Die Ausprägungen der Merker sind alphabetisch sortiert („9 bis 16 Wochen“ vor „bis 8 Wochen“).
+
+**Kleinigkeiten, die noch offen sind:** `startCapital: 1500` in `config.js` ist ein Platzhalter (geklärt am 07.10. über den Export: Der Nutzer hat einen eigenen Wert als Abweichung gespeichert, er liegt nur auf dem iPhone und geht nicht an den Wächter); die Zeile bleibt, wie sie ist · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
 
 ---
 
@@ -370,6 +417,25 @@ Rund 525 (Swing) bzw. 550 (Daytrade) Trades je Durchgang, „Neu im Trend" 588 b
 **Hypothese aus dem ersten Durchgang (im Nachhinein gesehen, nur ein Durchgang, auf frischen Daten prüfen):** Bei den Zufalls-Einstiegen liegt „nur BTC über Tages-EMA 100" in beiden Zeiträumen im Plus (Swing: 247 Trades, +0,20R / +0,50R). Bei „Neu im Trend" tat derselbe Filter das nicht.
 
 **Noch offen:** Ergebnis des Zufalls-Maßstabs für Donchian (seit 8g rechenbar, Lauf des Nutzers steht aus).
+
+### Lange Historie (Binance), Entwicklung 2020 bis 2023 (07.10., App 8j, Zufalls-Vergleich Fassung 2)
+
+Gemeinsamer Rahmen des Testplans, 41 Märkte mit Kerzen in der Entwicklung, 200 Durchgänge. **Nur die Entwicklung, also Hinweise, kein Urteil.** Prüfung bei keiner Regel angesehen, Tresor gesperrt.
+
+| | Trades | Ø R | Spanne (Monate) | Zufall, selbe Kerze | Platz | Rahmen allein | A | B |
+|---|---|---|---|---|---|---|---|---|
+| Neu im Trend (Vergleich) | 935 | +0,13R | ±0,00R bis +0,25R | +0,14R (+0,11R bis +0,18R) | 28 % | +0,09R | nein | ja |
+| Donchian 20/10 (Vergleich, 10 Tage Zeit-Ausstieg) | 883 | +0,26R | +0,07R bis +0,43R | +0,21R (+0,18R bis +0,25R) | 99 % | +0,09R | ja | ja |
+
+**Regel 5 (Kandidat, gepaart):** Schalter an Ø +0,16R (rund 350 Trades je Durchgang) · Schalter aus Ø +0,02R (rund 309) · Differenz Ø +0,14R (+0,01R bis +0,26R) · über 0 in 96 % der Durchgänge · Schalter an 56 % der 1.433 Tage, 86 Wechsel. A knapp bestanden (nötig 95 %), B bestanden.
+
+**Regel 5, Prüfung 2024 bis 25.09.2025 (einmal geöffnet am 07.10. um 00:53):** Schalter an Ø +0,05R (rund 259 Trades je Durchgang) · aus Ø −0,01R (rund 275) · Differenz Ø +0,06R (−0,07R bis +0,19R) · über 0 in 78 % der Durchgänge · Schalter an 49 % der 634 Tage, 59 Wechsel. **A nicht bestanden, B bestanden, 609 Trades. Urteil nach Testplan: nicht bestanden, kein Tresor.** Genau gesagt: kein nachweisbarer Vorteil unter diesen Bedingungen. Die Richtung ist in beiden Zeiträumen dieselbe (an besser als aus), der Abstand ist in der Prüfung aber nicht vom Zufall zu trennen. Der Schalter bleibt als beschreibender Merker brauchbar, als Regel wird er nicht scharf und nicht nachjustiert (andere Fenster als 28 Tage wären ein neuer Testplan).
+
+Einordnung durch Claude:
+- **Neu im Trend:** Der gewählte Coin ist nicht besser als ein beliebiger Coin im Aufwärtstrend zur selben Zeit.
+- **Donchian:** An Ausbruchs-Tagen verdient schon der Zufall +0,21R, der Rahmen allein +0,09R. Der größte Teil kommt also vom Zeitpunkt; der ausbrechende Coin legt rund +0,05R drauf. Donchian hatte den leichteren Vergleich (sein Zufall darf jeden Markt ziehen, auch schwache; bei den anderen Regeln muss der gewürfelte Markt im Aufwärtstrend sein). Die 99 % sind deshalb weniger stark, als sie aussehen.
+- **Regel 5:** Die 96 % sind zu günstig gelesen, denn alle Durchgänge laufen durch dieselbe Marktgeschichte. Die wahre Stichprobe sind die 86 Wechsel in vier Jahren.
+- Die drei Ergebnisse aus 8i (alter Vergleich) sind ungültig und stehen nur noch im Protokoll.
 
 ### Was durchgefallen ist
 
@@ -453,7 +519,23 @@ Der Nutzer hat bezweifelt, dass die gewachsene Testreihe richtig aufgebaut ist, 
 
 **Reihenfolge am 06.10. abends vom Nutzer geändert („so einfach und so schnell wie möglich, so valide wie nötig"):** erst der **Testplan** (erledigt: `TESTPLAN.md`, vom Nutzer am 06.10. um 22:12 bestätigt, seitdem fest; **gehört zusammen mit diesem Masterplan in jeden neuen Chat**), dann **Binance** (Punkt 4, nächster Bau-Schritt), dann **Umstellen** (Punkt 1). Binance ist vom iPhone des Nutzers aus erreichbar (Test-Adresse im Browser geprüft, 06.10.); offen ist, ob die App selbst laden darf. Der Nutzer hat ein Binance-Konto; es wird nicht gebraucht, und API-Schlüssel kommen nie in App oder Repository.
 
-**Stand:** 8j (Änderung 1: neuer Zufalls-Vergleich) ist gebaut, noch nicht eingespielt. Danach 8k: die Regeln 1, 2, 3, 4 und 6 (in 8i und 8j steht dafür teils noch „8j“). Ursprünglicher Wortlaut: die sechs Regeln aus dem Testplan als Engines auf der langen Historie (Paket 8i), danach „Umstellen“.
+**Stand (07.10., 10:15):** 8k ist gebaut (Regeln 1, 2, 3, 4, 6 mit Blindprobe), noch nicht auf dem iPhone. **Reihenfolge von Jensen am 07.10. um 08:29 entschieden: erst Testplan 1 zu Ende (8k), dann Testplan 2 „Marktphase“, danach „Umstellen“.** Früherer Stand: 8j (Änderung 1: neuer Zufalls-Vergleich) ist eingespielt und geprüft, die Maschine ist freigegeben. Regel 5 ist in der Prüfung durchgefallen (07.10.). **Nächster Bau-Schritt war 8k, in einem frischen Chat** (Füllstand dieses Chats am 07.10. um 00:45 nach Schätzung bei 75 bis 80 %; außerdem ist Claudes entpackte Code-Kopie durch einen Neustart der Arbeitsumgebung weg). In den neuen Chat gehören: Masterplan, `TESTPLAN.md`, `TESTPLAN-PROTOKOLL.md` und der aktuelle Code als ZIP. 8k: die Regeln 1, 2, 3, 4 und 6 (in 8i und 8j steht dafür teils noch „8j“). Ursprünglicher Wortlaut: die sechs Regeln aus dem Testplan als Engines auf der langen Historie (Paket 8i), danach „Umstellen“.
+
+**Gewichtung nach den ersten Läufen (07.10., 01:28, von Jensen bestätigt):**
+
+Anlass: Jensens Frage, ob jetzt ein Modell Vorrang bekommt, das den Beginn von Bullruns so früh wie möglich erkennt und die Gewinne abschöpft.
+
+Einordnung durch Claude:
+- **Was die Messung stützt:** Mit Schalter aus verdient der Rahmen ungefähr null (+0,02R und −0,01R), mit Schalter an liegt er im Plus (+0,16R und +0,05R). „Nur in Aufwärtsphasen profitabel“ ist damit ein **Hinweis**, kein Befund: Genau der Phasen-Schalter (Regel 5) ist in der Prüfung durchgefallen. Das Erkennen der Phase ist der schwere Teil.
+- **„So früh wie möglich“ ist nicht prüfbar:** Vier Jahre enthalten zwei bis drei Bullrun-Starts; jedes Modell würde auf diese Stellen zugeschnitten. Prüfbar ist der **Zustand** (Aufwärtsphase heute, ja oder nein) über viele Tage und Wechsel, gepaart an gegen aus wie bei Regel 5. Früher erkennen heißt mehr Fehlalarme; das Ziel ist „früh genug, und ein Fehlstart kostet wenig“ (das Zweite regelt die Positionsgröße).
+- **Der größere Nutzen liegt vermutlich am Ende eines Laufs:** „Schalter aus“ als Signal zum Verkleinern und Teilverkaufen trifft Jensens Schwäche, Gewinne beim Übergang in den Bärenmarkt nicht zu sichern.
+
+Reihenfolge:
+1. **Testplan 1 zu Ende bringen** (8k: Regeln 1, 2, 3, 4, 6). Er ist fest und beantwortet seit Änderung 1 die Frage „welcher Coin“.
+2. **Testplan 2 „Marktphase“**, vorab geschrieben, bevor etwas läuft: höchstens drei Kandidaten (Vorschläge, noch nicht festgelegt: BTC gegen das Bull Market Support Band · Marktbreite · BTC über Tages-EMA 100), gepaart an gegen aus gemessen, Frühzeitigkeit nur beschreibend (Tage nach dem Tief, Fehlalarme). Gehört zum Zyklus-Kompass (Abschnitt 15).
+3. **Testplan 3 „Abschöpfen“:** nachlaufender Stop gegen den heutigen Zeit-Ausstieg, dazu „Schalter aus“ als Ausstieg.
+
+Einschränkungen: Die Prüfung 2024 bis 2025 wurde für einen Phasen-Schalter schon einmal angesehen; jeder weitere Kandidat darauf macht einen Zufallstreffer wahrscheinlicher, frisch ist nur der Tresor. Möglich: BTC bei Binance bis 2017 zurückholen (Bärenmarkt 2018), das bleibt aber eine Handvoll Zyklen. „Umstellen“ (unten) kommt nach Testplan 2 (von Jensen am 07.10. um 08:29 entschieden).
 
 1. **Umstellen** (Nummer wird beim Bau vergeben; hieß erst 8g, dann 8h; fasst den Wächter an: ein Tag Abstand zu 8e, also frühestens 07.10.; vom Nutzer bestätigt, dass es direkt nach „Geld schützen" kommt):
    - Heiße Coins und das Kopf-Etikett im Signalgeber auf „Neu im Trend". Telegram und Heiße Coins melden **beide Varianten, getrennt gekennzeichnet:** „Trendfolge · Swing" (Wechsel auf 4H, Ausstieg nach 10 Tagen) und „Trendfolge · Daytrade" (Wechsel auf 1H, Ausstieg nach 2,5 Tagen), eigenes Kennzeichen je Variante im Tagebuch. Stop und Ziele sind bei beiden gleich. Ein Coin, ein Signal: Welche Variante zuerst auslöst, gilt. **Die Regel ist beim Zufalls-Maßstab durchgefallen: Die Signale heißen in App und Telegram „Beobachtung"** (Wortlaut vor dem Bau mit dem Nutzer abstimmen).
@@ -475,6 +557,8 @@ Der Nutzer hat bezweifelt, dass die gewachsene Testreihe richtig aufgebaut ist, 
 
 ### Sammelliste (noch keinem Paket zugeordnet)
 
+- Anzeige „Key-Level im Chart“ für das Vorsortieren, aber erst nach dem Ergebnis von Regel 1 und mit deren Definition (damit Chart und Messung dasselbe zeigen).
+- Für Testplan 2: BTC bei Binance bis 2017 zurückholen (Bärenmarkt 2018).
 - Echter Funding-Verlauf je Coin statt der Pauschale; Slippage in den Backtest-Kosten.
 - 3-Tage-Trailing-Stop nach Brandt als Ausstiegs-Variante (Tag mit dem höchsten Hoch merken; Schluss unter dessen Tief = Setup-Tag; Unterschreiten des Setup-Tag-Tiefs = Ausstieg). Last Day Rule nur im Backtest gegen den 2-ATR-Stop messen, nicht übernehmen.
 - Backtest-Auswertungen: Erwartungswert-Formel, „Wann eingestiegen?" (Wochentage, Sessions), Haltedauer bis TP1 / bis Stop, Ziel-Varianten je Stil.
@@ -499,7 +583,7 @@ Der Nutzer hat bezweifelt, dass die gewachsene Testreihe richtig aufgebaut ist, 
 18. ~~Test „Nachziehen nach Struktur" unabhängig vom Ausstiegsplan~~ erledigt in 8c.
 - Markierung „▼ 1×" am Hebel-Regler ragt bei 1× über den linken Rand.
 
-**Vom Nutzer abgelehnt (nicht wieder vorschlagen):** „Max. Drawdown" umbenennen, Zeile „aktuell x % unter dem Hoch" (06.10.: „lass alles wie es ist"). Lightweight Charts als Fremdbibliothek. Mehr Indikatoren ohne Messung.
+**Vom Nutzer abgelehnt (nicht wieder vorschlagen):** „Max. Drawdown" umbenennen, Zeile „aktuell x % unter dem Hoch" (06.10.: „lass alles wie es ist"). Lightweight Charts als Fremdbibliothek. Mehr Indikatoren ohne Messung. **Am 07.10. geprüft und verworfen (Jensen: „du hast mich überzeugt“):** „Donchian MA Bands“ (LuxAlgo): Ausbruch aus einem Kanal auf geglättetem Kurs, zu nah an Donchian, schaltet spät aus, viele Stellschrauben · „DonAlt Toolkit“ (BigBeluga): reines Zeichenwerkzeug ohne Regel, Level erst 20 Kerzen später bekannt, die Ideen stecken genauer in Regel 1 und Regel 6. Beide stehen unter CC BY-NC-SA: kein Code davon ins Repository. Weitere Skripte kommen auf eine Liste für nach Testplan 1.
 
 ### Auf Halde (ändert Signale, wartet auf Messlatten und frische Daten)
 
@@ -567,9 +651,8 @@ Hinweis: Repainting-Signale sehen im Nachhinein besser aus als live; gerechnet w
 
 ## 17. Neustart mit einem neuen Claude-Chat
 
-1. Diesen Masterplan **und `TESTPLAN.md`** anhängen (Dateien-App → lange drücken → Teilen → Claude).
-2. Den aktuellen Code als ZIP anhängen: `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` in Brave öffnen, herunterladen, in der Dateien-App lange drücken → Teilen → Claude.
-3. Falls vorhanden: den letzten Export („📤 Daten für Claude") und das Wolfskopf-Bild müssen nicht mehr mit, die Icons liegen im Repository.
-4. Diesen Text als erste Nachricht:
-
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk" gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang sind der Masterplan und der aktuelle Code. Bitte lies beides und arbeite genau so weiter, wie es in Abschnitt 2 steht. Hol dir zuerst Datum und Uhrzeit von der Uhr, prüf dann, ob die Versionsnummer im Code zum Masterplan passt (8j), und lass die Tests laufen (852). Der Testplan ist bestätigt und fest; bitte nichts daran ändern. Danach geht es nach der Reihenfolge in Abschnitt 12 weiter (nächster Schritt: Paket 8k mit den Regeln 1, 2, 3, 4 und 6 aus dem Testplan; `TESTPLAN-PROTOKOLL.md` gehört mit in den Chat): erst den Bestand prüfen und mir kurz sagen, was du vorhast. Aussagen über die App bitte nur, nachdem du im Code nachgesehen hast. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle.
+1. In der Dateien-App bereitlegen: `MASTERPLAN.md` (diese Fassung), `TESTPLAN.md`, `TESTPLAN-PROTOKOLL.md`. Ältere Fassungen vorher löschen, sonst hängt das iPhone eine Nummer an.
+2. Den aktuellen Code als ZIP holen: `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` in Brave öffnen und herunterladen.
+3. Neuen Chat öffnen und alle vier Dateien anhängen (Dateien-App → lange drücken → Teilen → Claude, oder im Chat über die Büroklammer).
+4. Die erste Nachricht aus dem Abschnitt „Übergabe“ (ganz oben) einfügen und senden.
+5. Der letzte Export („📤 Daten für Claude“) muss nicht mit. Er enthält Beträge und geht nie ins Repository.

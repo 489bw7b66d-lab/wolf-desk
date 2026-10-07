@@ -16,6 +16,7 @@ import { paretoShare, avgHoldDays } from './core-btmetrics.js';
 import { randomSummary } from './core-randombase.js';
 import { compareGate } from './core-trendgate.js';
 import { getFeedSignals, getArchive } from './ui-feed.js';
+import { RULES, loadResults, resultText, loadBlind, blindOk, gapsText } from './core-longtest.js';
 
 const BT_KEY = 'wolfdesk.btlast';
 const n2 = (v, d = 2) => (v == null || !Number.isFinite(v) ? '–' : v.toFixed(d));
@@ -96,6 +97,19 @@ export function tradeList(trades, max = 150) {
   return ['## Einzel-Trades', '```', 'Auf;Zu;Std;Coin;Richtung;Einstieg;AusstiegSchnitt;Teilverkäufe;VerkauftPct;Ergebnis$;Gebühren$;AnfangFehlt', ...rows, '```'].join('\n');
 }
 
+// ---- Testplan-Läufe (8k): dieselben Texte wie „Ergebnis kopieren“, je gerechneter Regel ----
+export function longTestText(res = loadResults(), blind = loadBlind(), gaps = gapsText()) {
+  const rules = Object.keys(RULES).filter((r) => res[r]?.dev);
+  const bl = Object.keys(RULES).filter((r) => RULES[r].blind).map((r) => `${RULES[r].label}: ${blindOk(r, blind) ? 'bestätigt' : blind[r]?.ok === false ? 'abgelehnt' : 'offen'}`);
+  if (!rules.length && !Object.keys(blind).length && !gaps) return '';
+  const L = ['## Testplan-Läufe (lange Historie)'];
+  rules.forEach((r) => L.push(`### ${RULES[r].label} (gerechnet ${new Date(res[r].devAt || 0).toLocaleString('de-DE')}, App ${res[r].ver || '?'})`, resultText(r, res[r], res[r].ver || ''), ''));
+  if (!rules.length) L.push('- noch keine Regel gerechnet');
+  L.push('Blindproben: ' + bl.join(' · '));
+  if (gaps) L.push(gaps);
+  return L.join('\n');
+}
+
 // ---- Der ganze Bericht ----
 export function buildReport(s = {}, now = Date.now(), store = globalThis.localStorage) {
   const L = [];
@@ -163,6 +177,8 @@ export function buildReport(s = {}, now = Date.now(), store = globalThis.localSt
   const bts = Object.values(loadBacktests(store));
   L.push('## Backtests');
   L.push(bts.length ? bts.sort((a, b) => b.at - a.at).map(btText).join('\n\n') : '- noch keiner gerechnet');
+  // 8k: Testplan-Läufe auf der langen Historie (Binance), dazu Stand der Blindproben und das Datum fehlender Kerzen
+  try { const t = longTestText(); if (t) L.push('', t); } catch { /* egal */ }
   return L.join('\n');
 }
 
