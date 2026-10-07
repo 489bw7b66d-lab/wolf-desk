@@ -9,6 +9,7 @@ import { ema, rsi } from './core-indicators.js';
 import { toWeekly } from './core-engine2.js';
 import { sellBlocks, roomAbove, roomByTf, blocksAbove } from './core-sellblock.js';
 import { CONFIG } from './config.js';
+import { relStrength } from './core-index.js';
 
 const DAY = 864e5, H4 = 4 * 36e5;
 export const FINDER = {
@@ -112,16 +113,25 @@ export function rsiInfo(closes) {
   if (now == null || !(now >= 0)) return null;
   const sw = (lowSide) => { const out = []; for (let p = n - 1 - S; p >= S && out.length < 2; p--) { let ok = true; for (let j = 1; j <= S && ok; j++) ok = lowSide ? (c[p] < c[p - j] && c[p] <= c[p + j]) : (c[p] > c[p - j] && c[p] >= c[p + j]); if (ok && r[p] != null) out.push(p); } return out; };
   const lows = sw(true), highs = sw(false);
-  let div = null;
-  if (lows.length === 2 && n - 1 - lows[0] <= RSI.recent && c[lows[0]] < c[lows[1]] && r[lows[0]] > r[lows[1]]) div = 'bullische Divergenz';
-  else if (lows.length && n - 1 - lows[0] <= RSI.recent && c[n - 1] < c[lows[0]] && now > r[lows[0]]) div = 'bullische Divergenz im Entstehen';
-  else if (highs.length === 2 && n - 1 - highs[0] <= RSI.recent && c[highs[0]] > c[highs[1]] && r[highs[0]] < r[highs[1]]) div = 'bärische Divergenz';
-  else if (highs.length && n - 1 - highs[0] <= RSI.recent && c[n - 1] > c[highs[0]] && now < r[highs[0]]) div = 'bärische Divergenz im Entstehen';
-  return { now, state: now < RSI.low ? 'überverkauft' : now > RSI.high ? 'überkauft' : '', div };
+  // Klassisch (Wende) und versteckt (Fortsetzung), 8m. Versteckt bullisch: höheres Tief im Kurs, tieferes im RSI.
+  // Versteckt bärisch: tieferes Hoch im Kurs, höheres im RSI. Aus den Tiefs und aus den Hochs je höchstens eine Angabe.
+  const fresh = (list) => list.length && n - 1 - list[0] <= RSI.recent;
+  let low = null, high = null;
+  if (lows.length === 2 && fresh(lows) && c[lows[0]] < c[lows[1]] && r[lows[0]] > r[lows[1]]) low = 'bullische Divergenz';
+  else if (fresh(lows) && c[n - 1] < c[lows[0]] && now > r[lows[0]]) low = 'bullische Divergenz im Entstehen';
+  else if (lows.length === 2 && fresh(lows) && c[lows[0]] > c[lows[1]] && r[lows[0]] < r[lows[1]]) low = 'versteckte bullische Divergenz';
+  if (highs.length === 2 && fresh(highs) && c[highs[0]] > c[highs[1]] && r[highs[0]] < r[highs[1]]) high = 'bärische Divergenz';
+  else if (fresh(highs) && c[n - 1] > c[highs[0]] && now < r[highs[0]]) high = 'bärische Divergenz im Entstehen';
+  else if (highs.length === 2 && fresh(highs) && c[highs[0]] < c[highs[1]] && r[highs[0]] > r[highs[1]]) high = 'versteckte bärische Divergenz';
+  // div: die eine Angabe wie bis 8l1 (klassisch vor versteckt, Tiefs vor Hochs); divs: alle, für den Text
+  const hid = (x) => !!x && x.startsWith('versteckte');
+  const div = (low && !hid(low) ? low : null) || (high && !hid(high) ? high : null) || low || high || null;
+  const divs = [low, high].filter(Boolean);
+  return { now, state: now < RSI.low ? 'überverkauft' : now > RSI.high ? 'überkauft' : '', div, divs };
 }
 // Tag zuerst (Jensen bewertet den Tag stärker), dann 4H
 export function rsiText(day, h4) {
-  const part = (name, x) => (x ? `${name} ${Math.round(x.now)}${x.state ? ' ' + x.state : ''}${x.div ? ' · ' + x.div : ''}` : '');
+  const part = (name, x) => (x ? `${name} ${Math.round(x.now)}${x.state ? ' ' + x.state : ''}${(x.divs || (x.div ? [x.div] : [])).map((d) => ' · ' + d).join('')}` : '');
   const t = [part('Tag', day), part('4H', h4)].filter(Boolean).join(' · ');
   return t ? 'RSI · ' + t : '';
 }
@@ -191,4 +201,13 @@ export function tradeResult(entry, price = null, tps = CONFIG.benchmark?.tps || 
     method: 'finder', entryMode: 'Beobachtung: Einstieg zum Kurs', stopLabel: `${LT.atrMult}× ATR (Tag)`, tpLabels: tps.map((k) => `${k}R`), warnings: [] };
   return { coin: entry.coin, finder: true, blocks: names, mode: style, best: style, dir: 'long', plan, tfs: CONFIG.signals.modes[style].tfs, total: { long: 0, short: 0 },
     events: [], waves: [], confirms: [], warnings: [], analyses: [null, { close: px, atr: null }] };
+}
+
+// 8m: Coin-Bias für die Zeile. Jeder Eintrag steht im Tagestrend aufwärts (nur solche Märkte werden geprüft);
+// dazu die Stärke gegen BTC über 30 Tage in Prozentpunkten (null, wenn BTC-Kerzen fehlen).
+export const withBias = (entry, btcDaily) => (entry ? { ...entry, up: true, vsBtc: relStrength(entry.M?.daily, btcDaily) } : entry);
+// 8m: Suche über alle geprüften Märkte (Groß- und Kleinschreibung egal, auch Teil des Namens)
+export function searchEntries(list, q, name = (e) => e.coin) {
+  const s = String(q || '').trim().toLowerCase();
+  return s ? (list || []).filter((e) => String(name(e)).toLowerCase().includes(s) || e.coin.toLowerCase().includes(s)) : (list || []);
 }

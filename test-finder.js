@@ -1,6 +1,6 @@
 // Tests für den Setup-Finder (8l, 8l1): core-sellblock.js (Sell-Block, „Platz nach oben“) und core-finder.js (Funde, Gültigkeit, Fib-Lage, RSI, Reihenfolge)
 import { sellBlocks, roomAbove, roomText, roomByTf, roomsText, blocksAbove } from './core-sellblock.js';
-import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, findsOf, fibBlockOverlap, sellSets, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, stillValid, fibPosition, fibText, rsiInfo, rsiText, atLeast, crowdNotes, sinceText, tradeResult } from './core-finder.js';
+import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, findsOf, fibBlockOverlap, sellSets, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, stillValid, fibPosition, fibText, rsiInfo, rsiText, atLeast, crowdNotes, sinceText, tradeResult, withBias, searchEntries } from './core-finder.js';
 import { signalsOf, NEW_RULES } from './core-ltrules.js';
 import { LT } from './core-longtest.js';
 import { mulberry32 } from './core-randombase.js';
@@ -50,6 +50,9 @@ const seg = (a, b, k) => Array.from({ length: k }, (_, j) => a + ((b - a) * (j +
 const DIVC = [...seg(120, 120, 20), ...seg(120, 90, 6), ...seg(90, 104, 10), ...seg(104, 88, 16), ...seg(88, 96, 8)];
 const rise = Array.from({ length: 60 }, (_, k) => 100 + k), fall = Array.from({ length: 60 }, (_, k) => 200 - k);
 const ent = (coin, rules) => ({ coin, n: rules.length, finds: rules.map((rule) => ({ rule, ago: 1 })) });
+// 8m: versteckte Divergenz. Zwei Swing-Tiefs, das zweite HÖHER, aber nach härterem Abverkauf (RSI tiefer).
+// Dieselbe Reihe hat an den Hochs eine klassische bärische Divergenz (höheres Hoch, RSI tiefer): beide Angaben stehen nebeneinander.
+const HIDC = [...seg(100, 120, 20), ...seg(120, 116, 6), ...seg(116, 140, 10), ...seg(140, 118, 5), ...seg(118, 124, 8)];
 export const tests = [
   ['Sell-Block: letzte steigende Kerze vor dem Bruch eines bestätigten Swing-Tiefs, von der Eröffnung bis zum Hoch', () => { const b = one(base); return b.length === 1 && b[0].b === 12 && b[0].bottom === 100 && b[0].body === 101.5 && b[0].top === 102 && b[0].at === 13; }],
   ['Sell-Block: ein Docht über dem Block bricht ihn nicht', () => one([...base, [94, 103, 94, 96]]).length === 1],
@@ -111,4 +114,10 @@ export const tests = [
   ['8l1 Trade-Karte: als Beobachtung gekennzeichnet, ohne Score, mit den Namen der Bausteine', () => { const r = tradeResult({ coin: 'AAA', price: 100, R: 4, finds: [{ rule: 'r6' }, { rule: 'r3' }] }); return r.finder === true && r.total.long === 0 && r.total.short === 0 && r.blocks.join() === 'Order Block,VWAP' && /Beobachtung/.test(r.plan.entryMode) && !('score' in r); }],
   ['8l1 Trade-Karte: der Live-Kurs geht vor, R bleibt der Rahmen-Abstand', () => { const r = tradeResult({ coin: 'AAA', price: 100, R: 4, finds: [] }, 102); return r.plan.entry === 102 && r.plan.stop === 98 && r.blocks.length === 0; }],
   ['8l1 Trade-Karte: ohne R oder mit Stop unter null gibt es keinen Plan', () => tradeResult(null) === null && tradeResult({ coin: 'A', price: 100, R: 0 }) === null && tradeResult({ coin: 'A', price: 3, R: 4 }) === null],
+  ['8m RSI: versteckte bullische Divergenz = höheres Tief im Schlusskurs, tieferes Tief im RSI', () => { const x = rsiInfo(HIDC); return x.divs.join() === 'versteckte bullische Divergenz,bärische Divergenz' && x.div === 'bärische Divergenz'; }],
+  ['8m RSI: versteckte bärische Divergenz ist das Spiegelbild (tieferes Hoch im Kurs, höheres im RSI)', () => rsiInfo(HIDC.map((x) => 300 - x)).divs.includes('versteckte bärische Divergenz')],
+  ['8m RSI: die klassische Divergenz bleibt die Hauptangabe, und der Filter „bullische Divergenz“ meint nur die klassische', () => rsiInfo(DIVC).div === 'bullische Divergenz' && rsiInfo(DIVC).divs[0] === 'bullische Divergenz' && !rsiInfo(HIDC).div.startsWith('bullische') && rsiInfo([...seg(100, 120, 20), ...seg(120, 116, 6), ...seg(116, 119, 10), ...seg(119, 117, 5), ...seg(117, 118, 8)]).div === 'versteckte bullische Divergenz'],
+  ['8m RSI: der Text nennt alle Angaben einer Zeitebene', () => rsiText({ now: 55, state: '', div: 'bärische Divergenz', divs: ['versteckte bullische Divergenz', 'bärische Divergenz'] }, null) === 'RSI · Tag 55 · versteckte bullische Divergenz · bärische Divergenz'],
+  ['8m Coin-Bias: Stärke gegen BTC über 30 Tage kommt an den Eintrag, der Eintrag selbst bleibt unverändert', () => { const btc = c3.M.daily.map((d) => ({ ...d, c: 100 })); const e = withBias(e3, btc); return e.up === true && Number.isFinite(e.vsBtc) && e.n === e3.n && !('vsBtc' in e3) && withBias(e3, null).vsBtc === null && withBias(null, btc) === null; }],
+  ['8m Suche: findet über alle geprüften Märkte, Groß- und Kleinschreibung egal, auch Teilnamen', () => { const l = [ent('SUI', []), ent('kPEPE', ['r3']), ent('HBAR', [])]; return searchEntries(l, 'su').map((e) => e.coin).join() === 'SUI' && searchEntries(l, 'PEPE').length === 1 && searchEntries(l, ' ').length === 3 && searchEntries(l, 'xyz').length === 0 && searchEntries(null, 'a').length === 0; }],
 ];
