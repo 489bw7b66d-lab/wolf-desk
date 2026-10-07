@@ -17,8 +17,10 @@ export function panelSvg(get, from, to, spec = {}, { signal = false, max = 300 }
   const x = (k) => PL + (k - from + 0.5) * step, y = (v) => PT + (1 - (v - lo) / span) * (H - PT - PB);
   let s = `<svg class="lt-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Kerzenbild ohne Coin und Datum">`;
   for (const b of spec.bands || []) {
-    s += `<rect x="0" y="${f1(y(b[1]))}" width="${W - PR}" height="${f1(Math.max(1, y(b[0]) - y(b[1])))}" style="fill:var(--gold);opacity:.18"/>`;
-    if (b[2]) s += `<text x="${W - PR + 3}" y="${f1((y(b[0]) + y(b[1])) / 2 + 3)}" style="fill:var(--gold);font-size:9px">${b[2]}</text>`;
+    const col = b[3] === 'bad' ? 'var(--bad)' : 'var(--gold)'; // 8l: Sell-Block in Rot
+    const x0 = b[4] != null && b[4] > from ? Math.min(W - PR - 2, x(b[4]) - step / 2) : 0; // Band erst ab seiner Entstehungskerze
+    s += `<rect x="${f1(x0)}" y="${f1(y(b[1]))}" width="${f1(W - PR - x0)}" height="${f1(Math.max(1, y(b[0]) - y(b[1])))}" style="fill:${col};opacity:.18"/>`;
+    if (b[2]) s += `<text x="${W - PR + 3}" y="${f1((y(b[0]) + y(b[1])) / 2 + 3)}" style="fill:${col};font-size:9px">${b[2]}</text>`;
   }
   for (const L of spec.lines || []) {
     s += `<line x1="0" x2="${W - PR}" y1="${f1(y(L.y))}" y2="${f1(y(L.y))}" style="stroke:${L.hot ? 'var(--gold)' : 'var(--muted)'};stroke-width:${L.hot ? 1.4 : 0.8};${L.hot ? '' : 'stroke-dasharray:3 3'}"/>`;

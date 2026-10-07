@@ -208,7 +208,7 @@ Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian 
 
 ## Änderung 3 (07.10.2026): Regel 1 nimmt ein schmales Band aus dem 4H-Chart
 
-**Von Jensen am 07.10.2026 um 14:05 bestätigt (zur Beschreibung „stimme ich zu“, zum Einstieg „richtig“, zur Breite „ja mach das so“). Vor dem ersten Lauf eines der Kandidaten 1, 2, 3, 4, 6; von keiner dieser Regeln ist eine Zahl bekannt. Die zweite Meinung zu Änderung 3 steht noch aus und kommt vor dem ersten Lauf. Abgenommen wird mit einer neuen Blindprobe.**
+**Von Jensen am 07.10.2026 um 14:05 bestätigt (zur Beschreibung „stimme ich zu“, zum Einstieg „richtig“, zur Breite „ja mach das so“). Vor dem ersten Lauf eines der Kandidaten 1, 2, 3, 4, 6; von keiner dieser Regeln ist eine Zahl bekannt. Zweite Meinung am 07.10. um 14:45: zulässig (siehe „Läufe“). Neue Blindprobe von Jensen um 14:35 abgenommen.**
 
 **Anlass:** Die Blindprobe von Regel 1 (Fassung 2, App 8k1) hat Jensen am 07.10. um 13:17 abgelehnt. Seine Notizen zu den fünf Bildern: Alle fünf 4H-Bilder passen; drei von fünf Tagesbildern passen nicht (Nr. 1 „zu ungenau, letzte Kerze bearish“, Nr. 4 und 5 „eher ein Short-Einstieg“). Danach hat er vier eigene Charts mit von Hand gezeichneten Leveln geschickt (4H-Charts von heute; der Verlauf danach ist ihm bekannt, deshalb dienen sie nur als Beschreibung seiner Handschrift, nicht als Beleg).
 
@@ -239,7 +239,7 @@ Einstieg: Der Kurs kommt nach dem Ausbruch von oben auf das Band zurück, und ei
 - Regel 1: Im ersten Bild (4H-Chart über die Berührungen) steht • für eine Berührung (Körperkante im Band) und × für eine Kerze, bei der nur ein Docht das Band antippt (zählt nicht). Zeigt keines der fünf Bilder ein ×, kommt gezielt ein sechstes dazu, das eines zeigt.
 - Zweck: prüfen, ob der Code die Lesart trifft und die Lesart Jensens Handschrift.
 
-**Stand der Blindproben (07.10.2026):** Regel 2 bestätigt (in der App, vor 12:57) · Regel 3 bestätigt um 13:46 („unterschreibe ich jedes Bild“) · Regel 4 bestätigt um 13:47 · Regel 6 bestätigt um 13:48 · **Regel 1 abgelehnt um 13:17** (Fassung 2), neu aufgesetzt mit Änderung 3 (Fassung 3, App 8k2), neue Blindprobe offen. Seit 8k2 hat jede Regel ihre eigene Fassung: Die Bestätigungen der Regeln 2, 3, 4 und 6 bleiben gültig.
+**Stand der Blindproben (07.10.2026):** Regel 2 bestätigt (in der App, vor 12:57) · Regel 3 bestätigt um 13:46 („unterschreibe ich jedes Bild“) · Regel 4 bestätigt um 13:47 · Regel 6 bestätigt um 13:48 · **Regel 1 abgelehnt um 13:17** (Fassung 2), neu aufgesetzt mit Änderung 3 (Fassung 3, App 8k2) und **um 14:35 abgenommen**. Seit 8k2 hat jede Regel ihre eigene Fassung: Die Bestätigungen der Regeln 2, 3, 4 und 6 bleiben gültig.
 
 ## Nachweis für die fünf Regeln an Zufallskursen (07.10.2026, App 8k2, keine echten Kerzen)
 
@@ -275,3 +275,39 @@ Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) 
 - A: Entwicklung nein · Prüfung nein · B: Entwicklung ja · Prüfung nein · Trades gesamt 1.793
 
 **Einordnung:** Vergleichsregel, zählt nicht als Kandidat. Bestätigt den Befund: kein nachweisbarer Vorteil gegenüber einem beliebigen Markt im Aufwärtstrend zur selben Zeit. Die Prüfung von Donchian ist weiter nicht angesehen. Tresor gesperrt.
+
+### 07.10.2026, 14:45 bis 14:51 · vor dem ersten Lauf der fünf Kandidaten
+
+- **Zweite Meinung zu Änderung 3 (14:45): zulässig.** Kein Blick in die Zukunft, keine Schieflage gegen den Vergleich, „eine Berührung je Wegdrehen“ sauber. Von Claude gegen den Code geprüft: Episode (Beginn, Seite, Ende mit Berührung, Durchlauf, Verfall nach 60 Kerzen), überspannende Kerze (beginnt keine Berührung, die Seite ergibt sich aus ihrem Schluss), Swing-Kerze wie jede andere, Gleichstand bei 4H-Körper-Swings wie in Änderung 2, überlappende Bänder. **Eine Abweichung, bewusst belassen:** Band und beide ATR-Werte sind mit dem Stand vom Ende des Tages VOR dem Ausbruch eingefroren (die zweite Meinung schlug den Schluss des Ausbruchstags vor); so hängt die Bandbreite nicht von der Ausbruchskerze ab.
+- **Regel 1 hat acht feste Werte:** 180 Tage, Swing 5/5, ¼ 4H-ATR, 1 Tages-ATR, 60 Kerzen, 3 Berührungen, 28 Tage, 10 Tage. Alle vor dem Lauf gesetzt.
+- **Bekannte Unschärfe:** Jensens vier Beispiel-Charts für Regel 1 sind vom 07.10.2026 und liegen damit im Tresor-Zeitraum. Sie haben nur die Beschreibung geliefert.
+- **Blindprobe Regel 1 (Fassung 3, App 8k2): von Jensen um 14:35 abgenommen** („unterschreibe ich uneingeschränkt“). Damit alle fünf Regeln abgenommen.
+- **Zahl der Signale in der Entwicklung, vor jedem Ergebnis festgehalten (14:51, aus den Blindproben):** Regel 1: 2.979 · Regel 2: 255 · Regel 3: 4.981 · Regel 4: 4.131 · Regel 6: 1.566. Claudes Einschätzung vor dem Lauf: Regel 2 erreicht die 300 Trades voraussichtlich nicht.
+- **Mit dem ersten Lauf endet die Phase der Änderungen.** Danach nur noch Fehlerkorrekturen, wenn der Code von der geschriebenen Regel abweicht.
+
+### 07.10.2026, 14:54 · App 8k2 · Zufalls-Vergleich Fassung 2 · Entwicklung (2020 bis 2023) · die fünf Kandidaten
+
+- **Regel 1, Key-Level mit Retest (Fassung 3):** 750 Trades · Ø +0,10R (Spanne −0,03R bis +0,22R, 48 Monate) · Treffer 46 % · Zufall selbe Kerze Ø +0,10R (+0,06R bis +0,14R, 200 Durchgänge, je rund 748 Trades, 2 ausgelassen) · besser als 48 % der Durchgänge · Rahmen allein Ø +0,09R · 7,5 Einstiege je Markt und Jahr · 2.229 Signale verfallen · A nein · B ja
+  - Merker Berührungen: 3: 341 (Ø +0,13R) · 4: 212 (Ø +0,09R) · 5 und mehr: 197 (Ø +0,05R) · Merker Alter: bis 8 Wochen 64 (Ø +0,09R) · 9 bis 16 Wochen 225 (Ø ±0,00R) · über 16 Wochen 461 (Ø +0,15R)
+- **Regel 2, Fibonacci-Rücklauf (Fassung 2):** 74 Trades · Ø +0,22R (Spanne +0,02R bis +0,41R) · Treffer 49 % · Zufall selbe Kerze Ø +0,23R (+0,09R bis +0,38R, je rund 74 Trades) · besser als 46 % · 0,7 Einstiege je Markt und Jahr · 181 Signale verfallen · A nein · B ja (74 von nötigen 300 Trades)
+  - Merker Teilzone: 0,382 bis 0,5: 42 (Ø +0,24R) · 0,5 bis 0,618: 25 (Ø +0,26R) · Golden Pocket: 7 (Ø −0,01R) · Merker Einstieg: erster 52 (Ø +0,16R) · wiederholter 22 (Ø +0,37R)
+- **Regel 3, VWAP (Fassung 2):** 1.222 Trades · Ø +0,13R (Spanne ±0,00R bis +0,24R) · Treffer 48 % · Zufall selbe Kerze Ø +0,12R (+0,10R bis +0,15R, je rund 1.219 Trades, 3 ausgelassen) · besser als 62 % · 12,3 Einstiege je Markt und Jahr · 3.759 Signale verfallen · A nein · B ja
+  - Merker Level: Woche −1: 472 (Ø +0,18R) · Woche −2: 197 (Ø +0,19R) · Woche −3: 159 (Ø +0,07R) · Woche −4: 115 (Ø +0,01R) · Monat −1: 134 (Ø +0,16R) · Monat −2: 145 (Ø −0,02R) · Merker Nachbarn: Level allein 658 (Ø +0,17R) · weitere Level nah 564 (Ø +0,07R)
+- **Regel 4, Liquidity Sweep (Fassung 2):** 1.101 Trades · Ø +0,08R (Spanne −0,05R bis +0,20R) · Treffer 48 % · Zufall selbe Kerze Ø +0,12R (+0,09R bis +0,14R, je rund 1.096 Trades, 5 ausgelassen) · besser als 1 % · 11,1 Einstiege je Markt und Jahr · 3.030 Signale verfallen · A nein · B ja
+  - Merker Sweep: erster 1.019 (Ø +0,08R) · wiederholt 82 (Ø +0,06R)
+- **Regel 6, Order Block (Fassung 2):** 936 Trades · Ø +0,14R (Spanne ±0,00R bis +0,27R) · Treffer 48 % · Zufall selbe Kerze Ø +0,14R (+0,11R bis +0,16R, je rund 934 Trades, 2 ausgelassen) · besser als 65 % · 9,4 Einstiege je Markt und Jahr · 630 Signale verfallen · A nein · B ja
+  - Merker Rücklauf: nur Körper 616 (Ø +0,16R) · bis in den Docht 320 (Ø +0,11R) · Merker Alter: unter 3 Tage 629 (Ø +0,15R) · 3 bis 10 Tage 164 (Ø +0,12R) · über 10 Tage 143 (Ø +0,14R)
+
+**Prüfung der Maschine:** Der Zufall kommt bei allen fünf auf dieselbe Zahl an Trades wie die Regel; „Rahmen allein“ liegt wie in den Läufen mit 8j bei +0,09R.
+
+## Urteil Testplan 1 (07.10.2026)
+
+**Kein Kandidat besteht.** Regel 5 ist in der Prüfung durchgefallen (07.10., 00:53). Die Regeln 1, 2, 3, 4 und 6 verfehlen Messlatte A schon in der Entwicklung (Plätze 48 %, 46 %, 62 %, 1 %, 65 % statt mindestens 95 %). A verlangt die 95 % in Entwicklung und Prüfung; damit kann keine der fünf mehr bestehen, gleichgültig, was die Prüfung zeigt. Regel 2 hat zudem nur 74 Trades.
+
+**Genau gesagt:** kein nachweisbarer Vorteil bei der Wahl des Coins unter diesen Bedingungen (jeder Baustein allein, als feste Regel, nur Long, im gemeinsamen Rahmen). Alle fünf liegen im Plus (B in der Entwicklung ja); dieses Plus bringt auch ein zufälliger Markt im Aufwärtstrend zur selben Kerze. Jensens Zusammenspiel mehrerer Bausteine und sein Ermessen sind nicht geprüft. Die Merker sind Beschreibung; aus ihnen wird keine Regel abgeleitet.
+
+**Festgelegt (Jensen, 07.10., 15:04 und 16:11):**
+- Die Prüfung der Regeln 1, 2, 3, 4 und 6 wird nicht geöffnet (sie könnte am Urteil nichts ändern und würde den Zeitraum für Testplan 2 verbrauchen). Die Prüfung von Donchian ist ebenfalls nicht angesehen.
+- **Der Tresor bleibt zu.** Für Testplan 1 wird er nicht geöffnet.
+- Es werden keine weiteren Einstiegsregeln mehr auf Vorteil getestet (Richtungsentscheidung, siehe Masterplan).
+- Die fünf Regeln bleiben in ihrer festgeschriebenen Fassung als Bausteine des Setup-Finders erhalten. Dort gilt die Messlatte „Findet er, was Jensen im Chart suchen würde?“, nicht „Schlägt er den Markt?“.

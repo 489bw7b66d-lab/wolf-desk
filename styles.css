@@ -717,3 +717,9 @@ button.pos-row:first-of-type { border-top: 0; }
 .lt-bcard { margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
 .lt-cap { margin: 8px 0 2px; color: var(--muted); font-size: 12.5px; }
 .lt-svg { display: block; width: 100%; height: auto; }
+/* 8l: Setup-Finder (Vorschau) */
+.fd-filter { margin: 4px 0 10px; }
+.fd-row { display: grid; gap: 6px; width: 100%; height: auto; padding: 12px 0; text-align: left; background: transparent; color: var(--text); border: 0; border-top: 1px solid var(--line); border-radius: 0; font: inherit; }
+.fd-coin { font-size: 15px; } .fd-coin .muted { font-size: 13px; }
+.fd-room { font-size: 13px; }
+.fd-detail { padding-bottom: 10px; }
