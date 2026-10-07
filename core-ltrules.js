@@ -7,17 +7,21 @@
 // Sie benutzt an Kerze i nur 4H-Kerzen bis i und Tageskerzen, die beim Schluss von i schon abgeschlossen waren (M.dOf).
 // Setups laufen unabhängig davon weiter, ob im Markt gerade ein Trade offen ist (Lesart 11).
 import { reversalPoint } from './core-engine2.js';
+import { atr } from './core-indicators.js';
 
 const DAY = 864e5;
 export const LTR = {
-  ver: 2,                 // Fassung der Regeln (2 = Grundsatz Körper auch in Regel 1 und 3). Ändert sich der Code einer Regel, steigt die Zahl und die Blindprobe gilt nicht mehr.
+  // Fassung je Regel. Ändert sich der Code einer Regel, steigt IHRE Zahl: Ihre Blindprobe und ihre Ergebnisse gelten dann nicht mehr,
+  // die der anderen Regeln bleiben gültig. 2 = Grundsatz Körper (8k1) · Regel 1: 3 = schmales Band aus dem 4H-Chart (8k2, Änderung 3)
+  rv: { r1: 3, r2: 2, r3: 2, r4: 2, r6: 2 },
   side: 5,                // Swing: je 5 Kerzen (Tage) davor und danach, strikt höher bzw. tiefer
-  r1: { win: 180, touches: 3, spanDays: 28, turnDays: 10, retestDays: 10, half: 0.25, turnAtr: 1 },
+  r1: { win: 180, touches: 3, spanDays: 28, turnBars: 60, retestDays: 10, half: 0.25, turnAtr: 1, drawBars: 420 },
   r2: { minAtr: 6, zoneFrom: 0.382, zoneTo: 0.65, kill: 0.786 },
   r3: { weeks: 4, months: 2, tolAtr: 0.5 },
   r4: { days: 20 },
 };
 export const NEW_RULES = ['r1', 'r2', 'r3', 'r4', 'r6'];
+export const ruleVer = (rule) => LTR.rv[rule] ?? 0;
 
 // Gemeinsame Vorbedingung (Tagestrend aufwärts: Tages-EMA 20 über EMA 100 am letzten abgeschlossenen Tag).
 // Dieselbe Funktion prüft auch den gewürfelten Markt im Zufalls-Vergleich (core-longtest preOf).
@@ -26,7 +30,7 @@ export const trendUp = (M, i) => { const d = M.dOf[i]; return d >= 0 && M.fast[d
 // Swing-Punkt an Stelle p: strikt höher (tiefer) als je `side` Werte davor und danach. Bei Gleichstand kein Swing.
 const isTop = (v, p, n, S = LTR.side) => { if (p < S || p + S >= n) return false; for (let j = 1; j <= S; j++) if (!(v(p) > v(p - j)) || !(v(p) > v(p + j))) return false; return true; };
 const isBottom = (v, p, n, S = LTR.side) => { if (p < S || p + S >= n) return false; for (let j = 1; j <= S; j++) if (!(v(p) < v(p - j)) || !(v(p) < v(p + j))) return false; return true; };
-// Swing aus Kerzenkörpern (Regel 1 und 2): strikt höher (tiefer) als die 5 davor, höher (tiefer) ODER GLEICH die 5 danach.
+// Swing aus Kerzenkörpern (Regel 1 im 4H-Chart, Regel 2 im Tageschart): strikt höher (tiefer) als die 5 davor, höher (tiefer) ODER GLEICH die 5 danach.
 // Grund: Ohne Kurslücke ist die Eröffnung eines Tages der Schluss des Vortags; zwei Nachbartage teilen sich dann dieselbe
 // Körperkante, und mit „strikt auf beiden Seiten“ gäbe es so gut wie nie einen Körper-Swing. Es zählt der frühere Tag.
 const isTopB = (v, p, n, S = LTR.side) => { if (p < S || p + S >= n) return false; for (let j = 1; j <= S; j++) if (!(v(p) > v(p - j)) || !(v(p) >= v(p + j))) return false; return true; };
@@ -188,52 +192,65 @@ function ruleFib(M) {
 }
 
 // ---- Regel 1: Key-Level, Ausbruch mit Retest ----
-// Grundsatz Körper: Level = bestätigter KÖRPER-Swing im Tageschart (Körper-Hoch oder Körper-Tief) der letzten 180 Tage,
-// Zone = Level ± ¼ ATR (ATR des Tages vor dem Ausbruch).
-// Berührung = eine Körperkante einer Tageskerze liegt in der Zone, ein Docht allein zählt nicht (aufeinanderfolgende Tage = eine), danach innerhalb von 10 Tagen ein
-// Tagesschluss mindestens 1 ATR jenseits der Zone, zurück auf der Seite, von der der Kurs kam. Alles vor dem Ausbruchstag.
-// Ausbruch = erster Tagesschluss über der Zone. Retest = die Körper-Unterkante einer 4H-Kerze erreicht in den 10 Tagen danach die Zonen-Oberkante.
-// Einstieg = erster 4H-Schluss über der Zone ab der Retest-Kerze. Ende: Tagesschluss unter der Zone.
-export function countTouches(D, P, A, from, to) { // Tage from..to (einschließlich), alle vor dem Ausbruchstag
-  const R = LTR.r1, zl = P - R.half * A, zh = P + R.half * A, out = [];
-  const inZone = (k) => { const a = bTop(D[k]), b = bBot(D[k]); return (a >= zl && a <= zh) || (b >= zl && b <= zh); };
-  for (let k = Math.max(1, from); k <= to; k++) {
-    if (!inZone(k)) continue;
-    const k1 = k; while (k + 1 <= to && inZone(k + 1)) k++;
-    const below = D[k1 - 1].c < P; // Seite, von der der Kurs kam
-    for (let j = k + 1; j <= Math.min(k + R.turnDays, to); j++) {
-      if (below ? D[j].c <= zl - R.turnAtr * A : D[j].c >= zh + R.turnAtr * A) { out.push(k1); break; }
+// Änderung 3 (07.10.2026, nach Jensens Blindprobe und seinen vier von Hand gezeichneten Beispielen): Das Key-Level ist ein
+// SCHMALES BAND AUS DEM 4H-CHART, nicht mehr eine breite Zone aus dem Tageschart.
+// Level = bestätigter Körper-Swing im 4H-Chart (Körper-Hoch oder Körper-Tief) der letzten 180 Tage.
+// Band = Level ± ¼ 4H-ATR (Breite ½ ATR(14) der 4H-Kerzen, Stand: Ende des Tages vor dem Ausbruch).
+// Berührung = eine Körperkante einer 4H-Kerze liegt im Band (ein Docht allein zählt nicht), danach dreht der Kurs deutlich weg:
+// ein 4H-Schluss mindestens 1 TAGES-ATR jenseits des Bandes, zurück auf der Seite, von der er kam, spätestens 60 Kerzen
+// (10 Tage) nach der letzten Kerze im Band. Alles, was der Kurs bis zu diesem Wegdrehen am Band tut, ist EINE Berührung.
+// Mindestens drei Berührungen, zwischen erster und letzter mindestens 28 Tage, alle vor dem Ausbruchstag abgeschlossen.
+// Ausbruch = erster Tagesschluss über dem Band. Retest = die Körper-Unterkante einer 4H-Kerze erreicht in den 10 Tagen danach
+// die Band-Oberkante. Einstieg = erster 4H-Schluss über dem Band ab der Retest-Kerze. Ende: Tagesschluss unter dem Band.
+const H4 = 4 * 36e5;
+function atr4(M) { if (!M.atr4) { const c = []; for (let k = 0; k < M.n; k++) c.push(c4(M.g, k)); M.atr4 = atr(c, 14); } return M.atr4; }
+// Berührungen eines Bandes in den 4H-Kerzen from..to (einschließlich; alle vor dem Ausbruchstag).
+// g: 4H-Spalten · P: Level · W: 4H-ATR (Bandbreite ½ W) · Ad: Tages-ATR (Maß fürs Wegdrehen). Ergebnis: je Berührung die erste Kerze.
+export function countTouches(g, P, W, Ad, from, to) {
+  const R = LTR.r1, zl = P - R.half * W, zh = P + R.half * W, far = R.turnAtr * Ad, out = [];
+  const inZone = (k) => { const a = Math.max(g.o[k], g.c[k]), b = Math.min(g.o[k], g.c[k]); return (a >= zl && a <= zh) || (b >= zl && b <= zh); };
+  let k = Math.max(1, from);
+  while (k <= to) {
+    if (!inZone(k)) { k++; continue; }
+    const k1 = k, below = g.c[k1 - 1] < P; // Seite, von der der Kurs kam
+    let last = k, next = to + 1;
+    for (let j = k + 1; j <= to; j++) {
+      if (inZone(j)) { last = j; continue; }
+      if (j - last > R.turnBars) { next = j; break; }                                                    // Frist vorbei: keine Berührung
+      if (below ? g.c[j] <= zl - far : g.c[j] >= zh + far) { out.push(k1); next = j + 1; break; }         // dreht weg: eine Berührung
+      if (below ? g.c[j] >= zh + far : g.c[j] <= zl - far) { next = j + 1; break; }                       // Durchlauf: keine Berührung
     }
+    k = next;
   }
   return out;
 }
-// Tage, an denen nur ein Docht (Hoch oder Tief) in der Zone liegt, aber keine Körperkante: zählen NICHT als Berührung.
-// Nur für die Zeichnung der Blindprobe, die Regel selbst braucht sie nicht.
-export function wickOnlyDays(D, P, A, from, to) {
-  const R = LTR.r1, zl = P - R.half * A, zh = P + R.half * A, out = [], inZ = (v) => v >= zl && v <= zh;
-  for (let k = Math.max(0, from); k <= to; k++) if ((inZ(D[k].h) || inZ(D[k].l)) && !inZ(bTop(D[k])) && !inZ(bBot(D[k]))) out.push(k);
+// Kerzen, bei denen nur ein Docht (Hoch oder Tief) im Band liegt, aber keine Körperkante: zählen NICHT. Nur für die Zeichnung.
+export function wickOnly(g, P, W, from, to) {
+  const R = LTR.r1, zl = P - R.half * W, zh = P + R.half * W, out = [], inZ = (v) => v >= zl && v <= zh;
+  for (let k = Math.max(0, from); k <= to; k++) if ((inZ(g.h[k]) || inZ(g.l[k])) && !inZ(Math.max(g.o[k], g.c[k])) && !inZ(Math.min(g.o[k], g.c[k]))) out.push(k);
   return out;
 }
 function ruleKey(M) {
-  const g = M.g, D = M.daily, S = LTR.side, R = LTR.r1, piv = [];
-  let setups = [];
+  const g = M.g, D = M.daily, S = LTR.side, R = LTR.r1, A4 = atr4(M);
+  const bt = (k) => Math.max(g.o[k], g.c[k]), bb = (k) => Math.min(g.o[k], g.c[k]);
+  let setups = [], piv = [], w = 0;
   return {
-    day(d) {
-      setups = setups.filter((s) => !(D[d].c < s.zl)); // Tagesschluss unter der Zone beendet das Setup
-      const A = d >= 1 ? M.atr[d - 1] : null;
-      if (A > 0) {
-        for (const pv of piv) { // nur Level, die am Vortag schon bestätigt waren
-          if (pv.p < d - R.win) continue;
-          const zh = pv.price + R.half * A, zl = pv.price - R.half * A;
-          if (!(D[d].c > zh && D[d - 1].c <= zh)) continue; // erster Tagesschluss über der Zone
-          const t = countTouches(D, pv.price, A, d - R.win, d - 1);
-          if (t.length < R.touches || t[t.length - 1] - t[0] < R.spanDays) continue;
-          setups.push({ zl, zh, P: pv.price, n: t.length, first: t[0], touches: t, wicks: wickOnlyDays(D, pv.price, A, t[0] - 15, d - 1), D: d, tEnd: D[d].t + DAY, retest: false });
-        }
+    day(d, i) {
+      setups = setups.filter((s) => !(D[d].c < s.zl)); // Tagesschluss unter dem Band beendet das Setup
+      if (d < 1) return;
+      let e = i; while (e >= 0 && g.t[e] + H4 > D[d].t) e--;      // letzte 4H-Kerze, die vor dem Ausbruchstag geschlossen hat
+      const Ad = M.atr[d - 1], W = e >= 0 ? A4[e] : null;
+      if (!(Ad > 0) || !(W > 0)) return;
+      while (w < e && g.t[w] < D[d].t - R.win * DAY) w++;         // Fenster: 180 Tage
+      piv = piv.filter((pv) => pv.p >= w);
+      for (const pv of piv) {
+        if (pv.p + S > e) continue;                              // nur Level, die vor dem Ausbruchstag schon bestätigt waren
+        const zh = pv.price + R.half * W, zl = pv.price - R.half * W;
+        if (!(D[d].c > zh && D[d - 1].c <= zh)) continue;        // erster Tagesschluss über dem Band
+        const t = countTouches(g, pv.price, W, Ad, w, e);
+        if (t.length < R.touches || g.t[t[t.length - 1]] - g.t[t[0]] < R.spanDays * DAY) continue;
+        setups.push({ zl, zh, P: pv.price, W, n: t.length, touches: t, e, ib: i, D: d, tEnd: D[d].t + DAY, retest: false });
       }
-      const p = d - S;
-      if (isTopB((k) => bTop(D[k]), p, d + 1)) piv.push({ p, price: bTop(D[p]) });
-      if (isBottomB((k) => bBot(D[k]), p, d + 1)) piv.push({ p, price: bBot(D[p]) });
     },
     candle(i, d, up) {
       let best = null;
@@ -242,18 +259,23 @@ function ruleKey(M) {
         if (g.t[i] < s.tEnd) continue; // Retest zählt erst ab den Kerzen nach dem Ausbruchstag
         if (!s.retest) {
           if (g.t[i] >= s.tEnd + R.retestDays * DAY) { setups.splice(k, 1); continue; }
-          if (Math.min(g.o[i], g.c[i]) <= s.zh) s.retest = true;
+          if (bb(i) <= s.zh) s.retest = true;
         }
         if (s.retest && g.c[i] > s.zh) {
           if (!best || s.n > best.n || (s.n === best.n && s.P > best.P)) best = s;
           setups.splice(k, 1);
         }
       }
+      const p = i - S;
+      if (isTopB(bt, p, i + 1)) piv.push({ p, price: bt(p) });
+      if (isBottomB(bb, p, i + 1)) piv.push({ p, price: bb(p) });
       if (!best || !up) return null;
-      const weeks = Math.floor((best.D - best.first) / 7);
+      const weeks = Math.floor((g.t[best.e] - g.t[best.touches[0]]) / (7 * DAY));
+      const from = Math.max(best.touches[0] - 30, i - R.drawBars + 1), older = best.touches.filter((k) => k < from).length;
+      const marks = [...best.touches.map((k) => ({ k, l: '•' })), ...wickOnly(g, best.P, best.W, Math.max(from, best.touches[0]), best.e).map((k) => ({ k, l: '×', x: true })), { k: best.ib, l: 'A' }];
       return { mk: { Berührungen: best.n >= 5 ? '5 und mehr' : String(best.n), Alter: weeks <= 8 ? 'bis 8 Wochen' : weeks <= 16 ? '9 bis 16 Wochen' : 'über 16 Wochen' },
-        viz: { d: { from: best.first - 15, bands: [[best.zl, best.zh, 'Zone']], marks: [...best.touches.map((k) => ({ k, l: '•' })), ...best.wicks.map((k) => ({ k, l: '×', x: true })), { k: best.D, l: 'A' }] },
-          h: { from: i - 70, bands: [[best.zl, best.zh, 'Zone']] } } };
+        viz: { w: { from, older, bands: [[best.zl, best.zh, 'Band']], marks },
+          h: { from: i - 70, bands: [[best.zl, best.zh, 'Band']] } } };
     },
   };
 }
@@ -269,7 +291,7 @@ export function signalsOf(rule, M) {
   let last = -1;
   for (let i = 0; i < M.n; i++) {
     const d = M.dOf[i];
-    while (last < d) st.day(++last);
+    while (last < d) st.day(++last, i);
     const s = st.candle(i, d, trendUp(M, i));
     if (s) out.set(i, s);
   }

@@ -4,7 +4,7 @@
 // 8k: Regeln 1, 2, 3, 4, 6 mit Blindprobe. Vor dem ersten Lauf zeigt die App fünf Einstiege ohne Ergebnis; erst nach der
 // Bestätigung wird „Entwicklung rechnen“ für diese Regel frei.
 import { RULES, LT, runLongTest, verdict, loadResults, saveResults, resultText, fmtR, loadMarkets, blindSample, loadBlind, saveBlind, blindOk, loadGaps, saveGaps, gapsText } from './core-longtest.js';
-import { LTR, gapTimes } from './core-ltrules.js';
+import { ruleVer, gapTimes, signalsOf } from './core-ltrules.js';
 import { blindHtml } from './ui-blindchart.js';
 import { loadMeta, phaseOf, getSeries } from './core-binance.js';
 import { esc, tipInline } from './ui-parts.js';
@@ -56,7 +56,7 @@ function blindBlock() {
   const ok = blindOk(rule);
   return `<div class="lt-per"><h4>Blindprobe · ${esc(RULES[rule].label)}</h4>
     <p class="set-hint">${blind.total ? `Fünf zufällig gezogene Einstiege aus der Entwicklung (von ${blind.total}). Ohne Coin, ohne Datum, ohne Ergebnis und ohne die Kerzen danach. Trifft das, was du meinst?` : 'Die Regel feuert in der Entwicklung kein einziges Mal.'}</p>
-    ${rule === 'r1' ? '<p class="set-hint">Im Tagesbild: • = Berührung (eine Körperkante liegt in der Zone) · × = nur ein Docht tippt die Zone an, das zählt nicht · A = Ausbruchstag.</p>' : ''}
+    ${rule === 'r1' ? '<p class="set-hint">Im ersten Bild: • = Berührung (eine Körperkante liegt im Band) · × = nur ein Docht tippt das Band an, das zählt nicht · A = Schluss des Ausbruchstags.</p>' : ''}
     ${blind.cards.map((c, k) => `<div class="lt-bcard"><b>Nr. ${k + 1}${blind.extra[k] ? ' · gezielt gewählt: Docht ohne Körper (×)' : ''}</b>${c}</div>`).join('')}
     <div class="mk-actions">${ok ? '<span class="long">Bestätigt ✓</span>' : '<button type="button" class="small-btn" id="lt-bok">Das ist, was ich meine</button>'}
       <button type="button" class="small-btn ghost" id="lt-bno">Nein: Rückmeldung kopieren</button>
@@ -115,6 +115,8 @@ async function showBlind() {
   try {
     const L = gapLoader(), { Ms } = await loadMarkets(m, { load: L.load, pause: tick, onProgress: progress });
     L.done();
+    // 8k2: Markt für Markt rechnen und dazwischen Luft holen, damit die Seite nicht einfriert (Regel 1 braucht am längsten)
+    for (let k = 0; k < Ms.length; k++) { signalsOf(my, Ms[k]); if (k % 5 === 4) { note = `Suche Einstiege: ${k + 1} von ${Ms.length} Märkten …`; const s = $('lt-area')?.querySelector('[role=status]'); if (s) s.textContent = note; await tick(); } }
     const b = blindSample(my, Ms, m.stichtag);
     blind = { rule: my, total: b.total, cards: b.items.map(blindHtml), extra: b.items.map((x) => !!x.extra), codes: b.items.map((x) => btoa(`${x.coin}|${x.t}`)) };
     note = '';
@@ -151,10 +153,10 @@ export function initLongTest() {
     if (b?.id === 'lt-dev') run(false);
     if (b?.id === 'lt-blind') showBlind();
     if (b?.id === 'lt-bclose') { blind = null; paint(); }
-    if (b?.id === 'lt-bok') { saveBlind({ ...loadBlind(), [rule]: { ok: true, rv: LTR.ver, at: Date.now(), ver: VER() } }); note = 'Blindprobe bestätigt. „Entwicklung rechnen“ ist frei.'; blind = null; paint(); }
+    if (b?.id === 'lt-bok') { saveBlind({ ...loadBlind(), [rule]: { ok: true, rv: ruleVer(rule), at: Date.now(), ver: VER() } }); note = 'Blindprobe bestätigt. „Entwicklung rechnen“ ist frei.'; blind = null; paint(); }
     if (b?.id === 'lt-bno') {
-      const txt = `WOLF DESK – Blindprobe „${RULES[rule].label}“: passt NICHT.\nApp ${VER()} · Fassung der Regeln ${LTR.ver}\nProben: ${(blind?.codes || []).join(' ')}\nWas nicht passt (bitte mit Nr.): `;
-      saveBlind({ ...loadBlind(), [rule]: { ok: false, rv: LTR.ver, at: Date.now(), ver: VER() } });
+      const txt = `WOLF DESK – Blindprobe „${RULES[rule].label}“: passt NICHT.\nApp ${VER()} · Fassung der Regel ${ruleVer(rule)}\nProben: ${(blind?.codes || []).join(' ')}\nWas nicht passt (bitte mit Nr.): `;
+      saveBlind({ ...loadBlind(), [rule]: { ok: false, rv: ruleVer(rule), at: Date.now(), ver: VER() } });
       try { await navigator.clipboard.writeText(txt); note = 'Rückmeldung kopiert. Schreib dazu, was nicht passt, und schick sie Claude. Die Regel bleibt gesperrt.'; } catch { note = 'Kopieren hat nicht geklappt. Schreib Claude, welche Nummer nicht passt und warum.'; }
       paint();
     }

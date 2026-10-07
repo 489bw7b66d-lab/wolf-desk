@@ -1,43 +1,48 @@
 # Wolf Desk – Masterplan
 
-Stand: 07.10.2026, 11:50 · Code: Etappe 8k1 · 930 Tests · auf dem iPhone geprüft bis 8j (852 von 852 am 07.10. um 00:38), 8k und 8k1 noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
+Stand: 07.10.2026, 14:45 · Code: Etappe 8k2 · 933 Tests · auf dem iPhone läuft 8k1 (laut Export vom 07.10., 12:57; die Zahl auf der Testseite hat Jensen nicht gemeldet), 8k2 noch nicht · **Zufalls-Maßstab ausgewertet: „Neu im Trend" besteht Messlatte A nicht, die vorab festgelegte Folge gilt (Abschnitt 11)**
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
 
 ---
 
-## Übergabe (07.10.2026, 11:50, nach dem Bau von 8k1)
+## Übergabe (07.10.2026, 14:45, nach dem Bau von 8k2)
 
-**Was am 07.10. vormittags geschah:**
-- **Lesarten 11 bis 16** für die Regeln 1, 2, 3, 4 und 6 geschrieben, von zwei zweiten Meinungen geprüft (ein Blick in die Zukunft in Lesart 12 gefunden und behoben), von Jensen um 09:53 bestätigt. Wortlaut im `TESTPLAN-PROTOKOLL.md`.
-- **Änderung 2 „Grundsatz Körper“** (Jensen, 09:53 für Regel 2, 11:19 und 11:25 für alle: „immer mit dem Kerzenkörper rechnen“; von der zweiten Meinung ausgearbeitet): Wo ein Level liegt und wann der Kurs es erreicht, entscheidet die Körperkante. Betrifft Regel 1 (Level, Berührung, Retest), Regel 2 (Impuls, Zone) und Regel 3 (Annäherung). **Bewusst unverändert:** Sweep (Regel 4) und Order Block (Regel 6), Rahmen, ATR, Zufalls-Vergleich. Damit ist Körper oder Docht für alle Regeln abgeschlossen.
-- **Blindprobe** (Vorschlag der zweiten Meinung, von Jensen bestätigt): Vor dem ersten Lauf zeigt die App je Regel fünf Einstiege ohne Coin, Datum und Ergebnis. Erst nach „Das ist, was ich meine“ wird „Entwicklung rechnen“ für diese Regel frei.
-- **Reihenfolge entschieden (Jensen, 08:29):** erst 8k, dann Testplan 2 „Marktphase“, danach „Umstellen“.
-- **Paket 8k gebaut, danach 8k1** mit dem Grundsatz Körper (Abschnitt 9). 8k1 enthält alles aus 8k; wer 8k nicht eingespielt hat, nimmt nur 8k1. Noch nicht auf dem iPhone.
+**Was am 07.10. geschah:**
+- **Lesarten 11 bis 16** für die Regeln 1, 2, 3, 4 und 6, von zwei zweiten Meinungen geprüft, von Jensen bestätigt. Wortlaut im `TESTPLAN-PROTOKOLL.md`.
+- **Änderung 2 „Grundsatz Körper“** (Jensen: „immer mit dem Kerzenkörper rechnen“): Wo ein Level liegt und wann der Kurs es erreicht, entscheidet die Körperkante. Ausnahmen: Sweep (Regel 4) und der Docht-Teil des Order Blocks (Regel 6).
+- **Blindproben** (je Regel fünf Einstiege ohne Coin, Datum und Ergebnis): Regel 2, 3, 4 und 6 von Jensen bestätigt. **Regel 1 abgelehnt** (drei von fünf Tagesbildern passten nicht).
+- **Umgekehrter Bildtest für Regel 1:** Jensen hat vier Charts mit von Hand gezeichneten Leveln geschickt, Claude hat die Regel in Worten zurückgeschrieben, Jensen hat bestätigt. Daraus **Änderung 3: schmales Band aus dem 4H-Chart** (Breite ½ 4H-ATR, Level und Berührungen aus 4H-Körpern, mehrere Kontakte vor einem Wegdrehen sind eine Berührung).
+- **Reihenfolge entschieden (Jensen, 08:29):** erst Testplan 1 zu Ende, dann Testplan 2 „Marktphase“, danach „Umstellen“.
+- **Pakete:** 8k, 8k1 (Grundsatz Körper), 8k2 (Änderung 3, Speicher-Verbindung). 8k2 enthält alles; auf dem iPhone läuft 8k1.
+- **Vereinbart (13:46):** Solange die Lesart von Regel 1 offen ist, wird bei keinem der fünf Kandidaten „Entwicklung rechnen“ getippt.
 
 **Nächste Schritte:**
-1. 8k1 einspielen, Testseite: 930 von 930.
-2. Je Regel die Blindprobe ansehen und bestätigen oder mit „Nein: Rückmeldung kopieren“ an Claude geben. **Bei „Nein“ wird nichts gerechnet**, erst wird Code oder Lesart berichtigt (Fassung der Regeln steigt, Blindprobe gilt neu).
-3. Erst alle fünf Regeln in der Entwicklung rechnen, Ergebnisse („Ergebnis kopieren“) an Claude. Prüfung nur für Regeln, die in der Entwicklung nicht bei A und B durchfallen, je Regel ein einziges Mal. Tresor nur mit A und B in beiden Zeiträumen und 300 Trades.
-4. Danach: Testplan 2 „Marktphase“ schreiben (Abschnitt 12).
+1. 8k2 einspielen, Testseite: 933 von 933.
+2. Zweite Meinung zu Änderung 3 einholen.
+3. Neue Blindprobe für Regel 1 ansehen: als Block ja (mindestens vier von fünf Bildern passen) oder nein (ein Satz und ein Screenshot vom schlechtesten Bild). Die Bestätigungen der Regeln 2, 3, 4 und 6 bleiben gültig. **Nach einem zweiten Nein wird nicht weiter nach Augenmaß nachgebessert** (eine Runde je Regel war vereinbart): Dann entscheidet Jensen, ob Regel 1 in dieser Fassung läuft oder aus Testplan 1 herausgenommen und in einem späteren Testplan neu beschrieben wird.
+4. Erst danach alle fünf Regeln in der Entwicklung rechnen, Ergebnisse („Ergebnis kopieren“) an Claude. Prüfung nur für Regeln, die in der Entwicklung nicht bei A und B durchfallen, je Regel ein einziges Mal. Tresor nur mit A und B in beiden Zeiträumen und 300 Trades.
+5. Danach: Testplan 2 „Marktphase“ schreiben (Abschnitt 12).
 
-**Vor dem Lauf zu wissen:** Mit Körper-Berührungen feuert Regel 1 deutlich seltener (auf Zufallskursen 40 bis 60 % weniger), Regel 2 dort unter einmal je Markt und Jahr. Die Blindprobe nennt die Zahl der Einstiege in der Entwicklung („von N“), bevor ein Ergebnis bekannt ist. Unter 300 Trades besteht eine Regel B nicht; gelockert wird nichts.
+**Lehre für künftige Regeln (von Jensen selbst benannt):** Worte reichen nicht, Claude sieht seine Linien nicht. Reihenfolge deshalb: Jensen zeichnet drei bis fünf Beispiele von Hand (dazu ein, zwei Gegenbeispiele), Claude schreibt die Regel in einfachen Worten zurück, Jensen korrigiert einmal, dann Code, dann Blindprobe als Abnahme. Beispiele möglichst ohne Blick aufs Ergebnis wählen (am besten in Bildern der Blindprobe zeichnen).
+
+**Vor dem Lauf zu wissen:** Regel 2 feuert auf Zufallskursen unter einmal je Markt und Jahr. Die Blindprobe nennt die Zahl der Einstiege in der Entwicklung („von N“), bevor ein Ergebnis bekannt ist. Unter 300 Trades besteht eine Regel B nicht; gelockert wird nichts.
 
 Hinweise für den Bau (alles zuerst im Code nachprüfen):
-- `core-ltrules.js`: je Regel eine Zustandsmaschine mit `day(d)` (ein neuer Tag ist abgeschlossen) und `candle(i, d, up)` (4H-Kerze i, `up` = Tagestrend). `signalsOf(rule, M)` liefert eine Map 4H-Index → `{ mk: Merker, viz: Zeichenhilfe }`. Feste Werte in `LTR`; **`LTR.ver` erhöhen, sobald sich der Code einer Regel ändert** (dann gelten die Blindproben nicht mehr). `trendUp` steht jetzt dort und wird vom Vergleich mitbenutzt.
+- `core-ltrules.js`: je Regel eine Zustandsmaschine mit `day(d)` (ein neuer Tag ist abgeschlossen) und `candle(i, d, up)` (4H-Kerze i, `up` = Tagestrend). `signalsOf(rule, M)` liefert eine Map 4H-Index → `{ mk: Merker, viz: Zeichenhilfe }`. Feste Werte in `LTR`; **In `LTR.rv` die Fassung DER Regel erhöhen, deren Code sich ändert** (dann gilt nur ihre Blindprobe nicht mehr; `ruleVer(rule)`). `trendUp` steht jetzt dort und wird vom Vergleich mitbenutzt.
 - `core-longtest.js`: `RULES` (mit `blind: true` für die fünf neuen), `fireOf`, `runRule` (zählt verfallene Signale in `trades.missed`), `loadMarkets`, `marketYears`, `blindSample`, `blindOk`, `loadBlind` / `saveBlind` (`wolfdesk.ltblind`), Lücken (`wolfdesk.ltgaps`), `resultText` mit Merker-Zeilen.
 - `ui-blindchart.js` zeichnet die Blindprobe als SVG-Text. `ui-longtest.js` sperrt „Entwicklung rechnen“, bis `blindOk` gilt.
 - **Der Zufalls-Vergleich wird nicht mehr angefasst.** Fällt eine Regel durch, wird nicht am Würfel und nicht an der Lesart gedreht.
 - Vor der Lieferung wie immer: alle Tests, verstellte Einstellungen, Sichtprüfung in iPhone-Größe, Wächter, Zeile „nicht getestet“.
 
-**Offen beim Nutzer:** die Schritte 1 bis 3 oben. Freiwillig: Prüfung der beiden Vergleichsregeln ansehen.
+**Offen beim Nutzer:** die Schritte 1 bis 4 oben. Freiwillig: Prüfung der beiden Vergleichsregeln ansehen.
 
-**Sachlicher Hinweis zum Konto (Export vom 07.10., 00:43, ohne Beträge):** Das Gesamt-Risiko bis zu den Stops lag bei rund 20 % vom Konto (Budget 6 %), der Tagesverlust bei rund 10 % (Grenze 5 %), bei zwei Positionen lag die Liquidation weniger als 1 % hinter dem Stop. Claude hat es am 07.10. zweimal angesprochen; Jensen hat nicht darauf geantwortet. Das ist das Muster aus der Selbstanalyse (Hebel zu hoch im Verhältnis zum Stop); der Hebel dagegen ist die Positionsgröße, nicht ein engerer Stop.
+**Sachlicher Hinweis zum Konto (Export vom 07.10., 00:43, ohne Beträge):** Das Gesamt-Risiko bis zu den Stops lag bei rund 20 % vom Konto (Budget 6 %), der Tagesverlust bei rund 10 % (Grenze 5 %), bei zwei Positionen lag die Liquidation weniger als 1 % hinter dem Stop. Claude hat es am 07.10. dreimal angesprochen (zuletzt zum Export von 12:57: Gesamt-Risiko weiter rund 20 %, Tagesverlust rund 16 %, bei einer Position die Liquidation 0,1 % hinter dem Stop); Jensen hat nicht darauf geantwortet. Das ist das Muster aus der Selbstanalyse (Hebel zu hoch im Verhältnis zum Stop); der Hebel dagegen ist die Positionsgröße, nicht ein engerer Stop.
 
 **Erste Nachricht für den neuen Chat:**
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang: MASTERPLAN.md, TESTPLAN.md, TESTPLAN-PROTOKOLL.md und der aktuelle Code als ZIP. Bitte lies die drei Dokumente ganz, zuerst den Abschnitt „Übergabe“ im Masterplan, und arbeite genau so weiter, wie es in Abschnitt 2 steht (Ton, Regeln, Lehren). Hol dir Datum und Uhrzeit von der Uhr, prüf, ob die Versionsnummer im Code zum Masterplan passt (8k1), und lass alle Tests laufen (930). Sag mir kurz, was du vorgefunden hast und was du vorhast, bevor du baust. Stand: 8k1 ist gebaut (Regeln 1, 2, 3, 4, 6 mit Blindprobe, Grundsatz Körper), die lange Historie von Binance ist geladen und eingefroren, Regel 5 ist in der Prüfung durchgefallen. Der Testplan ist seit 06.10.2026 fest, der Zufalls-Vergleich seit Änderung 1 und die Lesarten 11 bis 16 samt Änderung 2 (Grundsatz Körper) seit 07.10.: bitte an allem nichts ändern. Nächster Schritt: siehe „Nächste Schritte“ in der Übergabe. Aussagen über die App nur nach einem Blick in den Code. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle. Keine Beträge oder Zugangsdaten in Dateien fürs Repository. Ich bin Buddy2, du bist Buddy1, und wir berichten dem Chef. 🐺
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang: MASTERPLAN.md, TESTPLAN.md, TESTPLAN-PROTOKOLL.md und der aktuelle Code als ZIP. Bitte lies die drei Dokumente ganz, zuerst den Abschnitt „Übergabe“ im Masterplan, und arbeite genau so weiter, wie es in Abschnitt 2 steht (Ton, Regeln, Lehren). Hol dir Datum und Uhrzeit von der Uhr, prüf, ob die Versionsnummer im Code zum Masterplan passt (8k2), und lass alle Tests laufen (933). Sag mir kurz, was du vorgefunden hast und was du vorhast, bevor du baust. Stand: 8k2 ist gebaut (Regeln 1, 2, 3, 4, 6 mit Blindprobe; Regel 1 als schmales 4H-Band, Blindprobe dafür offen; die anderen vier bestätigt), die lange Historie von Binance ist geladen und eingefroren, Regel 5 ist in der Prüfung durchgefallen. Der Testplan ist seit 06.10.2026 fest, der Zufalls-Vergleich seit Änderung 1 und die Lesarten 11 bis 16 samt Änderung 2 (Grundsatz Körper) und Änderung 3 (Regel 1) seit 07.10.: bitte an allem nichts ändern. Nächster Schritt: siehe „Nächste Schritte“ in der Übergabe. Aussagen über die App nur nach einem Blick in den Code. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle. Keine Beträge oder Zugangsdaten in Dateien fürs Repository. Ich bin Buddy2, du bist Buddy1, und wir berichten dem Chef. 🐺
 
 ---
 
@@ -64,7 +69,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8k1). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8k2). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -89,7 +94,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8k1` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8k2` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -145,7 +150,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 43 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8k1">` und eine Import-Liste mit `?v=8k1` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8k2">` und eine Import-Liste mit `?v=8k2` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -367,6 +372,14 @@ jobs:
 - 7 neue Tests (930): Körper-Berührung, Docht ohne Körper, Plateau, Tick-Fall, Docht allein ist keine VWAP-Annäherung, gezieltes sechstes Bild, alte Fassung wird nicht gezeigt. Geprüft: alle Tests, Testseite und Ablauf im Browser in iPhone-Größe, Nachweis an Zufallskursen neu gerechnet (Plätze 44 bis 58 %). Wächter unberührt.
 - **Nicht getestet:** alles auf echten Kerzen. Regel 1 feuert mit Körper-Berührungen deutlich seltener; ob sie und Regel 2 die 300 Trades erreichen, ist offen.
 
+**8k2 „Regel 1 als schmales 4H-Band“ (07.10., 14:45, reines Mess-Paket, ersetzt 8k1):**
+- **Änderung 3:** Regel 1 neu nach Jensens Bildern (Wortlaut im Protokoll, Lesart 12). Fassung je Regel (`LTR.rv`): Regel 1 hat Fassung 3 und braucht eine neue Blindprobe, die Bestätigungen der Regeln 2, 3, 4 und 6 bleiben gültig.
+- **Blindprobe Regel 1:** erstes Bild jetzt ein 4H-Chart über die Berührungen (bis 420 Kerzen, ältere Berührungen werden als Zahl genannt), zweites Bild die letzten Tage vergrößert. Die Suche nach Einstiegen läuft Markt für Markt mit Pausen, damit die Seite nicht einfriert.
+- **Speicher-Verbindung:** Auf dem iPhone ließ sich die Blindprobe zeitweise nicht mehr öffnen; nach einem Neustart der App ging es wieder (von Jensen mit 👍 quittiert, nicht ausdrücklich bestätigt). Vermutete Ursache: iOS kappt die Verbindung zum Kerzen-Speicher, wenn die App im Hintergrund war. `core-binance.js` verwirft die Verbindung jetzt bei einem Fehler oder nach 8 Sekunden ohne Antwort beim Lesen und versucht es einmal neu. Im Browser nachgestellt (Fehler und Hänger). `core-btstore.js` hat dasselbe Muster und ist noch nicht geändert.
+- **Protokoll:** Abnahmen der Blindproben, Prüfung von „Neu im Trend“ (01:32, von Jensen geöffnet), Datum der fehlenden 4H-Kerze (19.02.2020, 12:00 UTC).
+- 3 neue Tests (933). Geprüft: alle Tests, Tests der Messmaschine und der Regeln mit vier Sätzen verstellter Einstellungen, Testseite und Ablauf im Browser in iPhone-Größe, Größe wie auf dem iPhone (50 Märkte, volle Historie: Regel 1 rund 1,5 Sekunden am Rechner), Nachweis an Zufallskursen (Regel 1 bei 48 %). Wächter unberührt.
+- **Nicht getestet:** alles auf echten Kerzen; ob die neu aufgebaute Speicher-Verbindung das Problem auf dem iPhone wirklich behebt; Tempo der Blindprobe von Regel 1 auf dem iPhone.
+
 **Kleinigkeiten, die noch offen sind:** `startCapital: 1500` in `config.js` ist ein Platzhalter (geklärt am 07.10. über den Export: Der Nutzer hat einen eigenen Wert als Abweichung gespeichert, er liegt nur auf dem iPhone und geht nicht an den Wächter); die Zeile bleibt, wie sie ist · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
 
 ---
@@ -526,7 +539,7 @@ Der Nutzer hat bezweifelt, dass die gewachsene Testreihe richtig aufgebaut ist, 
 
 **Reihenfolge am 06.10. abends vom Nutzer geändert („so einfach und so schnell wie möglich, so valide wie nötig"):** erst der **Testplan** (erledigt: `TESTPLAN.md`, vom Nutzer am 06.10. um 22:12 bestätigt, seitdem fest; **gehört zusammen mit diesem Masterplan in jeden neuen Chat**), dann **Binance** (Punkt 4, nächster Bau-Schritt), dann **Umstellen** (Punkt 1). Binance ist vom iPhone des Nutzers aus erreichbar (Test-Adresse im Browser geprüft, 06.10.); offen ist, ob die App selbst laden darf. Der Nutzer hat ein Binance-Konto; es wird nicht gebraucht, und API-Schlüssel kommen nie in App oder Repository.
 
-**Stand (07.10., 11:50):** 8k1 ist gebaut (Regeln 1, 2, 3, 4, 6 mit Blindprobe, Grundsatz Körper), noch nicht auf dem iPhone. **Reihenfolge von Jensen am 07.10. um 08:29 entschieden: erst Testplan 1 zu Ende (8k), dann Testplan 2 „Marktphase“, danach „Umstellen“.** Früherer Stand: 8j (Änderung 1: neuer Zufalls-Vergleich) ist eingespielt und geprüft, die Maschine ist freigegeben. Regel 5 ist in der Prüfung durchgefallen (07.10.). **Nächster Bau-Schritt war 8k, in einem frischen Chat** (Füllstand dieses Chats am 07.10. um 00:45 nach Schätzung bei 75 bis 80 %; außerdem ist Claudes entpackte Code-Kopie durch einen Neustart der Arbeitsumgebung weg). In den neuen Chat gehören: Masterplan, `TESTPLAN.md`, `TESTPLAN-PROTOKOLL.md` und der aktuelle Code als ZIP. 8k: die Regeln 1, 2, 3, 4 und 6 (in 8i und 8j steht dafür teils noch „8j“). Ursprünglicher Wortlaut: die sechs Regeln aus dem Testplan als Engines auf der langen Historie (Paket 8i), danach „Umstellen“.
+**Stand (07.10., 14:45):** 8k2 ist gebaut; auf dem iPhone läuft 8k1. Blindproben der Regeln 2, 3, 4, 6 bestätigt, Regel 1 neu aufgesetzt (Änderung 3), noch nichts gerechnet. **Reihenfolge von Jensen am 07.10. um 08:29 entschieden: erst Testplan 1 zu Ende (8k), dann Testplan 2 „Marktphase“, danach „Umstellen“.** Früherer Stand: 8j (Änderung 1: neuer Zufalls-Vergleich) ist eingespielt und geprüft, die Maschine ist freigegeben. Regel 5 ist in der Prüfung durchgefallen (07.10.). **Nächster Bau-Schritt war 8k, in einem frischen Chat** (Füllstand dieses Chats am 07.10. um 00:45 nach Schätzung bei 75 bis 80 %; außerdem ist Claudes entpackte Code-Kopie durch einen Neustart der Arbeitsumgebung weg). In den neuen Chat gehören: Masterplan, `TESTPLAN.md`, `TESTPLAN-PROTOKOLL.md` und der aktuelle Code als ZIP. 8k: die Regeln 1, 2, 3, 4 und 6 (in 8i und 8j steht dafür teils noch „8j“). Ursprünglicher Wortlaut: die sechs Regeln aus dem Testplan als Engines auf der langen Historie (Paket 8i), danach „Umstellen“.
 
 **Gewichtung nach den ersten Läufen (07.10., 01:28, von Jensen bestätigt):**
 

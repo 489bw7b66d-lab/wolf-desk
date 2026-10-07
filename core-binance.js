@@ -201,18 +201,28 @@ function idb() {
   if (!dbp) dbp = new Promise((res, rej) => {
     const r = indexedDB.open(DB, 1);
     r.onupgradeneeded = () => r.result.createObjectStore(STORE);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
+    // 8k2: iOS kappt die Verbindung, wenn die App im Hintergrund war. Dann beim nächsten Zugriff neu öffnen.
+    r.onsuccess = () => { const db = r.result; db.onclose = () => { dbp = null; }; db.onversionchange = () => { try { db.close(); } catch { /* egal */ } dbp = null; }; res(db); };
+    r.onerror = () => { dbp = null; rej(r.error); };
   });
   return dbp;
 }
 const wait = (p, ms, fb) => Promise.race([p, new Promise((res) => setTimeout(() => res(fb), ms))]);
-async function req(mode, fn) {
-  const db = await idb();
+function once(db, mode, fn) {
   return new Promise((res, rej) => {
     const t = db.transaction(STORE, mode), q = fn(t.objectStore(STORE));
     t.oncomplete = () => res(q?.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
   });
+}
+// 8k2: Scheitert ein Zugriff (gekappte Verbindung), wird die Verbindung verworfen und genau einmal neu versucht.
+async function req(mode, fn) {
+  const attempt = async () => {
+    const db = await idb(), run = once(db, mode, fn);
+    if (mode !== 'readonly') return run;                       // Schreiben darf dauern (große Reihen), nur Lesen bekommt eine Frist
+    let timer; const late = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('Speicher antwortet nicht')), 8000); });
+    try { return await Promise.race([run, late]); } finally { clearTimeout(timer); }
+  };
+  try { return await attempt(); } catch { dbp = null; return once(await idb(), mode, fn); }
 }
 const key = (tf, coin) => `${tf}:${coin}`;
 // true = sicher gespeichert. false = Speicher voll, gesperrt oder zu langsam (dann gilt der Markt als nicht geladen).

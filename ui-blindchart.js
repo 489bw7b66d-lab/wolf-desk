@@ -13,7 +13,7 @@ export function panelSvg(get, from, to, spec = {}, { signal = false, max = 300 }
   let lo = Math.min(...cs.map((c) => c.l)), hi = Math.max(...cs.map((c) => c.h));
   for (const b of spec.bands || []) { lo = Math.min(lo, b[0]); hi = Math.max(hi, b[1]); }
   for (const L of spec.lines || []) { lo = Math.min(lo, L.y); hi = Math.max(hi, L.y); }
-  const span = hi - lo || 1, step = (W - PL - PR) / n, bw = Math.max(1, Math.min(7, step * 0.7));
+  const span = hi - lo || 1, step = (W - PL - PR) / n, bw = Math.max(0.5, Math.min(7, step * 0.7)), sw = Math.round(Math.min(1, Math.max(0.4, step * 0.8)) * 10) / 10;
   const x = (k) => PL + (k - from + 0.5) * step, y = (v) => PT + (1 - (v - lo) / span) * (H - PT - PB);
   let s = `<svg class="lt-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Kerzenbild ohne Coin und Datum">`;
   for (const b of spec.bands || []) {
@@ -27,7 +27,7 @@ export function panelSvg(get, from, to, spec = {}, { signal = false, max = 300 }
   if (signal) s += `<rect x="${f1(x(to) - step / 2)}" y="${PT - 6}" width="${f1(step)}" height="${H - PT - PB + 12}" style="fill:var(--text);opacity:.10"/>`;
   cs.forEach((c, j) => {
     const k = from + j, col = c.c >= c.o ? 'var(--ok)' : 'var(--bad)', top = y(Math.max(c.o, c.c)), bot = y(Math.min(c.o, c.c));
-    s += `<line x1="${f1(x(k))}" x2="${f1(x(k))}" y1="${f1(y(c.h))}" y2="${f1(y(c.l))}" style="stroke:${col};stroke-width:1"/>`;
+    s += `<line x1="${f1(x(k))}" x2="${f1(x(k))}" y1="${f1(y(c.h))}" y2="${f1(y(c.l))}" style="stroke:${col};stroke-width:${sw}"/>`;
     s += `<rect x="${f1(x(k) - bw / 2)}" y="${f1(top)}" width="${f1(bw)}" height="${f1(Math.max(1, bot - top))}" style="fill:${col}"/>`;
   });
   for (const m of spec.marks || []) {
@@ -42,7 +42,8 @@ export function panelSvg(get, from, to, spec = {}, { signal = false, max = 300 }
 export function blindHtml(item) {
   const { M, i, viz } = item, g = M.g, d = M.dOf[i];
   let h = '';
+  if (viz.w) h += `<p class="lt-cap">4H-Chart über die Berührungen${viz.w.older ? ` · ${viz.w.older} ältere links außerhalb des Bildes` : ''}</p>` + panelSvg((k) => ({ o: g.o[k], h: g.h[k], l: g.l[k], c: g.c[k] }), viz.w.from, i, viz.w, { signal: true, max: 440 });
   if (viz.d) h += `<p class="lt-cap">Tageschart bis zum letzten abgeschlossenen Tag</p>` + panelSvg((k) => M.daily[k], viz.d.from, d, viz.d, { max: 260 });
-  if (viz.h) h += `<p class="lt-cap">4H-Chart · die letzte Kerze ist die Signalkerze</p>` + panelSvg((k) => ({ o: g.o[k], h: g.h[k], l: g.l[k], c: g.c[k] }), viz.h.from, i, viz.h, { signal: true, max: 320 });
+  if (viz.h) h += `<p class="lt-cap">${viz.w ? '4H-Chart, die letzten Tage vergrößert' : '4H-Chart'} · die letzte Kerze ist die Signalkerze</p>` + panelSvg((k) => ({ o: g.o[k], h: g.h[k], l: g.l[k], c: g.c[k] }), viz.h.from, i, viz.h, { signal: true, max: 320 });
   return h;
 }

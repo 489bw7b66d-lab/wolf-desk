@@ -138,19 +138,20 @@ Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian 
 **Lesart 11, für alle fünf Regeln**
 - Tages-ATR, EMA und Level stammen vom letzten Tag, dessen Schluss nicht nach dem Schluss der 4H-Signalkerze liegt (die Kerze, die um 00:00 UTC schließt, nutzt den eben beendeten Tag).
 - Der Tagestrend (Tages-EMA 20 über EMA 100) wird an der Signalkerze geprüft, mit derselben Funktion wie beim gewürfelten Markt des Vergleichs.
-- Swing-Punkt aus Dochten (4H-Swings der Regeln 4 und 6): strikt höher bzw. tiefer als die 5 Kerzen davor und die 5 danach; bei Gleichstand kein Swing. Körper-Swings (Tages-Swings der Regeln 1 und 2): siehe Änderung 2. Jeder Swing zählt erst nach seiner Bestätigung (5 Kerzen bzw. 5 Tage später).
+- Swing-Punkt aus Dochten (4H-Swings der Regeln 4 und 6): strikt höher bzw. tiefer als die 5 Kerzen davor und die 5 danach; bei Gleichstand kein Swing. Körper-Swings (4H-Swings der Regel 1, Tages-Swings der Regel 2): siehe Änderung 2. Jeder Swing zählt erst nach seiner Bestätigung (5 Kerzen bzw. 5 Tage später).
 - Setups laufen weiter, während im Markt ein Trade offen ist. Ein dadurch verpasster Einstieg ist verbraucht und wird gezählt („Signale verfallen“).
 - Fallen an einer Kerze mehrere Level, Tiefs oder Blöcke zusammen, ist das ein Einstieg.
 
-**Lesart 12, Regel 1 (Key-Level, Ausbruch mit Retest)**
-- Mögliche Level: bestätigte **Körper-Swings** im Tageschart (Körper-Hochs und Körper-Tiefs, Änderung 2) der bis zu 180 Tage vor dem Ausbruchstag, am Vortag schon bestätigt. Zone = Level plus und minus ¼ ATR. *(Level aus Swing-Punkten: Festlegung, nicht im Plan.)*
-- Ein ATR für Zonenbreite und Wegdrehen: der des Tages vor dem Ausbruch.
-- Berührung = **eine Körperkante einer Tageskerze liegt in der Zone; ein Docht allein zählt nicht** (Änderung 2). Aufeinanderfolgende Tage mit Körperkante in der Zone sind eine Berührung. Sie zählt nur, wenn danach innerhalb von 10 Tagen ein Tagesschluss mindestens 1 ATR jenseits der Zone liegt, zurück auf der Seite, von der der Kurs kam (Seite = Tagesschluss vor der Berührung, unter oder über dem Level). Ein Durchlauf ist keine Berührung. *(10 Tage: Festlegung, nicht im Plan.)*
+**Lesart 12, Regel 1 (Key-Level, Ausbruch mit Retest), in der Fassung von Änderung 3**
+- Mögliche Level: bestätigte **Körper-Swings im 4H-Chart** (Körper-Hochs und Körper-Tiefs, je 5 Kerzen davor und danach) der bis zu 180 Tage vor dem Ausbruchstag, vor dem Ausbruchstag schon bestätigt. *(Level aus Swing-Punkten: Festlegung, nicht im Plan.)*
+- **Band = Level plus und minus ¼ 4H-ATR** (Breite ½ ATR(14) der 4H-Kerzen, Stand: Ende des Tages vor dem Ausbruch). Auf Zufallskursen rund 40 % der Breite aus dem Testplan (½ Tages-ATR).
+- Berührung = **eine Körperkante einer 4H-Kerze liegt im Band; ein Docht allein zählt nicht.** Sie zählt nur, wenn der Kurs danach deutlich wegdreht: ein 4H-Schluss mindestens 1 **Tages**-ATR jenseits des Bandes, zurück auf der Seite, von der er kam (Seite = 4H-Schluss vor der Berührung, unter oder über dem Level), spätestens 60 Kerzen (10 Tage) nach der letzten Kerze im Band. *(Frist: Festlegung, nicht im Plan.)*
+- **Alles, was der Kurs bis zu diesem Wegdrehen am Band tut, ist eine Berührung.** Die nächste beginnt erst danach. Ein Durchlauf (Schluss 1 Tages-ATR auf der anderen Seite) ist keine Berührung. *(Festlegung, nicht im Plan; damit heißt „dreimal“ wirklich dreimal gedreht.)*
 - Jede Berührung samt Wegdrehen ist vor dem Ausbruchstag abgeschlossen. Mindestens drei Berührungen, zwischen erster und letzter mindestens 28 Tage.
-- Ausbruch = der erste Tagesschluss über der Zone (der Schluss davor lag nicht darüber).
-- Retest = **die Körper-Unterkante einer 4H-Kerze** erreicht die Zonen-Oberkante (Änderung 2), in den 4H-Kerzen nach dem Ausbruchstag und innerhalb von 10 Tagen. Einstieg = der erste 4H-Schluss über der Zone ab der Retest-Kerze, ohne eigene Frist.
-- Ein Tagesschluss unter der Zone beendet das Setup. *(Festlegung, nicht im Plan.)*
-- Überlappende Zonen: keine wird verworfen; die Merker kommen von der Zone mit den meisten Berührungen, bei Gleichstand von der höheren.
+- Ausbruch = der erste Tagesschluss über dem Band (der Schluss davor lag nicht darüber). Unverändert.
+- Retest = die Körper-Unterkante einer 4H-Kerze erreicht die Band-Oberkante, in den 4H-Kerzen nach dem Ausbruchstag und innerhalb von 10 Tagen. Einstieg = der erste 4H-Schluss über dem Band ab der Retest-Kerze, ohne eigene Frist.
+- Ein Tagesschluss unter dem Band beendet das Setup. *(Festlegung, nicht im Plan.)*
+- Überlappende Bänder: keines wird verworfen; die Merker kommen vom Band mit den meisten Berührungen, bei Gleichstand vom höheren.
 - Merker: Zahl der Berührungen · Alter des Levels (erste Berührung bis Ausbruch, in Wochen).
 
 **Lesart 13, Regel 2 (Fibonacci-Rücklauf), zusammen mit Änderung 2**
@@ -193,7 +194,7 @@ Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian 
 **Grundsatz:** Wo ein Level liegt und wann der Kurs es erreicht, entscheidet die Körperkante (Oberkante = das Größere aus Eröffnung und Schluss, Unterkante = das Kleinere). Dochte zählen nur dort, wo sie zum Wesen der Regel gehören.
 
 **Was sich gegenüber dem Wortlaut des Testplans ändert:**
-- **Regel 1:** Mögliche Level sind bestätigte Körper-Swings im Tageschart. Berührung = eine Körperkante einer Tageskerze liegt in der Zone, ein Docht allein zählt nicht (Testplan: Tageshoch oder Tagestief). Retest auf 4H = die Körper-Unterkante erreicht die Zonen-Oberkante. Wegdrehen, Ausbruch und Einstieg laufen über Schlusskurse und bleiben; Zonenbreite, Fristen, vier Wochen und überlappende Zonen bleiben.
+- **Regel 1:** Mögliche Level sind bestätigte Körper-Swings (seit Änderung 3 im 4H-Chart). Berührung = eine Körperkante liegt in der Zone, ein Docht allein zählt nicht (Testplan: Tageshoch oder Tagestief). Retest auf 4H = die Körper-Unterkante erreicht die Zonen-Oberkante. Wegdrehen, Ausbruch und Einstieg laufen über Schlusskurse und bleiben; Zonenbreite, Fristen, vier Wochen und überlappende Zonen bleiben.
 - **Regel 2:** Swing-Hoch und Swing-Tief des Impulses kommen aus den Körpern der Tageskerzen (Testplan: Tageshoch und Tagestief). „In der Zone“ wird an der Körper-Unterkante der Umkehrkerze geprüft; danach richtet sich auch der Merker für die Teilzone.
 - **Regel 3:** Die Annäherung wird an der Körper-Unterkante gemessen. Einstieg und Verfall laufen über Schlusskurse und bleiben.
 - **Gleichstand bei Körper-Swings (Regel 1 und 2):** strikt höher (tiefer) als die 5 Tage davor, höher (tiefer) oder gleich die 5 danach; es zählt der frühere Tag. Grund: Ohne Kurslücke ist die Eröffnung eines Tages der Schluss des Vortags, zwei Nachbartage teilen sich dann dieselbe Körperkante, und mit „strikt auf beiden Seiten“ gäbe es fast nie einen Körper-Swing. Eröffnet der zweite Tag einen Tick höher, zählt der zweite. *(Technische Festlegung von Claude, ohne Wahl nach Ergebnis; per Test abgesichert: Plateau und Tick-Fall ergeben je genau einen Swing.)*
@@ -205,19 +206,49 @@ Die Zahlen der Regeln selbst (Trades, Ø R) bei „Neu im Trend“ und Donchian 
 
 **Folge, vor dem ersten Lauf benannt (aus Zufallskursen, keine echten Kerzen):** Mit Körper-Berührungen feuert Regel 1 deutlich seltener als in der Docht-Fassung, auf Zufallskursen je nach Kursmodell um 40 bis 60 % weniger. Regel 2 feuert dort unter einmal je Markt und Jahr. Ob beide die 300 Trades erreichen, ist offen. Die Blindprobe nennt die Zahl der Einstiege in der Entwicklung, bevor ein Ergebnis bekannt ist. Erreicht eine Regel die 300 nicht, besteht sie B nicht; gelockert wird nichts.
 
+## Änderung 3 (07.10.2026): Regel 1 nimmt ein schmales Band aus dem 4H-Chart
+
+**Von Jensen am 07.10.2026 um 14:05 bestätigt (zur Beschreibung „stimme ich zu“, zum Einstieg „richtig“, zur Breite „ja mach das so“). Vor dem ersten Lauf eines der Kandidaten 1, 2, 3, 4, 6; von keiner dieser Regeln ist eine Zahl bekannt. Die zweite Meinung zu Änderung 3 steht noch aus und kommt vor dem ersten Lauf. Abgenommen wird mit einer neuen Blindprobe.**
+
+**Anlass:** Die Blindprobe von Regel 1 (Fassung 2, App 8k1) hat Jensen am 07.10. um 13:17 abgelehnt. Seine Notizen zu den fünf Bildern: Alle fünf 4H-Bilder passen; drei von fünf Tagesbildern passen nicht (Nr. 1 „zu ungenau, letzte Kerze bearish“, Nr. 4 und 5 „eher ein Short-Einstieg“). Danach hat er vier eigene Charts mit von Hand gezeichneten Leveln geschickt (4H-Charts von heute; der Verlauf danach ist ihm bekannt, deshalb dienen sie nur als Beschreibung seiner Handschrift, nicht als Beleg).
+
+**Was Claude daraus gelesen und Jensen bestätigt hat:**
+1. Ein Key-Level ist ein schmales waagrechtes Band.
+2. Es liegt dort, wo sich Kerzenkörper stauen; Dochte dürfen hindurchstechen.
+3. Es zählt, wenn der Kurs dort mehrmals deutlich gedreht hat, von unten oder von oben.
+4. Besonders stark ist es, wenn es die Rolle wechselt (erst Widerstand, nach dem Ausbruch Unterstützung).
+5. Er zeichnet es im 4H-Chart; die Berührungen verteilen sich über Wochen.
+Einstieg: Der Kurs kommt nach dem Ausbruch von oben auf das Band zurück, und eine 4H-Kerze schließt wieder darüber.
+
+**Was sich gegenüber dem Testplan ändert (nur Regel 1):**
+- Breite: ½ ATR der **4H-Kerzen** statt ½ Tages-ATR.
+- Level und Berührungen kommen aus dem **4H-Chart** statt aus dem Tageschart.
+- Mehrere Kontakte am Band vor einem Wegdrehen sind eine Berührung.
+
+**Was bleibt:** mindestens drei Berührungen in 180 Tagen von oben oder unten, vier Wochen zwischen erster und letzter, Wegdrehen um 1 Tages-ATR, Ausbruch per Tagesschluss, Rückkehr binnen 10 Tagen, Einstieg mit dem ersten 4H-Schluss darüber. Punkt 4 (Rollenwechsel) ist kein eigenes Kriterium; er ergibt sich beim Einstieg von selbst, weil das Band nach dem Ausbruch von oben getestet wird.
+
+**Berichtigung:** Claude hatte die neue Breite im Chat auf „ein Fünftel bis ein Viertel“ der alten geschätzt. Gemessen sind es auf Zufallskursen rund 40 %. Jensen wurde darauf hingewiesen; ob das Band schmal genug ist, zeigt die Blindprobe.
+
+**Verworfen:** Claudes Vermutungen „Einstiegskerze muss grün sein“ und „Berührungen nur von unten“ haben Jensens Bilder nicht bestätigt; sie wurden nicht eingebaut.
+
 ## Blindprobe vor dem ersten Lauf (07.10.2026, Vorschlag der zweiten Meinung, von Jensen bestätigt)
 
 - Je Regel zeigt die App fünf zufällig gezogene Einstiege der Entwicklung als Kerzenbild: Level oder Zone und die Signalkerze. Ohne Coin, ohne Datum, ohne Kurse, ohne Ergebnis und ohne eine Kerze nach dem Einstieg. Dabei wird kein Trade gerechnet.
 - Jensen sagt je Regel „Das ist, was ich meine“ oder „Nein, weil …“. Erst nach der Bestätigung gibt die App „Entwicklung rechnen“ für diese Regel frei.
-- Bei „Nein“ wird Code oder Lesart berichtigt, bevor eine Zahl bekannt ist; die Fassung der Regeln steigt und die Blindprobe gilt neu. **Zurzeit Fassung 2 (Grundsatz Körper, App 8k1).** Fassung 1 (App 8k, Regel 1 und 3 noch mit Dochten) wurde nie gerechnet.
-- Regel 1: Im Tagesbild steht • für eine Berührung (Körperkante in der Zone) und × für einen Tag, an dem nur ein Docht die Zone antippt (zählt nicht). Zeigt keines der fünf Bilder ein ×, kommt gezielt ein sechstes dazu, das eines zeigt.
+- Bei „Nein“ wird Code oder Lesart berichtigt, bevor eine Zahl bekannt ist; die Fassung der Regeln steigt und die Blindprobe gilt neu. **Zurzeit Regel 1 Fassung 3 (Änderung 3, App 8k2), die Regeln 2, 3, 4 und 6 Fassung 2 (Grundsatz Körper, App 8k1).** Fassung 1 (App 8k, Regel 1 und 3 noch mit Dochten) wurde nie gerechnet.
+- Regel 1: Im ersten Bild (4H-Chart über die Berührungen) steht • für eine Berührung (Körperkante im Band) und × für eine Kerze, bei der nur ein Docht das Band antippt (zählt nicht). Zeigt keines der fünf Bilder ein ×, kommt gezielt ein sechstes dazu, das eines zeigt.
 - Zweck: prüfen, ob der Code die Lesart trifft und die Lesart Jensens Handschrift.
 
-**Stand der Blindproben:** (wird ergänzt)
+**Stand der Blindproben (07.10.2026):** Regel 2 bestätigt (in der App, vor 12:57) · Regel 3 bestätigt um 13:46 („unterschreibe ich jedes Bild“) · Regel 4 bestätigt um 13:47 · Regel 6 bestätigt um 13:48 · **Regel 1 abgelehnt um 13:17** (Fassung 2), neu aufgesetzt mit Änderung 3 (Fassung 3, App 8k2), neue Blindprobe offen. Seit 8k2 hat jede Regel ihre eigene Fassung: Die Bestätigungen der Regeln 2, 3, 4 und 6 bleiben gültig.
 
-## Nachweis für die fünf Regeln an Zufallskursen (07.10.2026, App 8k1, Fassung 2 der Regeln, keine echten Kerzen)
+## Nachweis für die fünf Regeln an Zufallskursen (07.10.2026, App 8k2, keine echten Kerzen)
 
-Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) liegen die Regeln im festen Zufalls-Vergleich im Schnitt bei diesen Plätzen: Regel 1 bei 47 %, Regel 2 bei 50 %, Regel 3 bei 44 %, Regel 4 bei 46 %, Regel 6 bei 58 %. Der Vergleich zieht also keine der Regeln systematisch nach oben oder unten. Am Vergleich wurde nichts geändert.
+Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) liegen die Regeln im festen Zufalls-Vergleich im Schnitt bei diesen Plätzen: Regel 1 (Fassung 3) bei 48 %, Regel 2 bei 50 %, Regel 3 bei 44 %, Regel 4 bei 46 %, Regel 6 bei 58 %. Der Vergleich zieht also keine der Regeln systematisch nach oben oder unten. Am Vergleich wurde nichts geändert.
+
+## Nachträge (07.10.2026)
+
+- **Fehlende 4H-Kerze:** 19.02.2020, 12:00 UTC, bei 15 Märkten (aus dem Export vom 07.10., 12:57). Eine Kerze, passt zur vermuteten Wartungspause bei Binance.
+- **Reihenfolge:** Solange die Lesart von Regel 1 offen ist, wird bei keinem der fünf Kandidaten „Entwicklung rechnen“ getippt (mit Jensen am 07.10. um 13:46 vereinbart).
 
 ## Läufe
 
@@ -237,3 +268,10 @@ Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) 
 - A: Entwicklung ja · Prüfung nein · B: Entwicklung ja · Prüfung ja · Trades gesamt 609 (nötig 300)
 
 **Urteil: Regel 5 nicht bestanden.** Sie geht nicht in den Tresor und wird nicht nachgebessert. Der Blick in die Prüfung ist für Regel 5 verbraucht. Die Prüfung der Vergleichsregeln ist nicht angesehen. Tresor gesperrt.
+
+### 07.10.2026, 01:32 · App 8j · Zufalls-Vergleich Fassung 2 · Prüfung von „Neu im Trend“ (Vergleichsregel, von Jensen geöffnet; nachgetragen aus dem Export vom 07.10., 12:57)
+
+- **Neu im Trend, Prüfung (2024 bis 25.09.2025):** 858 Trades · Ø ±0,00R (Spanne −0,23R bis +0,25R, 21 Monate) · Treffer 41 % · Zufall selbe Kerze Ø +0,01R (−0,03R bis +0,04R, 200 Durchgänge, je rund 858 Trades) · besser als 30 % der Durchgänge · Rahmen allein Ø +0,02R
+- A: Entwicklung nein · Prüfung nein · B: Entwicklung ja · Prüfung nein · Trades gesamt 1.793
+
+**Einordnung:** Vergleichsregel, zählt nicht als Kandidat. Bestätigt den Befund: kein nachweisbarer Vorteil gegenüber einem beliebigen Markt im Aufwärtstrend zur selben Zeit. Die Prüfung von Donchian ist weiter nicht angesehen. Tresor gesperrt.

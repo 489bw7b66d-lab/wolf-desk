@@ -9,7 +9,7 @@ import { simulateTrade } from './core-backtest.js';
 import { ema, atr } from './core-indicators.js';
 import { mulberry32, hashStr } from './core-randombase.js';
 import { BN, periods, periodOf, unpack } from './core-binance.js';
-import { trendUp, signalsOf, markerTable, NEW_RULES, LTR } from './core-ltrules.js';
+import { trendUp, signalsOf, markerTable, NEW_RULES, ruleVer } from './core-ltrules.js';
 
 const DAY = 864e5, H4 = 4 * 36e5;
 // Feste Werte des Tests. Bewusst NICHT aus den Einstellungen der App: Wer später seinen Ausstiegsplan ändert, ändert den Test nicht.
@@ -316,7 +316,7 @@ export function verdict(rule, dev, check) {
 const KEY = 'wolfdesk.lt';
 // Ergebnisse mit dem alten Zufalls-Vergleich (8i) werden nicht mehr gezeigt: Sie sind laut Protokoll ungültig.
 // 8k1: Ergebnisse der Regeln 1, 2, 3, 4, 6 gelten nur für die Fassung der Regeln, mit der sie gerechnet wurden.
-export const validResults = (r) => Object.fromEntries(Object.entries(r && typeof r === 'object' ? r : {}).filter(([, v]) => v && v.cmp === LT.cmp && (v.dev?.rv == null || v.dev.rv === LTR.ver)));
+export const validResults = (r) => Object.fromEntries(Object.entries(r && typeof r === 'object' ? r : {}).filter(([k, v]) => v && v.cmp === LT.cmp && (v.dev?.rv == null || v.dev.rv === ruleVer(k))));
 export function loadResults() { try { return validResults(JSON.parse(globalThis.localStorage?.getItem(KEY) || 'null')); } catch { return {}; } }
 export function saveResults(r) { try { globalThis.localStorage?.setItem(KEY, JSON.stringify(r)); return true; } catch { return false; } }
 
@@ -371,7 +371,7 @@ export async function runLongTest(rule, meta, { withCheck = false, load, onProgr
     res[p] = periodResult(mine, rnd[p], range[p], plain[p]);
     if (NEW_RULES.includes(rule)) { // 8k: Merker (nur beschreibend), verfallene Signale, Einstiege je Markt und Jahr
       const my = marketYears(Ms, meta.stichtag, p);
-      res[p].mk = markerTable(mine); res[p].missed = missed[p] || 0; res[p].perMY = my > 0 ? mine.length / my : null; res[p].rv = LTR.ver;
+      res[p].mk = markerTable(mine); res[p].missed = missed[p] || 0; res[p].perMY = my > 0 ? mine.length / my : null; res[p].rv = ruleVer(rule);
     }
   }
   return res;
@@ -382,11 +382,11 @@ export async function runLongTest(rule, meta, { withCheck = false, load, onProgr
 export function blindSample(rule, Ms, stichtag, k = 5) {
   const all = [];
   Ms.forEach((M, m) => { for (const [i, s] of signalsOf(rule, M)) if (periodOf(entryTime(M, i), stichtag) === 'dev' && canEnter(M, i)) all.push({ m, i, s }); });
-  const rng = mulberry32((LT.seed ^ hashStr('blind|' + rule) ^ LTR.ver) >>> 0), pick = [];
+  const rng = mulberry32((LT.seed ^ hashStr('blind|' + rule) ^ ruleVer(rule)) >>> 0), pick = [];
   for (let n = Math.min(k, all.length); pick.length < n;) { const x = all[Math.floor(rng() * all.length)]; if (!pick.includes(x)) pick.push(x); }
   // 8k1, nur Regel 1: Zeigt keines der fünf Bilder einen Tag, an dem bloß ein Docht die Zone antippt (zählt nicht als Berührung),
   // kommt gezielt ein sechstes dazu, das so einen Tag zeigt. Jensen soll sehen, was der Grundsatz Körper ausschließt.
-  const hasWick = (x) => (x.s.viz?.d?.marks || []).some((m) => m.x);
+  const hasWick = (x) => (x.s.viz?.w?.marks || []).some((m) => m.x && m.k >= x.s.viz.w.from);
   let extra = null;
   if (rule === 'r1' && pick.length && !pick.some(hasWick)) { const cand = all.filter((x) => hasWick(x) && !pick.includes(x)); if (cand.length) extra = cand[Math.floor(rng() * cand.length)]; }
   const item = (x, ex) => ({ coin: Ms[x.m].coin, i: x.i, t: entryTime(Ms[x.m], x.i), mk: x.s.mk, viz: x.s.viz, M: Ms[x.m], ...(ex ? { extra: true } : {}) });
@@ -396,7 +396,7 @@ const BKEY = 'wolfdesk.ltblind';
 export function loadBlind() { try { return JSON.parse(globalThis.localStorage?.getItem(BKEY) || '{}') || {}; } catch { return {}; } }
 export function saveBlind(b) { try { globalThis.localStorage?.setItem(BKEY, JSON.stringify(b)); return true; } catch { return false; } }
 // Darf die Regel gerechnet werden? Regeln mit Blindprobe erst, wenn Jensen sie für diese Fassung der Regeln bestätigt hat.
-export const blindOk = (rule, b = loadBlind()) => !RULES[rule]?.blind || (b[rule]?.ok === true && b[rule]?.rv === LTR.ver);
+export const blindOk = (rule, b = loadBlind()) => !RULES[rule]?.blind || (b[rule]?.ok === true && b[rule]?.rv === ruleVer(rule));
 
 // Fehlende 4H-Kerzen (8k): beim Laden mitgezählt, damit das Datum der Lücke im Protokoll stehen kann. { Öffnungszeit: Zahl der Märkte }
 const GKEY = 'wolfdesk.ltgaps';
