@@ -1,6 +1,34 @@
 {
  "signals": [
   {
+   "coin": "ENA",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791360936350,
+   "px": 0.23911,
+   "zone": [
+    0.23858,
+    0.23858
+   ],
+   "stop": 0.19373800751413822,
+   "tps": [
+    0.32826398497172354,
+    0.37310597745758534,
+    0.4179479699434471,
+    0.5076319549151707
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Neu im Aufwärtstrend"
+   ],
+   "id": 10,
+   "eng": "bm"
+  },
+  {
    "coin": "ZEC",
    "dir": "long",
    "style": "swing",
