@@ -331,3 +331,31 @@ Jensen hat Fassung 3 von Testplan 2 „Marktphase“ festgeschrieben (Datei `TES
 - Varianten: A1 95 %: ohne Vorteil 0 / 0 / 0, mit Vorteil 37. A1 90 %: 0 / 0 / 0, mit 48. Nur Verschiebe-Test: 1 / 0 / 0, mit 50.
 - **Entscheidung Jensen (13:01): A1 wird nur berichtet, als Bedingung zählt allein der Verschiebe-Test ab 98 %.** Zulässig laut Testplan 2, Abschnitt 7 (Anpassung nur vor dem ersten echten Lauf). Nachgerechnet mit dieser Fassung: ohne Vorteil 1 / 0 / 0, mit Vorteil 50 von 50 → bestanden.
 - Auf echten Kerzen wurde bis hierher **nichts** gerechnet.
+
+## Testplan 2: Proben und Entwicklung auf echten Kerzen (08.10.2026, App 8s, auf Jensens iPhone)
+
+- **Proben (offiziell, in der App, mit dem echten BMSB-Verlauf der Entwicklung als Muster):** ohne Vorteil bestanden BMSB 1 von 50, Breite 0 von 50, BTC über EMA 100 0 von 50 (erlaubt höchstens 3) · mit Vorteil +0,1R erkannt in 50 von 50 (nötig 40) → **Proben bestanden**. Erst danach wurde „Entwicklung rechnen“ freigegeben.
+- **Entwicklung (2020 bis 2023, 200 Durchgänge, dieselben Einstiege für alle drei Schalter):**
+
+| | BMSB | Breite | BTC über EMA 100 |
+|---|---|---|---|
+| Ø R an / aus | +0,16R / +0,01R | +0,18R / +0,04R | +0,17R / −0,01R |
+| Trades je Durchgang an / aus | rund 345 / 296 | rund 258 / 392 | rund 355 / 295 |
+| Differenz an minus aus | +0,14R | +0,14R | +0,18R |
+| über 0 in (A1, nur berichtet) | 98 % | 97 % | 100 % |
+| **Verschiebe-Test (A, nötig 98 %)** | **75 %** von 1.198 | **86 %** von 1.233 | **87 %** von 1.243 |
+| Monats-Ziehen 2. / 5. Perzentil (nur berichtet) | −0,10R / −0,05R | −0,10R / −0,06R | −0,04R / ±0,00R |
+| an an … der Tage | 58 % von 1.317 | 44 % von 1.352 | 58 % von 1.362 |
+| Wechsel (Phasen ab 10 Tagen) / ohne Zählregel / Ø Phase | 8 / 24 / 146 Tage | 9 / 19 / 135 Tage | 11 / 45 / 114 Tage |
+| nur Coins im Tagestrend: Differenz | +0,24R | +0,21R | +0,28R |
+| je Jahr an / aus | 2020 +0,32R / –, 2021 +0,23R / +0,11R, 2022 −0,77R / −0,12R, 2023 +0,07R / +0,42R | 2020 +0,33R / +0,27R, 2021 +0,18R / +0,20R, 2022 – / −0,14R, 2023 +0,09R / +0,20R | 2020 +0,30R / +0,43R, 2021 +0,30R / −0,04R, 2022 −0,42R / −0,13R, 2023 +0,07R / +0,44R |
+| A / B / C (Entwicklung) | nein / ja / nein | nein / ja / nein | nein / ja / ja |
+
+Einigkeit der Schalter in der Entwicklung: BMSB/Breite 83 %, BMSB/EMA 100 96 %, Breite/EMA 100 79 %. Trades „an“ zusammen bisher: 345 / 258 / 355 (nötig 300 über beide Zeiträume).
+
+**Urteil nach Abschnitt 4: Alle drei Schalter sind abgelegt.** A ist in der Entwicklung bei keinem bestanden (Verschiebe-Test 75 %, 86 %, 87 % statt mindestens 98 %). Die Prüfung wird für keinen Schalter geöffnet, keiner wird nachgebessert. **Der Tresor bleibt zu.**
+
+**Genau gesagt:** Long-Trades im gemeinsamen Rahmen brachten 2020 bis 2023 bei „Schalter an“ im Schnitt deutlich mehr als bei „aus“, bei allen drei Schaltern und in fast allen Durchgängen. Ein Schalter mit derselben Form (gleiche Phasenlängen, gleicher Anteil „an“), aber zeitlich verschoben, schafft eine solche Trennung jedoch in 13 bis 25 % der Fälle ebenfalls. Die Trennung ist also nicht vom Zeitpunkt-Glück weniger großer Phasen zu unterscheiden. Die Jahreswerte zeigen dasselbe von innen: Der Vorsprung kommt vor allem daher, dass die Schalter 2020/21 überwiegend an und 2022 überwiegend aus waren. Innerhalb der einzelnen Jahre war „an“ meist nicht besser als „aus“: 2023 bei allen dreien schlechter, 2022 bei BMSB und EMA 100 schlechter (Breite war 2022 nie an), dazu 2020 bei EMA 100 und 2021 bei Breite. Besser war „an“ innerhalb eines Jahres nur 2021 bei BMSB und EMA 100 sowie 2020 bei Breite. Das ist kein Beweis, dass die Schalter wertlos sind; auf diesen Daten (8 bis 11 Wechsel) lässt sich ein langsamer Schalter nicht beweisen, wie Abschnitt 4 vorab festhält. Daraus wird keine Regel abgeleitet.
+
+- Index und Markt-Bias in der App bleiben Anzeige (wie vorgesehen).
+- Für später notiert (nicht Teil von Testplan 2, wäre ein eigener, neu festzuschreibender Testplan): mehr Zyklen, z. B. BTC bis 2017 mit dem Bärenmarkt 2018.

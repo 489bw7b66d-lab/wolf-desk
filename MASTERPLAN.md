@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 08.10.2026, 13:15 · Code: Etappe 8s · 1.125 Tests · auf dem iPhone geprüft bis 8r (1.099 von 1.099 am 08.10. um 10:43), 8s noch nicht · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
+Stand: 08.10.2026, 13:30 · Code: Etappe 8s1 · 1.125 Tests · auf dem iPhone geprüft bis 8s (1.125 von 1.125 am 08.10. um 13:10) · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -47,7 +47,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Der Zufalls-Vergleich wird nicht mehr angefasst.** Fällt eine Regel durch, wird nicht am Würfel und nicht an der Lesart gedreht.
 - Vor der Lieferung wie immer: alle Tests, verstellte Einstellungen, Sichtprüfung in iPhone-Größe, Wächter, Zeile „nicht getestet“.
 
-**Bericht an den Chef abgeheftet (08.10., 11:08).** **Jensen hat um 11:16 entschieden, sich gegen den Sammelmodus des Chefs zu stellen: Pakete werden gemacht, wenn sie anfallen; er fragt dabei immer nach Claudes Meinung.** Unberührt davon: Am Testplan, den Lesarten, dem Zufalls-Vergleich und den fünf Regeln wird nichts geändert. **Testplan 2 ist seit 08.10.2026, 11:45 fest** (Datei `TESTPLAN-2.md`, Fassung 3 mit den Einwänden der zweiten Meinung). **Mess-Paket 8s ist gebaut.** Nach der Probe bei Claude hat Jensen um 13:01 entschieden: A1 nur berichten, Bedingung A = Verschiebe-Test ab 98 % (Protokoll). In der App: erst „Proben rechnen“ (mit dem echten BMSB), dann „Entwicklung rechnen“. Offen bei Jensen: Gilt für Wächter-Pakete weiter ein Tag Abstand (Claudes Empfehlung) oder reicht die vorherige Benennung? **Offen beim Nutzer:** (8r ist eingespielt, 10:43) Wortlaut der Einwände der zweiten Meinung zu Testplan 2; danach bei GitHub unter Actions den Wächter einmal mit „Test“ starten und die erste echte Beobachtung abwarten; einmal „Datensicherung speichern“ ausprobieren; einmal „Märkte durchsuchen“ bis zum Ende laufen lassen und die Zeile unter dem Index auf der Startseite schicken (Diagnose der langen Historie) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
+**Bericht an den Chef abgeheftet (08.10., 11:08).** **Jensen hat um 11:16 entschieden, sich gegen den Sammelmodus des Chefs zu stellen: Pakete werden gemacht, wenn sie anfallen; er fragt dabei immer nach Claudes Meinung.** Unberührt davon: Am Testplan, den Lesarten, dem Zufalls-Vergleich und den fünf Regeln wird nichts geändert. **Testplan 2 ist seit 08.10.2026, 11:45 fest** (Datei `TESTPLAN-2.md`, Fassung 3 mit den Einwänden der zweiten Meinung). **Mess-Paket 8s ist eingespielt (13:10).** Nach der Probe bei Claude hat Jensen um 13:01 entschieden: A1 nur berichten, Bedingung A = Verschiebe-Test ab 98 % (Protokoll). **Ergebnis auf dem iPhone (08.10., gegen 13:20): Proben bestanden; in der Entwicklung besteht kein Schalter A (Verschiebe-Test BMSB 75 %, Breite 86 %, EMA 100 87 %). Alle drei abgelegt, Prüfung nicht geöffnet, Tresor zu. Index und Bias bleiben Anzeige** (Protokoll). Offen bei Jensen: Gilt für Wächter-Pakete weiter ein Tag Abstand (Claudes Empfehlung) oder reicht die vorherige Benennung? **Offen beim Nutzer:** (8r ist eingespielt, 10:43) Wortlaut der Einwände der zweiten Meinung zu Testplan 2; danach bei GitHub unter Actions den Wächter einmal mit „Test“ starten und die erste echte Beobachtung abwarten; einmal „Datensicherung speichern“ ausprobieren; einmal „Märkte durchsuchen“ bis zum Ende laufen lassen und die Zeile unter dem Index auf der Startseite schicken (Diagnose der langen Historie) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
 
 **Sachlicher Hinweis zum Konto (Export vom 07.10., 00:43, ohne Beträge):** Das Gesamt-Risiko bis zu den Stops lag bei rund 20 % vom Konto (Budget 6 %), der Tagesverlust bei rund 10 % (Grenze 5 %), bei zwei Positionen lag die Liquidation weniger als 1 % hinter dem Stop. Claude hat es am 07.10. dreimal angesprochen (zuletzt zum Export von 12:57: Gesamt-Risiko weiter rund 20 %, Tagesverlust rund 16 %, bei einer Position die Liquidation 0,1 % hinter dem Stop); Jensen hat nicht darauf geantwortet. Das ist das Muster aus der Selbstanalyse (Hebel zu hoch im Verhältnis zum Stop); der Hebel dagegen ist die Positionsgröße, nicht ein engerer Stop.
 
@@ -80,7 +80,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8s). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8s1). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -105,7 +105,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8s` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8s1` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -161,7 +161,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 44 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8s">` und eine Import-Liste mit `?v=8s` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8s1">` und eine Import-Liste mit `?v=8s1` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -507,6 +507,11 @@ Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im T
 - **Laufende Trades in der Statistik** (`core-openmark.js`, Jensens Hinweis 11:55): „Deine Statistik“ und „Deine Trades im Detail“ zählen laufende Trades standardmäßig mit, bewertet zum Kurs von jetzt (Teilverkäufe mit echtem Preis, Rest zum aktuellen Kurs, ohne Ausstiegsgebühr für den Rest); Umschalter „Mit laufenden / Nur abgeschlossene“. Der Würfel-Vergleich rechnet laufende Trades bis jetzt. Ein Runner mit Teilverkauf zählt als „in Teilen verkauft“.
 - 26 neue Tests (1.125). Geprüft: alle Tests, Probe bei Claude in Node (siehe Protokoll; ein Satz dauert rund 2 Sekunden), Konto-Karten mit einem nachgebildeten Runner in iPhone-Größe, Testplan-2-Box ohne Fehler. Wächter: keine seiner Dateien berührt.
 - **Nicht getestet:** der Ablauf mit der echten langen Historie (liegt nur auf dem iPhone); Dauer der Proben auf dem iPhone (geschätzt 5 bis 15 Minuten, die Seite reagiert dabei langsam).
+
+**Etappe 8s1 „Testplan 2 im Protokoll, Rückmeldungen der Box“ (08.10., 13:30, kein Wächter):**
+- Protokoll-Eintrag zu Proben und Entwicklung von Testplan 2 (alle drei Schalter abgelegt).
+- Box „Testplan 2“: nach „Entwicklung rechnen“ steht „Entwicklung fertig, das Ergebnis steht unten“ (vorher kam keine Meldung, das Ergebnis erschien unbemerkt weiter unten). Klappt „Ergebnis kopieren“ nicht, erscheint der Text in einem Feld zum Selbst-Markieren.
+- Keine Rechnung geändert, keine neuen Tests (1.125).
 
 **Kleinigkeiten, die noch offen sind:** `startCapital: 1500` in `config.js` ist ein Platzhalter (geklärt am 07.10. über den Export: Der Nutzer hat einen eigenen Wert als Abweichung gespeichert, er liegt nur auf dem iPhone und geht nicht an den Wächter); die Zeile bleibt, wie sie ist · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
 

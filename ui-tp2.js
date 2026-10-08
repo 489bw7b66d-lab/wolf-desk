@@ -10,7 +10,7 @@ const VER = () => document.querySelector('meta[name="app-version"]')?.content ||
 const tick = () => new Promise((r) => setTimeout(r, 0));
 const R = fmtR, P0 = (v) => (v == null ? '–' : `${Math.round(v)} %`);
 const yn = (b) => (b == null ? '<span class="muted">offen</span>' : b ? '<b class="long">✓</b>' : '<b class="short">✗</b>');
-let open = false, busy = false, stop = false, note = '';
+let open = false, busy = false, stop = false, note = '', manual = ''; // manual: Text zum Selbst-Kopieren, wenn die Zwischenablage nicht will
 
 const say = (t) => { note = t; const s = $('tp2-area')?.querySelector('[role=status]'); if (s) s.textContent = note; };
 
@@ -39,7 +39,7 @@ function body() {
       ${busy ? '<button type="button" class="small-btn ghost" id="tp2-stop">Anhalten</button>' : ''}
       ${pr || SW_KEYS.some((k) => rec[k]?.dev) ? '<button type="button" class="small-btn ghost" id="tp2-copy">Ergebnis kopieren</button>' : ''}
     </div>
-    <p class="set-hint" role="status">${esc(note)}</p>`;
+    <p class="set-hint" role="status">${esc(note)}</p>${manual ? `<textarea id="tp2-manual" readonly rows="8" style="width:100%;font-size:12px;background:transparent;color:inherit;border:1px solid currentColor;border-radius:8px;padding:8px;box-sizing:border-box">${esc(manual)}</textarea>` : ''}`;
   if (pr) h += `<p class="set-hint">Proben (${new Date(pr.at).toLocaleString('de-DE')}): ohne Vorteil bestanden ${SW_KEYS.map((k) => `${SWITCHES[k].short} ${pr.per[k]} von ${pr.sets}`).join(' · ')} (erlaubt höchstens ${TP2.probe.maxPassNoEdge}) · mit Vorteil +${String(TP2.probe.edge).replace('.', ',')}R erkannt in ${pr.edgePass} von ${pr.edgeSets} (nötig ${TP2.probe.minPassEdge}) · <b class="${pr.ok ? 'long' : 'short'}">${pr.ok ? 'Proben bestanden' : 'Proben nicht bestanden: Die Messung muss vor dem ersten echten Lauf angepasst werden (Claude fragen).'}</b></p>`;
   else h += '<p class="set-hint">Vor dem ersten Lauf: Proben rechnen (50 Sätze Zufallskurse ohne Vorteil, 50 mit Vorteil, je 50 Märkte; dauert einige Minuten). Erst wenn sie bestehen, wird „Entwicklung rechnen“ frei.</p>';
   for (const k of SW_KEYS) {
@@ -106,7 +106,7 @@ async function runPeriod(check = null) {
       rec[k] = { ...(rec[k] || {}), [per]: r, [`${per}At`]: Date.now(), ver: VER() };
     }
     if (!check) rec.agree = { 'BMSB/Breite': agreement(sws.s1, sws.s2, R), 'BMSB/EMA 100': agreement(sws.s1, sws.s3, R), 'Breite/EMA 100': agreement(sws.s2, sws.s3, R) };
-    say(saveTp2(rec) ? '' : 'Das Ergebnis ließ sich nicht speichern.');
+    say(!saveTp2(rec) ? 'Das Ergebnis ließ sich nicht speichern.' : check ? 'Prüfung fertig, das Ergebnis steht unten.' : 'Entwicklung fertig, das Ergebnis steht unten.');
   } catch (e) { say(`Abgebrochen: ${e.message}`); }
   busy = false; paint();
 }
@@ -122,7 +122,11 @@ export function initTp2() {
     else if (b.id === 'tp2-dev') runPeriod(null);
     else if (b.id === 'tp2-stop') { stop = true; say('Halte an …'); }
     else if (b.dataset.check) runPeriod(b.dataset.check);
-    else if (b.id === 'tp2-copy') { try { await navigator.clipboard.writeText(resultText2(loadTp2(), VER())); b.textContent = 'Kopiert ✓'; } catch { say('Kopieren hat nicht geklappt.'); } }
+    else if (b.id === 'tp2-copy') {
+      const txt = resultText2(loadTp2(), VER());
+      try { await navigator.clipboard.writeText(txt); manual = ''; b.textContent = 'Kopiert ✓'; }
+      catch { manual = txt; note = 'Kopieren hat nicht geklappt. Text im Feld unten antippen, „Alles auswählen“ und kopieren.'; paint(); const t = $('tp2-manual'); if (t) { t.focus(); t.select(); } }
+    }
   });
   paint();
 }
