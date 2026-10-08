@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 08.10.2026, 11:45 · Code: Etappe 8r · 1.099 Tests · auf dem iPhone geprüft bis 8o (1.069 von 1.069 am 08.10. um 09:20), 8p bis 8r noch nicht · **Testplan 1 abgeschlossen: kein Kandidat besteht. Richtungsentscheidung vom 07.10., 16:11: keine weiteren Einstiegsregeln auf Vorteil testen, die App wird zum Setup-Finder (Hinweisgeber)**
+Stand: 08.10.2026, 11:15 (Nachtrag nach der Rückmeldung der zweiten Meinung) · Code: Etappe 8r · 1.099 Tests · auf dem iPhone geprüft bis 8r (1.099 von 1.099 am 08.10. um 10:43) · **Sammelmodus: bis Testplan 2 festgeschrieben ist, keine neuen Pakete, nur sammeln (zweite Meinung, 08.10.)** · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -47,7 +47,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Der Zufalls-Vergleich wird nicht mehr angefasst.** Fällt eine Regel durch, wird nicht am Würfel und nicht an der Lesart gedreht.
 - Vor der Lieferung wie immer: alle Tests, verstellte Einstellungen, Sichtprüfung in iPhone-Größe, Wächter, Zeile „nicht getestet“.
 
-**Offen beim Nutzer:** 8r einspielen (enthält 8p und 8q), danach bei GitHub unter Actions den Wächter einmal mit „Test“ starten und die erste echte Beobachtung abwarten; einmal „Datensicherung speichern“ ausprobieren; einmal „Märkte durchsuchen“ bis zum Ende laufen lassen und die Zeile unter dem Index auf der Startseite schicken (Diagnose der langen Historie) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
+**Bericht an den Chef abgeheftet (08.10., 11:08). Nächster Schritt laut Chef: Testplan 2 festschreiben, bis dahin keine neuen Pakete.** **Offen beim Nutzer:** (8r ist eingespielt, 10:43) Wortlaut der Einwände der zweiten Meinung zu Testplan 2; danach bei GitHub unter Actions den Wächter einmal mit „Test“ starten und die erste echte Beobachtung abwarten; einmal „Datensicherung speichern“ ausprobieren; einmal „Märkte durchsuchen“ bis zum Ende laufen lassen und die Zeile unter dem Index auf der Startseite schicken (Diagnose der langen Historie) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
 
 **Sachlicher Hinweis zum Konto (Export vom 07.10., 00:43, ohne Beträge):** Das Gesamt-Risiko bis zu den Stops lag bei rund 20 % vom Konto (Budget 6 %), der Tagesverlust bei rund 10 % (Grenze 5 %), bei zwei Positionen lag die Liquidation weniger als 1 % hinter dem Stop. Claude hat es am 07.10. dreimal angesprochen (zuletzt zum Export von 12:57: Gesamt-Risiko weiter rund 20 %, Tagesverlust rund 16 %, bei einer Position die Liquidation 0,1 % hinter dem Stop); Jensen hat nicht darauf geantwortet. Das ist das Muster aus der Selbstanalyse (Hebel zu hoch im Verhältnis zum Stop); der Hebel dagegen ist die Positionsgröße, nicht ein engerer Stop.
 
@@ -480,6 +480,27 @@ Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im T
 - **Nicht umgestellt:** „Heiße Coins“ auf der Startseite rechnet weiter mit der alten Engine; der Finder im Tab Signale ersetzt ihn inhaltlich. „Meldung nach einer Pause“ aus der Richtungsentscheidung: Die Meldung „Abkühlphase vorbei“ gibt es schon; falls etwas anderes gemeint war, ist es offen.
 - 13 neue Tests (1.099). Geprüft: alle Tests, vier Sätze verstellter Einstellungen, **Trockenlauf des Wächters in Node mit nachgebildetem Hyperliquid und Telegram** (24 Märkte, eine offene Position seit 11 Tagen): zwei Beobachtungen in den Kanal, Zeit-Ausstieg, Bias-Wechsel und Ziel-Meldung privat, Testnachricht; zweiter Lauf in derselben 4H-Kerze meldet nichts doppelt. Startseite in iPhone-Größe.
 - **Nicht getestet:** mit echten Daten bei GitHub. Dauer im echten Lauf: grob 1,3 Sekunden je Markt im Aufwärtstrend, sechsmal am Tag (bei 80 Märkten rund 2 Minuten zusätzlich), der Lauf hat 14 Minuten.
+
+
+**Tempo-Regel und Festlegungen der Pakete 8l bis 8r (Nachtrag 08.10., auf Hinweis der zweiten Meinung):**
+
+| Paket | Fasst an | Auf dem iPhone geprüft | Tempo-Regel |
+|---|---|---|---|
+| 8l Setup-Finder | nur Anzeige | 07.10., 16:46 (963) | eingehalten |
+| 8l1 Überarbeitung, Trade-Karten-Knopf | Anzeige, Trade-Karte | 07.10., 20:49 (993) | eingehalten |
+| 8m Index, Markt-Bias im Finder | nur Anzeige | 08.10., 06:50 mit 8n (1.049) | eingehalten |
+| 8n Deine Trades im Detail | nur Anzeige | 08.10., 06:50 (1.049) | eingehalten |
+| 8n1 Index auf der Startseite | nur Anzeige | 08.10., um 08:00 (Screenshot, ohne Testzahl) | eingehalten |
+| 8o Top 10, Tacho, Würfel-Vergleich | nur Anzeige | 08.10., 09:20 (1.069) | eingehalten |
+| 8p Stop-Check Tages-ATR | Anzeige; liest die Einstellungen `guard.*`, ändert sie nicht | 08.10., 10:43 zusammen mit 8q und 8r (1.099) | **Abweichung:** nicht einzeln geprüft, mit 8q und 8r in einem ZIP eingespielt |
+| 8q Datensicherung | Anzeige (Einstellungen-Seite, Bereich Speicher), keine Werte | 08.10., 10:43 (1.099) | **Abweichung:** wie 8p |
+| 8r Umstellen | **Wächter, Telegram, `config.js`** (neuer Wert `alerts.observe`) | 08.10., 10:43 (1.099); echter Wächter-Lauf noch offen | **Abweichung:** am selben Tag wie 8o bis 8q gebaut, ohne einen Tag Abstand, auf Jensens ausdrücklichen Wunsch (10:29) |
+
+**Gesetzte Werte (Festlegungen, keine Messergebnisse):** „ab 2 Bausteinen“ als Voreinstellung und für Telegram (Jensen, 07.10.) · Frische = Baustein auf der letzten abgeschlossenen 4H-Kerze (aus der Richtungsentscheidung) · Funde „aktuell“ = letzte 6 4H-Kerzen (Jensen) · Wartezeit 110 Tage und Top 10 nach 30-Tage-Umsatz (Jensen) · Tacho-Gewichte 40 / 40 / 20 und „Rücksetzer zählen halb“ (Claude) · „gleichauf“ innerhalb eines Prozentpunkts (Claude) · Fib-Lage: Anstieg ab 6 Tages-ATR, bis 4 Swing-Tiefs zurück (Claude) · RSI 14, Grenzen 30 / 70, Swing 5 Kerzen, Divergenz höchstens 30 Kerzen alt (Claude) · Stop-Check rot unter 1,0 / gelb unter 1,5 Tages-ATR (bestehende Einstellungen) · Würfel-Vergleich 500 Durchgänge, Hürde 95 % (wie Testplan). Keiner dieser Werte ist gemessen; geändert werden sie nur mit Jensens Zustimmung.
+
+**RSI und Fib-Lage:** auf Jensens ausdrücklichen Wunsch vom 07.10. eingebaut, als Zusatzinformation **ohne Messung**; sie zählen nicht als Baustein und ändern die Reihenfolge nicht. Die zweite Meinung erinnerte daran, dass Jensen „mehr Indikatoren ohne Messung“ früher abgelehnt hat. **Jensen hat am 08.10. um 11:08 bestätigt: Sie bleiben als Zusatzinfo ohne Messung und zählen nicht als Baustein.**
+
+**Datensicherung:** enthält die Wallet-Adresse (geprüft im Code: alle Einträge unter `wolfdesk.`, auch `wolfdesk.address`). Die App sagt das beim Speichern und schreibt dazu, dass die Datei nie ins Repository gehört.
 
 **Kleinigkeiten, die noch offen sind:** `startCapital: 1500` in `config.js` ist ein Platzhalter (geklärt am 07.10. über den Export: Der Nutzer hat einen eigenen Wert als Abweichung gespeichert, er liegt nur auf dem iPhone und geht nicht an den Wächter); die Zeile bleibt, wie sie ist · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
 

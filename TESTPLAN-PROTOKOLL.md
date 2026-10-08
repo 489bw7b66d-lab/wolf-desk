@@ -311,3 +311,11 @@ Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) 
 - **Der Tresor bleibt zu.** Für Testplan 1 wird er nicht geöffnet.
 - Es werden keine weiteren Einstiegsregeln mehr auf Vorteil getestet (Richtungsentscheidung, siehe Masterplan).
 - Die fünf Regeln bleiben in ihrer festgeschriebenen Fassung als Bausteine des Setup-Finders erhalten. Dort gilt die Messlatte „Findet er, was Jensen im Chart suchen würde?“, nicht „Schlägt er den Markt?“.
+
+
+## Nachtrag 08.10.2026: Stand der App 8r (kein Testplan-Lauf)
+
+- Seit dem Urteil zu Testplan 1 wurde **nichts** am Testplan, an den Lesarten, am Zufalls-Vergleich oder an den fünf Regeln geändert (`core-ltrules.js` unverändert seit 8k2, per Dateivergleich geprüft). Der Tresor ist zu. Prüfung der Regeln 1, 2, 3, 4, 6 und von Donchian nicht geöffnet.
+- Die fünf Regeln laufen in ihrer festgeschriebenen Fassung als Bausteine des Setup-Finders (App ab 8l, Wächter ab 8r). Dort gilt die Messlatte „Findet er, was Jensen im Chart suchen würde?“.
+- **Beschreibend, nicht Teil des Testplans:** Auswertung von Jensens eigenen Trades (90 Tage, 08.10.). Würfel-Vergleich der Coin-Wahl (gleicher Einstieg, gleiche Haltedauer, zufälliger anderer handelbarer Markt, 500 Durchgänge, gemessen in 4H-ATR): 38 von 42 Trades vergleichbar, Coin-Wahl über 79 % der Durchgänge, **nicht vom Zufall zu unterscheiden (Hürde 95 %)**. Daraus wird nichts abgeleitet.
+- Testplan 2 „Marktphase“: Entwurf vom 07.10., 15:15, nicht gültig; die Einwände der zweiten Meinung (Verschiebe-Test, Phasen ab 10 Tagen, Hürde 98 %) sind noch einzuarbeiten. Bis er festgeschrieben ist: keine neuen Pakete (zweite Meinung, 08.10.).
