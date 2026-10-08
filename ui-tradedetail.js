@@ -13,7 +13,7 @@ import { esc, dn, tipInline } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-let dice = null, diceBusy = false, diceNote = '';
+let dice = null, diceBusy = false, diceNote = '', withOpen = true, statsAll = null; // 8s: laufende Trades zum Kurs von jetzt (Standard)
 let getState = () => ({}), getAddress = () => '', busy = false, stop = false, note = '', rows = null, stats = null, hasStop = 0, at = 0, showAll = false;
 
 async function run() {
@@ -40,9 +40,10 @@ async function run() {
       try { await gap(); hourly[t.coin + '|' + t.openedAt] = closedCandles(await hl.candles(t.coin, '1h', t.openedAt - 36e5, t.closedAt ?? now), now); }
       catch (err) { if (/Rate-Limit/.test(err.message)) { note = 'Hyperliquid bremst, kurze Pause …'; status(); await sleep(60e3); k--; } }
     }
-    const ctx = { fills: s.fills, orders, daily, hourly, btc, alt: loadIndex()?.alt || [] };
+    const pos = s.account?.positions || [];
+    const ctx = { fills: s.fills, orders, daily, hourly, btc, alt: loadIndex()?.alt || [], now: Date.now(), priceOf: (c) => getState().prices?.[c] || pos.find((p) => p.coin === c)?.markSnapshot || null };
     rows = trades.map((t) => detailRow(t, ctx));
-    stats = splitStats(rows); hasStop = rows.filter((r) => r.stopAtr != null).length; at = Date.now();
+    stats = splitStats(rows); statsAll = splitStats(rows, true); hasStop = rows.filter((r) => r.stopAtr != null).length; at = Date.now();
     note = stop ? 'Angehalten, ausgewertet ist nur ein Teil.' : '';
     if (!ctx.alt.length) note += ' Ohne Alt-Index (erst „Märkte durchsuchen“ im Tab Signale): Der Bias beim Einstieg zählt nur BTC.';
   } catch (e) { note = `Abgebrochen: ${e.message}`; }
@@ -54,8 +55,9 @@ async function runDice() {
   if (diceBusy || busy || !rows) return;
   diceBusy = true; stop = false; dice = null; diceNote = 'Lade Marktliste …'; paint();
   try {
-    const closed = rows.filter((r) => r.closed);
-    if (!closed.length) throw new Error('Keine abgeschlossenen Trades.');
+    const now = Date.now();
+    const closed = rows.filter((r) => r.closed || (withOpen && r.marked)).map((r) => ({ ...r, closedAt: r.closedAt ?? now }));
+    if (!closed.length) throw new Error('Keine Trades zum Vergleichen.');
     const ctx = await getMarketCtx(), names = Object.values(getState().markets || {}).flat();
     const uni = await scanUniverse(names, ctx.ctx, getTradeable());
     const coins = [...new Set([...uni.coins.filter((c) => !(ctx.map[c] < CONFIG.signals.minDayVolumeUsd)), ...closed.map((r) => r.coin)])];
@@ -83,7 +85,7 @@ function table(groups) {
 }
 
 function rowHtml(r) {
-  const res = r.closed ? `${atrTxt(r.resAtr)}${rTxt(r.resR)}` : 'läuft';
+  const res = r.closed ? `${atrTxt(r.resAtr)}${rTxt(r.resR)}` : r.marked ? `läuft, zum Kurs von jetzt ${atrTxt(r.resAtr)}${rTxt(r.resR)}` : 'läuft';
   return `<div class="td-trade"><div><b>${esc(dn(r.coin))}</b> <span class="${r.side === 'long' ? 'long' : 'short'}">${r.side === 'long' ? 'Long' : 'Short'}</span> <span class="muted">${day(r.openedAt)} · ${holdTxt(r.holdH)}${r.kind ? ' · ' + (r.kind === 'Kurs' ? 'zum Kurs' : r.kind === 'Limit' ? 'per Limit' : 'gemischt') : ''}</span></div>
     <div class="muted">Ergebnis ${res} · bester Stand ${atrTxt(r.bestAtr)}${rTxt(r.bestR)}${r.stopAtr != null ? ` · Stop ${atrTxt(r.stopAtr)}` : ''}</div>
     <div class="muted">${r.bias ? `${BIAS[r.bias]}${r.fit ? ` (${r.fit === 'mit' ? 'mit dem Bias' : r.fit === 'gegen' ? 'gegen den Bias' : 'gemischt'})` : ''}` : 'Bias unbekannt'}${r.coinUp != null ? ` · Coin ${r.coinUp ? 'im Tagestrend aufwärts' : 'nicht im Tagestrend aufwärts'}` : ''}</div></div>`;
@@ -95,17 +97,19 @@ function paint() {
   let h = `<div class="mk-actions"><button type="button" class="small-btn" id="td-go"${busy ? ' disabled' : ''}>Trades auswerten</button>${busy || diceBusy ? '<button type="button" class="small-btn ghost" id="td-stop">Anhalten</button>' : ''}</div>
     <p class="set-hint" id="td-status" role="status">${esc(note)}</p>`;
   if (rows && stats) {
-    const closed = rows.filter((r) => r.closed);
+    const closed = rows.filter((r) => r.closed), nMarked = rows.filter((r) => r.marked).length, st = withOpen ? statsAll : stats;
+    h += `<div class="tabs" role="group" aria-label="Welche Trades zählen" style="margin:6px 0 8px"><button type="button" data-tdopen="1" aria-pressed="${withOpen}">Mit laufenden (zum Kurs)</button><button type="button" data-tdopen="0" aria-pressed="${!withOpen}">Nur abgeschlossene</button></div>`;
+    h += `<p class="set-hint">${withOpen ? (nMarked ? `${nMarked === 1 ? 'Ein laufender Trade zählt' : `${nMarked} laufende Trades zählen`} mit, bewertet zum Kurs von jetzt (Teilverkäufe mit echtem Preis, Rest zum aktuellen Kurs).` : 'Gerade kein laufender Trade mit Kurs.') : 'Nur abgeschlossene: Trades mit offenem Runner fehlen, das Bild ist dadurch zu schlecht.'}</p>`;
     h += `<p class="set-hint">${closed.length} abgeschlossene Trades der letzten 90 Tage${rows.length > closed.length ? `, ${rows.length - closed.length} laufend` : ''}. Stop gefunden bei ${hasStop} von ${rows.length}. Stand ${new Date(at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr.</p>`;
-    if (closed.length) {
-      h += '<h3 class="sub-h">Mit oder gegen den Markt-Bias</h3>' + table([['Alle', stats.all], ['Mit dem Bias', stats.bias.mit], ['Gegen den Bias', stats.bias.gegen], ['Markt gemischt', stats.bias.gemischt]]);
-      h += `<p class="set-hint">${esc(compareText(stats.bias.mit, stats.bias.gegen, 'Mit dem Bias', 'gegen den Bias'))}</p>`;
-      h += '<h3 class="sub-h">Einstieg und Coin-Trend</h3>' + table([['Zum Kurs', stats.kind.Kurs], ['Per Limit', stats.kind.Limit], ['Coin im Trend', stats.coin.im], ['Coin gegen Trend', stats.coin.gegen]]);
-      h += '<h3 class="sub-h">Stop-Abstand</h3>' + table([['Stop unter 1 ATR', stats.stop.eng], ['1 bis 1,5 ATR', stats.stop.mittel], ['Ab 1,5 ATR', stats.stop.weit]]);
-      h += `<p class="set-hint">${esc(compareText(stats.stop.eng, stats.stop.weit, 'Stop unter 1 ATR', 'ab 1,5 ATR'))} Der Rahmen aus dem Testplan nimmt 2 ATR.</p>`;
+    if (st.all.n) {
+      h += '<h3 class="sub-h">Mit oder gegen den Markt-Bias</h3>' + table([['Alle', st.all], ['Mit dem Bias', st.bias.mit], ['Gegen den Bias', st.bias.gegen], ['Markt gemischt', st.bias.gemischt]]);
+      h += `<p class="set-hint">${esc(compareText(st.bias.mit, st.bias.gegen, 'Mit dem Bias', 'gegen den Bias'))}</p>`;
+      h += '<h3 class="sub-h">Einstieg und Coin-Trend</h3>' + table([['Zum Kurs', st.kind.Kurs], ['Per Limit', st.kind.Limit], ['Coin im Trend', st.coin.im], ['Coin gegen Trend', st.coin.gegen]]);
+      h += '<h3 class="sub-h">Stop-Abstand</h3>' + table([['Stop unter 1 ATR', st.stop.eng], ['1 bis 1,5 ATR', st.stop.mittel], ['Ab 1,5 ATR', st.stop.weit]]);
+      h += `<p class="set-hint">${esc(compareText(st.stop.eng, st.stop.weit, 'Stop unter 1 ATR', 'ab 1,5 ATR'))} Der Rahmen aus dem Testplan nimmt 2 ATR.</p>`;
       h += `<p class="set-hint">„Bester Stand“ = so weit lief der Kurs höchstens in deine Richtung. „Liegen gelassen“ = bester Stand minus Ergebnis. Alles in Tages-ATR beim Einstieg, in R nur, wo der Stop bekannt ist.</p>`;
     }
-    if (closed.length) {
+    if (st.all.n) {
       h += `<h3 class="sub-h">Würfel-Vergleich: deine Coin-Wahl gegen den Zufall</h3>
         <p class="set-hint">Gleicher Einstieg, gleiche Haltedauer, gleiche Richtung, aber ein zufälliger anderer Markt aus deiner Liste, ${500} Mal. Gemessen in 4H-ATR, ohne Stops und Teilverkäufe: Es geht nur um die Wahl des Coins. Lädt einmal die 4H-Kerzen aller handelbaren Märkte (ein paar Minuten).</p>
         <div class="mk-actions"><button type="button" class="small-btn ghost" id="td-dice"${diceBusy || busy ? ' disabled' : ''}>Würfel-Vergleich starten</button></div>
@@ -130,6 +134,7 @@ export function initTradeDetail(stateGetter, addressGetter) {
     if (b.id === 'td-go') run();
     else if (b.id === 'td-stop') { stop = true; note = 'Halte an …'; status(); }
     else if (b.id === 'td-dice') runDice();
+    else if (b.dataset.tdopen != null) { withOpen = b.dataset.tdopen === '1'; dice = null; diceNote = withOpen ? 'Würfel-Vergleich neu starten, damit die laufenden Trades mitzählen.' : 'Würfel-Vergleich neu starten für nur abgeschlossene Trades.'; paint(); }
     else if (b.id === 'td-more') { showAll = !showAll; paint(); }
   });
   paint();

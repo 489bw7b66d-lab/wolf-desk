@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
 import { parsePortfolio, equityCurve, maxDrawdown, honestSplit, lifePnlOf } from './core-performance.js';
 import { perfSplit, tradeHistory, closedTrades, tradeStats } from './core-trades.js';
+import { withOpenMarked, countMarked } from './core-openmark.js';
 import { costSummary, fundingForTrade } from './core-fees.js';
 import { evaluatePatience, patienceStats, PATIENCE_KEY, windowDays } from './core-patience.js';
 import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
@@ -41,6 +42,8 @@ export function initPerformance(onChange) {
     $('perf-tabs').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.p === period)));
     onChange();
   });
+  // 8s: Umschalter „mit laufenden / nur abgeschlossene“ in „Deine Statistik“
+  $('stats')?.addEventListener('click', (e) => { const b = e.target.closest('button[data-stopen]'); if (!b) return; statsOpen = b.dataset.stopen === '1'; onChange(); });
 }
 
 export function renderPerformance(s) {
@@ -104,7 +107,8 @@ function renderTrades(s) {
   }).join('');
 }
 
-// Deine Statistik: Auswertung der eigenen abgeschlossenen Trades (90 Tage)
+// Deine Statistik: Auswertung der eigenen Trades (90 Tage); seit 8s mit laufenden Trades zum Kurs von jetzt (umschaltbar)
+let statsOpen = true;
 const cl = (v) => (v > 0 ? 'long' : v < 0 ? 'short' : 'muted');
 const pc = (v) => (v == null ? '–' : f.pct(v, 0));
 const ofAcct = (v, eq) => (v == null || !(eq > 0) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs((v / eq) * 100).toFixed(2).replace('.', ',') + ' %');
@@ -112,12 +116,17 @@ function renderStats(s) {
   const box = $('stats');
   if (!box) return;
   if (!s.fills) { box.innerHTML = `<p class="empty">${s.fillsError ? 'Trades konnten nicht geladen werden.' : 'Wird geladen …'}</p>`; return; }
-  const hist = tradeHistory(s.fills);
+  // 8s: laufende Trades zum Kurs von jetzt mitzählen (Standard), sonst fehlen die Trades mit offenem Runner
+  const raw = tradeHistory(s.fills), pos = s.account?.positions || [];
+  const priceOf = (c) => s.prices?.[c] || pos.find((p) => p.coin === c)?.markSnapshot || null;
+  const hist = statsOpen ? withOpenMarked(raw, priceOf) : raw, nMarked = countMarked(hist);
   const st = tradeStats(hist);
   // 8e: Pareto-Anteil und Ø Gewinn / Ø Verlust in Prozent vom (heutigen) Kontowert
   const par = paretoShare(hist.filter((t) => t.closedAt != null && !t.partial).map((t) => ({ r: t.realized })));
   const eq = s.account ? accountSummary(s.account, CONFIG.accountMode).equity : null;
-  if (!st.n) { box.innerHTML = '<p class="empty">Noch keine abgeschlossenen Trades in den letzten 90 Tagen.</p>'; return; }
+  const toggle = `<div class="tabs" role="group" aria-label="Welche Trades zählen" style="margin-bottom:10px"><button type="button" data-stopen="1" aria-pressed="${statsOpen}">Mit laufenden (zum Kurs)</button><button type="button" data-stopen="0" aria-pressed="${!statsOpen}">Nur abgeschlossene</button></div>`
+    + `<p class="empty" style="font-size:12px;margin:-4px 0 10px">${statsOpen ? (nMarked ? `${nMarked} laufende ${nMarked === 1 ? 'Trade ist' : 'Trades sind'} zum Kurs von jetzt bewertet (Teilverkäufe mit echtem Preis, Rest zum aktuellen Kurs). Das ändert sich mit dem Kurs.` : 'Gerade kein laufender Trade mit Kurs.') : 'Nur Trades, deren Position wieder bei null ist. Trades mit offenem Runner fehlen, das Bild ist dadurch zu schlecht.'}</p>`;
+  if (!st.n) { box.innerHTML = toggle + '<p class="empty">Noch keine abgeschlossenen Trades in den letzten 90 Tagen.</p>'; return; }
   // Kernaussage: Ausstiegsplan (in Teilen verkauft) gegen alles auf einmal
   let insight = '';
   if (st.split.n >= 2 && st.single.n >= 2) {
@@ -127,9 +136,9 @@ function renderStats(s) {
       : `Alles auf einmal verkauft schneidet bei dir gerade besser ab (${f.signedUsd(st.single.avg)} gegen ${f.signedUsd(st.split.avg)} pro Trade). Beobachten, ob das so bleibt.`}${st.n < 30 ? ' Bei ' + st.n + ' Trades noch ein vorläufiges Bild.' : ''}</p>`;
   }
   const row = (name, x) => x.n ? `<div class="bt-row" role="row"><span>${name}</span><span>${x.n}</span><span>${pc(x.winRate)}</span><span class="${cl(x.avg)}">${f.usdShort(x.avg)}</span></div>` : '';
-  box.innerHTML = `${insight}
+  box.innerHTML = `${toggle}${insight}
     <div class="kv">
-      <div><span class="k">Trades (90 Tage)</span><span class="v">${st.n}</span></div>
+      <div><span class="k">Trades (90 Tage)</span><span class="v">${st.n}${statsOpen && nMarked ? ` <small class="muted" style="font-size:12px">davon ${nMarked} laufend</small>` : ''}</span></div>
       <div><span class="k">Trefferquote</span><span class="v">${pc(st.winRate)}</span></div>
       <div><span class="k">Ø Gewinn</span><span class="v long">${f.signedUsd(st.avgWin)}</span></div>
       <div><span class="k">Ø Verlust</span><span class="v short">${f.signedUsd(st.avgLoss)}</span></div>

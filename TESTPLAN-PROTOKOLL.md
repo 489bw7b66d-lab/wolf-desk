@@ -323,3 +323,11 @@ Auf Zufallskursen ohne jeden Vorteil (30 Sätze mit je 10 Märkten, vier Jahre) 
 ## Testplan 2 festgeschrieben (08.10.2026, 11:45)
 
 Jensen hat Fassung 3 von Testplan 2 „Marktphase“ festgeschrieben (Datei `TESTPLAN-2.md`). Verlauf: Fassung 1 am 07.10. um 15:15; Fassung 2 am 08.10. um 11:30 mit den drei Einwänden der zweiten Meinung (Verschiebe-Test, Phasen ab 10 Tagen, Hürde 98 %) nach Claudes Verständnis; Antwort der zweiten Meinung um 11:21 (alle Verschiebungen statt Würfel, Zählweise der Phasen, Monats-Ziehen nur berichten, 50 Sätze je Probe mit festen Hürden, Sperrfrist, mindestens 100 Trades bei „aus“, weitere Vorbelastungen); Fassung 3 um 11:45. Bis hierher wurde **nichts** gerechnet. Der Tresor ist zu, aus Testplan 1 nie geöffnet.
+
+## Testplan 2: Probe an Zufallskursen und Anpassung (08.10.2026, vor dem ersten echten Lauf)
+
+- **Probe bei Claude (Node, App 8s):** 50 Sätze Zufallskurse ohne Drift, je 50 Märkte über die Entwicklung (2020 bis 2023), 200 Durchgänge. Probe mit Vorteil: +0,1R bei „an“, Muster = BMSB eines Zufalls-BTC (ersatzweise; die offizielle Probe in der App nimmt den echten BMSB-Verlauf).
+- **Mit der festen Fassung (A1 98 % und Verschiebe-Test 98 %):** ohne Vorteil 0 / 0 / 0 Sätze bestanden (erlaubt 3), mit Vorteil **22 von 50** erkannt (nötig 40) → Probe nicht bestanden. Der Verschiebe-Test erkannte den Vorteil in 50 von 50; A1 war der Engpass.
+- Varianten: A1 95 %: ohne Vorteil 0 / 0 / 0, mit Vorteil 37. A1 90 %: 0 / 0 / 0, mit 48. Nur Verschiebe-Test: 1 / 0 / 0, mit 50.
+- **Entscheidung Jensen (13:01): A1 wird nur berichtet, als Bedingung zählt allein der Verschiebe-Test ab 98 %.** Zulässig laut Testplan 2, Abschnitt 7 (Anpassung nur vor dem ersten echten Lauf). Nachgerechnet mit dieser Fassung: ohne Vorteil 1 / 0 / 0, mit Vorteil 50 von 50 → bestanden.
+- Auf echten Kerzen wurde bis hierher **nichts** gerechnet.

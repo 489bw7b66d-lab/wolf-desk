@@ -17,6 +17,7 @@ import { randomSummary } from './core-randombase.js';
 import { compareGate } from './core-trendgate.js';
 import { getFeedSignals, getArchive } from './ui-feed.js';
 import { RULES, loadResults, resultText, loadBlind, blindOk, gapsText } from './core-longtest.js';
+import { loadTp2, resultText2, SW_KEYS } from './core-tp2.js';
 
 const BT_KEY = 'wolfdesk.btlast';
 const n2 = (v, d = 2) => (v == null || !Number.isFinite(v) ? '–' : v.toFixed(d));
@@ -179,6 +180,7 @@ export function buildReport(s = {}, now = Date.now(), store = globalThis.localSt
   L.push(bts.length ? bts.sort((a, b) => b.at - a.at).map(btText).join('\n\n') : '- noch keiner gerechnet');
   // 8k: Testplan-Läufe auf der langen Historie (Binance), dazu Stand der Blindproben und das Datum fehlender Kerzen
   try { const t = longTestText(); if (t) L.push('', t); } catch { /* egal */ }
+  try { const x = loadTp2(); if (x.probe || SW_KEYS.some((k) => x[k]?.dev)) L.push('', '## Testplan 2 · Marktphase', resultText2(x, x.probe?.ver || '')); } catch { /* egal */ }
   return L.join('\n');
 }
 

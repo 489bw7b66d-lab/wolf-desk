@@ -16,6 +16,7 @@ import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
 import { initBinance } from './ui-binance.js';
 import { initLongTest } from './ui-longtest.js';
+import { initTp2 } from './ui-tp2.js';
 import { initFinder } from './ui-finder.js';
 import { initTradeDetail } from './ui-tradedetail.js';
 import { initSettings } from './ui-settings.js';
@@ -209,6 +210,7 @@ initMarket();
 initBacktest(getState);
 initBinance(); // 8h: lange Historie von Binance
 initLongTest(); // 8i: Testplan-Läufe auf der langen Historie
+initTp2(); // 8s: Testplan 2 · Marktphase
 initFinder(getState, openTrade);
 initTradeDetail(getState, () => address); // 8n: Deine Trades im Detail (nur Anzeige, ohne Beträge) // 8l: Setup-Finder (Vorschau), reine Anzeige
 initSettings(getState);

@@ -7,6 +7,7 @@
 // Reine Funktionen, Tests in test-tradedetail.js.
 import { atr } from './core-indicators.js';
 import { trendOf } from './core-index.js';
+import { markTrade } from './core-openmark.js';
 import { mulberry32 } from './core-randombase.js';
 
 export const TD = { atrPeriod: 14, minN: 10, stopWindowMs: 5 * 60e3 };
@@ -74,19 +75,22 @@ export function withBias(side, state) {
 }
 
 // Eine Zeile je Trade. ctx: { fills, orders, daily: {COIN: [...]}, hourly: {key: [...]}, btc, alt }
-export function detailRow(trade, ctx = {}) {
+// 8s: ctx.priceOf(coin) gesetzt → laufende Trades werden zum Kurs von jetzt bewertet (marked), ihr bester Stand läuft bis jetzt.
+export function detailRow(trade0, ctx = {}) {
+  const mk = trade0.closedAt == null && ctx.priceOf ? markTrade(trade0, ctx.priceOf(trade0.coin), ctx.now ?? Date.now()) : null;
+  const trade = mk ? { ...mk, closedAt: null } : trade0; // für Haltedauer und besten Stand bleibt er laufend
   const sign = trade.side === 'long' ? 1 : -1, entry = trade.entryAvg;
   const daily = ctx.daily?.[trade.coin], A = atrAt(daily, trade.openedAt);
-  const ex = exitAvg(trade), closed = trade.closedAt != null;
+  const ex = exitAvg(trade), closed = trade.closedAt != null, marked = !!mk;
   const best = bestPrice(trade, ctx.hourly?.[trade.coin + '|' + trade.openedAt]);
   const stop = stopFor(trade, ctx.orders);
   const inA = (d) => (A > 0 && d != null ? d / A : null);
   const R = stop != null && entry > 0 ? Math.abs(entry - stop) : null;
-  const res = closed && ex != null && entry > 0 ? sign * (ex - entry) : null;
+  const res = (closed || marked) && ex != null && entry > 0 ? sign * (ex - entry) : null;
   const top = best != null && entry > 0 ? Math.max(0, sign * (best - entry)) : null;
   const bias = biasAt(ctx.btc, ctx.alt, trade.openedAt);
   return {
-    coin: trade.coin, side: trade.side, openedAt: trade.openedAt, closedAt: trade.closedAt ?? null, closed, partial: !!trade.partial,
+    coin: trade.coin, side: trade.side, openedAt: trade.openedAt, closedAt: trade.closedAt ?? null, closed, marked, partial: !!trade.partial,
     holdH: ((trade.closedAt ?? ctx.now ?? Date.now()) - trade.openedAt) / 36e5,
     kind: entryKind(trade, ctx.fills),
     stopAtr: R != null ? inA(R) : null,
@@ -98,16 +102,16 @@ export function detailRow(trade, ctx = {}) {
   };
 }
 
-// Statistik einer Gruppe (nur geschlossene Trades)
-export function groupStats(rows) {
-  const L = (rows || []).filter((r) => r.closed && r.resAtr != null);
+// Statistik einer Gruppe: abgeschlossene Trades, mit open = true auch laufende zum Kurs von jetzt (8s)
+export function groupStats(rows, open = false) {
+  const L = (rows || []).filter((r) => (r.closed || (open && r.marked)) && r.resAtr != null);
   const avg = (k) => { const v = L.map((r) => r[k]).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   return { n: L.length, winPct: L.length ? (L.filter((r) => r.resAtr > 0).length / L.length) * 100 : null,
     resAtr: avg('resAtr'), bestAtr: avg('bestAtr'), leftAtr: avg('leftAtr'), holdH: avg('holdH'), resPct: avg('resPct'), stopAtr: avg('stopAtr') };
 }
 // Gruppen für die Tabelle
-export function splitStats(rows) {
-  const g = (fn) => groupStats((rows || []).filter(fn));
+export function splitStats(rows, open = false) {
+  const g = (fn) => groupStats((rows || []).filter(fn), open);
   return {
     all: g(() => true),
     bias: { mit: g((r) => r.fit === 'mit'), gegen: g((r) => r.fit === 'gegen'), gemischt: g((r) => r.fit === 'gemischt') },

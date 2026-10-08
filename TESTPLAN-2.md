@@ -58,6 +58,8 @@ Warum der Verschiebe-Test und C: Bei Regel 5 liefen alle 200 Durchgänge durch d
 
 **[neu 08.10.] Warum der Verschiebe-Test:** Er beantwortet die Frage, ob nicht schon die bloße Form eines Schalters (lange Phasen, Anteil „an") eine Trennung vortäuscht. Eine verschobene Kopie hat dieselbe Form, aber keinen Bezug zum Markt. Schlägt der echte Schalter nicht 98 % seiner Kopien, trennt er nicht wegen des Marktes.
 
+**Anpassung nach der Probe, vor dem ersten Lauf auf echten Kerzen (08.10.2026, 13:01, Jensen):** A1 (Durchgänge über null) wird **nur noch berichtet**; als Bedingung A zählt allein der Verschiebe-Test ab 98 %. Anlass: In der Probe an Zufallskursen (50 Sätze, je 50 Märkte, Muster mit eingebautem Vorteil +0,1R) wurde der Vorteil mit A1 98 % nur in 22 von 50 Sätzen erkannt (A1 95 %: 37, A1 90 %: 48, nur Verschiebe-Test: 50); ohne Vorteil bestand mit „nur Verschiebe-Test“ ein Schalter in 1 von 50 Sätzen (erlaubt 3). A1 misst vor allem das Würfelrauschen des Einstiegszeitpunkts in derselben Marktgeschichte. Diese Anpassung ist laut Abschnitt 7 zulässig, weil sie vor dem ersten echten Lauf geschieht. Die offizielle Probe läuft in der App mit dem echten BMSB-Verlauf der Entwicklung.
+
 ## 5. Die drei Schalter
 
 Alle drei wurden am 07.10.2026 um 01:28 als Vorschläge notiert, also vor den Ergebnissen der Regeln 1, 2, 3, 4 und 6. Jeder Schalter nutzt nur Tageskerzen, die am Bewertungstag schon abgeschlossen waren.
