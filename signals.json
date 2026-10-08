@@ -336,9 +336,9 @@
     0.5298793443609011,
     0.5780555835471015
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791475199999,
    "events": [
     "MACD-Kreuzung aufwärts",
     "Ausbruch aus Dreieck",
@@ -720,6 +720,23 @@
    "sf": "aus",
    "zoneH": 0,
    "mfe": 0.28,
+   "mae": 1
+  },
+  {
+   "key": "CRV|long|1790683820436",
+   "id": "CRV|long|1790683820436",
+   "coin": "CRV",
+   "dir": "long",
+   "style": "swing",
+   "score": 85,
+   "seal": true,
+   "at": 1790683820436,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791475199999,
+   "sf": "aus",
+   "zoneH": 0,
+   "mfe": 0.46,
    "mae": 1
   },
   {
