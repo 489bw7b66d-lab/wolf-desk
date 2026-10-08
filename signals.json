@@ -76,9 +76,9 @@
     2339.6830404104576,
     2822.324560615686
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791475199999,
    "events": [
     "Neu im Aufwärtstrend"
    ],
@@ -857,6 +857,24 @@
    "zoneH": 0,
    "mfe": 0.99,
    "mae": 1
+  },
+  {
+   "key": "ZEC|long|1791293419945",
+   "id": 9,
+   "coin": "ZEC",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791293419945,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791475199999,
+   "sf": "mittel",
+   "zoneH": 0.5,
+   "mfe": 0.03,
+   "mae": 1,
+   "eng": "bm"
   }
  ]
 }
