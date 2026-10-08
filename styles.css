@@ -735,3 +735,11 @@ button.pos-row:first-of-type { border-top: 0; }
 .td-trade { display: grid; gap: 3px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; }
 .td-trade b { font-size: 15px; }
 #tdetail .sub-h { margin-top: 16px; }
+.mkt-idx { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 6px; }
+.mkt-idx-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mkt-idx-head .chip-btn { height: 28px; font-size: 11.5px; padding: 0 10px; }
+.mkt-idx-svg { width: 100%; height: auto; display: block; }
+.mkt-idx-head .k { font-size: 11px; white-space: nowrap; }
+.mkt-idx-head .chips { flex-wrap: nowrap; gap: 4px; }
+.mkt-idx-head .chip-btn { height: 26px; padding: 0 8px; font-size: 11px; }
+.mkt-idx-head .chip-btn { white-space: nowrap; }

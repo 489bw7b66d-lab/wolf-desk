@@ -1,6 +1,7 @@
 // Marktüberblick auf der Startseite: Markt-Bias als Tacho, Fear & Greed als Bogen, Marktkapitalisierung, BTC-Dominanz.
 import { market, onMarket, refreshMarket, fngLabel, fngStand, ETF_URL } from './core-market.js';
 import * as f from './core-format.js';
+import { loadIndex, indexChart, trendOf } from './core-index.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -72,6 +73,51 @@ function biasParts(bias, m) {
     <b class="${acls(m.breadth?.value ?? null)}">${breadth}</b>${r ? ` · <b class="${acls(p.ratio)}">${r}</b>` : ''}</span>`;
 }
 
+// 8n1: Bild des Hyperliquid-Ledger-Perp-Index (Alts gold, Small Caps blau, beide am ersten Tag des Ausschnitts = 100),
+// dazu EMA 20 und EMA 100 der Alts gestrichelt und der nächste Tages-Sell-Block über dem Index als roter Streifen.
+let idxDays = 180;
+function indexSvg(c) {
+  const W = 320, H = 130, P = { l: 4, r: 40, t: 8, b: 16 };
+  const ys = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)].filter((y) => y != null && Number.isFinite(y));
+  let lo = Math.min(...ys), hi = Math.max(...ys);
+  if (c.block && c.block.lo < hi * 1.15) hi = Math.max(hi, Math.min(c.block.hi, hi * 1.15));
+  if (lo > 0 && hi / lo > 3) { lo /= 1.08; hi *= 1.08; } else { const pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad; }
+  const t0 = c.alt[0].t, t1 = c.alt[c.alt.length - 1].t || t0 + 1;
+  // Bei großen Bewegungen (mehr als Faktor 3 im Bild) logarithmisch, damit der Anfang nicht flach aussieht
+  const log = lo > 0 && hi / lo > 3, g = (y) => (log ? Math.log(Math.max(y, 1e-9)) : y), gl = g(lo), gh = g(hi);
+  const X = (t) => (P.l + ((t - t0) / Math.max(1, t1 - t0)) * (W - P.l - P.r)).toFixed(1), Y = (y) => (P.t + (1 - (g(y) - gl) / (gh - gl)) * (H - P.t - P.b)).toFixed(1);
+  const path = (pts, k = 'y') => pts.filter((p) => p[k] != null && p[k] >= lo && p[k] <= hi).map((p, j) => `${j ? 'L' : 'M'}${X(p.t)} ${Y(p[k])}`).join('');
+  const band = c.block && c.block.lo < hi ? `<rect x="${P.l}" y="${Y(Math.min(c.block.hi, hi))}" width="${W - P.l - P.r}" height="${Math.max(1, Y(c.block.lo) - Y(Math.min(c.block.hi, hi)))}" fill="var(--bad)" opacity=".18"/><text x="${W - P.r + 3}" y="${Number(Y(c.block.lo)) + 3}" fill="var(--bad)" font-size="9" font-weight="700">Sell</text>` : '';
+  const last = c.alt[c.alt.length - 1], ls = c.small[c.small.length - 1];
+  const day = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  return `<svg viewBox="0 0 ${W} ${H}" class="mkt-idx-svg" role="img" aria-label="Alt-Index und Small-Index der letzten ${c.alt.length} Tage">
+    ${band}
+    <path d="${path(c.alt, 'slow')}" stroke="var(--muted)" stroke-width="1" fill="none" stroke-dasharray="4 3" opacity=".8"/>
+    <path d="${path(c.alt, 'fast')}" stroke="var(--gold)" stroke-width="1" fill="none" stroke-dasharray="2 2" opacity=".7"/>
+    ${c.small.length ? `<path d="${path(c.small)}" stroke="#6ea8ff" stroke-width="1.6" fill="none"/>` : ''}
+    <path d="${path(c.alt)}" stroke="var(--gold)" stroke-width="2" fill="none"/>
+    <text x="${W - P.r + 3}" y="${Number(Y(last.y)) + 3}" fill="var(--gold)" font-size="9" font-weight="800">Alts</text>
+    ${ls ? `<text x="${W - P.r + 3}" y="${Number(Y(ls.y)) + (Math.abs(Y(ls.y) - Y(last.y)) < 10 ? 12 : 3)}" fill="#6ea8ff" font-size="9" font-weight="800">Small</text>` : ''}
+    <text x="${P.l}" y="${H - 3}" fill="var(--muted)" font-size="9">${day(t0)}</text>
+    <text x="${W - P.r}" y="${H - 3}" fill="var(--muted)" font-size="9" text-anchor="end">${day(t1)}</text>
+  </svg>`;
+}
+const sgn = (x) => (x == null ? '–' : `${x >= 0 ? '+' : '−'}${f.pct(Math.abs(x), 1)}`);
+function indexBlock() {
+  const idx = loadIndex();
+  if (!idx?.alt?.length) return `<div class="mkt-idx"><span class="k">Hyperliquid-Ledger-Perp-Index</span><p class="empty" style="font-size:12px;margin:4px 0 0">Noch nicht berechnet. Einmal im Tab Signale „Märkte durchsuchen“, dann erscheint er hier.</p></div>`;
+  const c = indexChart(idx, idxDays);
+  if (!c) return '';
+  const up = trendOf(idx.alt);
+  const chips = [[90, '90 T'], [180, '180 T'], [100000, 'Alles']].map(([d, t]) => `<button type="button" class="chip-btn${idxDays === d ? ' ghost-chip' : ''}" data-idxdays="${d}">${t}</button>`).join('');
+  return `<div class="mkt-idx">
+    <div class="mkt-idx-head"><span class="k">Hyperliquid-Ledger-Perp-Index</span><span class="chips">${chips}</span></div>
+    ${indexSvg(c)}
+    <span class="mkt-parts"><b style="color:var(--gold)">Alts ${sgn(c.altPct)}</b> · <b style="color:#6ea8ff">Small Caps ${sgn(c.smallPct)}</b> im Ausschnitt · <b class="${up == null ? 'muted' : up ? 'long' : 'short'}">Alts ${up == null ? 'zu wenig Historie' : up ? 'aufwärts' : 'nicht aufwärts'}</b>
+    <br>gestrichelt: EMA 20 und EMA 100 der Alts${c.alt.length && (() => { const v = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)]; return Math.max(...v) / Math.min(...v) > 3; })() ? ' · logarithmische Skala' : ''}${c.block ? ' · rot: nächster Tages-Sell-Block' : ''}${c.full ? '' : ' · lange Historie folgt beim nächsten Durchlauf'}</span>
+  </div>`;
+}
+
 export function renderMarket() {
   const box = $('market');
   if (!box) return;
@@ -93,6 +139,7 @@ export function renderMarket() {
         ${stand ? `<span class="k${stand.stale ? ' fng-stale' : ''}">${stand.text}${stand.stale ? ', Quelle hängt' : ''}</span>` : ''}
       </div>
     </div>
+    ${indexBlock()}
     <div class="mkt-stats">
       <div><span class="k">Krypto-Marktkap.</span><b>${g ? bigUsd(g.cap) : '–'}</b>
         ${g && Number.isFinite(g.change24h) ? `<small class="${g.change24h >= 0 ? 'long' : 'short'}">${g.change24h >= 0 ? '+' : '−'}${f.pct(Math.abs(g.change24h), 2)} 24h</small>` : ''}</div>
@@ -105,6 +152,8 @@ export function renderMarket() {
 
 export function initMarket() {
   onMarket(renderMarket);
+  window.addEventListener('wolfdesk-index', renderMarket);
+  $('market')?.addEventListener('click', (e) => { const b = e.target.closest('button[data-idxdays]'); if (b) { idxDays = Number(b.dataset.idxdays); renderMarket(); } });
   renderMarket();
   refreshMarket();
   setInterval(() => refreshMarket(), 10 * 60e3);

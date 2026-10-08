@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 08.10.2026, 06:50 · Code: Etappe 8n · 1.049 Tests · auf dem iPhone geprüft bis 8l1 (993 von 993 am 07.10. um 20:49; von Jensen um 23:24 abgenommen: „läuft super, sehr hilfreich“), 8m und 8n noch nicht · **Testplan 1 abgeschlossen: kein Kandidat besteht. Richtungsentscheidung vom 07.10., 16:11: keine weiteren Einstiegsregeln auf Vorteil testen, die App wird zum Setup-Finder (Hinweisgeber)**
+Stand: 08.10.2026, 07:30 · Code: Etappe 8n1 · 1.055 Tests · auf dem iPhone geprüft bis 8n (1.049 von 1.049 am 08.10. um 06:50), 8n1 noch nicht · **Testplan 1 abgeschlossen: kein Kandidat besteht. Richtungsentscheidung vom 07.10., 16:11: keine weiteren Einstiegsregeln auf Vorteil testen, die App wird zum Setup-Finder (Hinweisgeber)**
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -22,7 +22,7 @@ Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine
 - Hyperliquid ist aus Claudes Arbeitsumgebung nicht erreichbar (wie Binance). **Aktuelle Funde kann Claude nicht selbst zeichnen; die Vorschau muss in der App laufen.**
 
 **Nächste Schritte:**
-1. **8l1 ist abgenommen (07.10., 23:24). Pakete 8m und 8n sind gebaut** (Abschnitt 9), noch nicht auf dem iPhone (das ZIP 8n enthält 8m mit). Jensen spielt es ein und sagt, ob die Kopfzeile „Markt“ zu seinem Bild von TOTAL2 und OTHERS passt; dann im Tab Konto „Trades auswerten“ und Screenshot der Karte (enthält keine Beträge). Jensen hat am 07.10. um 23:25 den ersten Trade aus dem Finder eröffnet (JTO, über „In Trade-Karte übernehmen“, Rahmen-Stop, 1 % Risiko); nach seinen Worten arbeitet er mit den Ansichten „ab 2“ und „ab 3 Bausteinen“.
+1. **8m und 8n laufen auf dem iPhone (08.10., 06:50). Paket 8n1 ist gebaut** (Index als Bild auf der Startseite), noch nicht auf dem iPhone. Befund auf echten Daten (07:07): Die Order-Historie liefert die Stops (bei 45 von 49 Trades gefunden), `crossed` steht in den Fills. Die Ergebnisse der Auswertung bleiben auf dem iPhone und stehen bewusst nicht in diesem öffentlichen Dokument. Jensen spielt es ein und sagt, ob die Kopfzeile „Markt“ zu seinem Bild von TOTAL2 und OTHERS passt; dann im Tab Konto „Trades auswerten“ und Screenshot der Karte (enthält keine Beträge). Jensen hat am 07.10. um 23:25 den ersten Trade aus dem Finder eröffnet (JTO, über „In Trade-Karte übernehmen“, Rahmen-Stop, 1 % Risiko); nach seinen Worten arbeitet er mit den Ansichten „ab 2“ und „ab 3 Bausteinen“.
 2. Offene Punkte aus der Abnahme einarbeiten (eine Korrekturrunde je Punkt).
    **Inhalt von Paket 8m (reine Anzeige, kein Wächter; von Jensen am 07.10. zwischen 20:33 und 22:32 festgelegt, gebaut um 23:40):**
    - **„Hyperliquid-Ledger-Perp-Index“** aus den Tageskerzen der handelbaren Märkte (Ledger-Liste, Hyperliquid-Perpetuals; nicht Binance-Spot, nicht die 50 Test-Märkte): Alt-Index = alle ohne BTC, gleichgewichtet; Small-Index = Alt-Index ohne die zehn größten nach 30-Tage-Umsatz (Rangliste je Tag neu aus den Kerzen). Neue Märkte erst nach 110 Tagen Historie. Historie so lang wie möglich (Hyperliquid so weit zurück abfragen, wie es liefert; ungeprüft, wie weit das reicht). Ersatz für TOTAL2 und OTHERS, die nicht abrufbar sind; der gleichgewichtete Index ähnelt eher OTHERS.
@@ -47,13 +47,13 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Der Zufalls-Vergleich wird nicht mehr angefasst.** Fällt eine Regel durch, wird nicht am Würfel und nicht an der Lesart gedreht.
 - Vor der Lieferung wie immer: alle Tests, verstellte Einstellungen, Sichtprüfung in iPhone-Größe, Wächter, Zeile „nicht getestet“.
 
-**Offen beim Nutzer:** 8n einspielen (enthält 8m), Kopfzeile „Markt“ ansehen, „Trades auswerten“ (Schritt 1) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
+**Offen beim Nutzer:** 8n1 einspielen, Index auf der Startseite ansehen und mit TOTAL2 / OTHERS vergleichen (Schritt 1) · Wortlaut der Einwände der zweiten Meinung zu Testplan 2 an Claude geben (die Recherche liegt seit 16:25 vor).
 
 **Sachlicher Hinweis zum Konto (Export vom 07.10., 00:43, ohne Beträge):** Das Gesamt-Risiko bis zu den Stops lag bei rund 20 % vom Konto (Budget 6 %), der Tagesverlust bei rund 10 % (Grenze 5 %), bei zwei Positionen lag die Liquidation weniger als 1 % hinter dem Stop. Claude hat es am 07.10. dreimal angesprochen (zuletzt zum Export von 12:57: Gesamt-Risiko weiter rund 20 %, Tagesverlust rund 16 %, bei einer Position die Liquidation 0,1 % hinter dem Stop); Jensen hat nicht darauf geantwortet. Das ist das Muster aus der Selbstanalyse (Hebel zu hoch im Verhältnis zum Stop); der Hebel dagegen ist die Positionsgröße, nicht ein engerer Stop.
 
 **Erste Nachricht für den neuen Chat:**
 
-> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang: MASTERPLAN.md, TESTPLAN.md, TESTPLAN-PROTOKOLL.md und der aktuelle Code als ZIP. Bitte lies die drei Dokumente ganz, zuerst den Abschnitt „Übergabe“ im Masterplan, und arbeite genau so weiter, wie es in Abschnitt 2 steht (Ton, Regeln, Lehren). Hol dir Datum und Uhrzeit von der Uhr, prüf, ob die Versionsnummer im Code zum Masterplan passt (8n), und lass alle Tests laufen (1.049). Sag mir kurz, was du vorgefunden hast und was du vorhast, bevor du baust. Stand: 8l1 ist eingespielt und abgenommen, 8m und 8n gebaut, Testplan 1 ist abgeschlossen (kein Kandidat besteht), seit der Richtungsentscheidung vom 07.10. wird die App zum Setup-Finder, die lange Historie von Binance ist geladen und eingefroren, Regel 5 ist in der Prüfung durchgefallen. Der Testplan ist seit 06.10.2026 fest, der Zufalls-Vergleich seit Änderung 1 und die Lesarten 11 bis 16 samt Änderung 2 (Grundsatz Körper) und Änderung 3 (Regel 1) seit 07.10.: bitte an allem nichts ändern. Nächster Schritt: siehe „Nächste Schritte“ in der Übergabe (Abnahme von 8m und 8n, dann „Umstellen“). Aussagen über die App nur nach einem Blick in den Code. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle. Keine Beträge oder Zugangsdaten in Dateien fürs Repository. Ich bin Buddy2, du bist Buddy1, und wir berichten dem Chef. 🐺
+> Hallo, ich bin Jensen, nenn mich Buddy. Wir haben zusammen „Wolf Desk“ gebaut, eine Trading-PWA für Hyperliquid, komplett vom iPhone aus (Brave, Dateien-App, GitHub im Browser, keine Programmierkenntnisse). Im Anhang: MASTERPLAN.md, TESTPLAN.md, TESTPLAN-PROTOKOLL.md und der aktuelle Code als ZIP. Bitte lies die drei Dokumente ganz, zuerst den Abschnitt „Übergabe“ im Masterplan, und arbeite genau so weiter, wie es in Abschnitt 2 steht (Ton, Regeln, Lehren). Hol dir Datum und Uhrzeit von der Uhr, prüf, ob die Versionsnummer im Code zum Masterplan passt (8n1), und lass alle Tests laufen (1.055). Sag mir kurz, was du vorgefunden hast und was du vorhast, bevor du baust. Stand: 8l1 ist eingespielt und abgenommen, 8m und 8n gebaut, Testplan 1 ist abgeschlossen (kein Kandidat besteht), seit der Richtungsentscheidung vom 07.10. wird die App zum Setup-Finder, die lange Historie von Binance ist geladen und eingefroren, Regel 5 ist in der Prüfung durchgefallen. Der Testplan ist seit 06.10.2026 fest, der Zufalls-Vergleich seit Änderung 1 und die Lesarten 11 bis 16 samt Änderung 2 (Grundsatz Körper) und Änderung 3 (Regel 1) seit 07.10.: bitte an allem nichts ändern. Nächster Schritt: siehe „Nächste Schritte“ in der Übergabe (Abnahme von 8m und 8n, dann „Umstellen“). Aussagen über die App nur nach einem Blick in den Code. Keine Disclaimer, ich weiß, dass ich auf eigenes Risiko handle. Keine Beträge oder Zugangsdaten in Dateien fürs Repository. Ich bin Buddy2, du bist Buddy1, und wir berichten dem Chef. 🐺
 
 ---
 
@@ -80,7 +80,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8n). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8n1). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -105,7 +105,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8n` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8n1` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -161,7 +161,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 44 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8n">` und eine Import-Liste mit `?v=8n` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8n1">` und eine Import-Liste mit `?v=8n1` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -438,6 +438,13 @@ Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im T
 - **Nicht möglich:** der Hebel von damals (steht nicht in den Fills).
 - 21 neue Tests (1.049). Geprüft: alle Tests, mit vier Sätzen verstellter Einstellungen, Ablauf im Browser in iPhone-Größe mit nachgebildeten Fills, Order-Historie und Kerzen (12 Trades, Long und Short). Wächter: keine seiner Dateien berührt.
 - **Nicht getestet:** mit echten Daten. Ob Hyperliquid `historicalOrders` so liefert, wie hier gelesen (Felder `order.coin`, `side`, `triggerPx`, `orderType`, `timestamp`; nach Claudes Kenntnis der Schnittstelle, nicht geprüft); fehlt der Stop überall, liegt es vermutlich daran. Ob `crossed` in den aggregierten Fills steht. Der beste Stand zählt die ganze Stunde des Einstiegs und des Ausstiegs mit und kann leicht zu hoch sein.
+
+**Etappe 8n1 „Index auf der Startseite“ (08.10., 07:30, reines Anzeige-Paket, Wunsch von Jensen 07:07):**
+- **Startseite, Karte Marktüberblick, zwischen den Tachos und der Marktkapitalisierung:** Bild des Hyperliquid-Ledger-Perp-Index. Alts gold, Small Caps blau, beide am ersten Tag des Ausschnitts = 100; EMA 20 und EMA 100 der Alts gestrichelt (über die ganze Reihe gerechnet); nächster Tages-Sell-Block über dem Index als roter Streifen. Ausschnitt 90 Tage, 180 Tage oder alles; bei mehr als Faktor 3 im Bild logarithmisch. Darunter: Veränderung im Ausschnitt und „Alts aufwärts / nicht aufwärts“. Der Tacho „Markt-Bias“ bleibt unverändert (alte Rechnung aus `core-market.js`).
+- **Index sofort gespeichert:** Beim ersten Aufbau wird der Index aus den kurzen Reihen gleich gespeichert (`full: false`), damit Startseite und Trade-Auswertung ihn haben, auch wenn die lange Historie noch fehlt oder abbricht. Die lange Historie wird dann höchstens einmal je 20 Stunden erneut versucht. Nach jeder Änderung meldet der Finder das der Startseite (Ereignis `wolfdesk-index`).
+- **Befund:** Auf Jensens iPhone zeigte die Kopfzeile während des ersten Durchlaufs „Historie ab 09.05.2026“, also den Index aus den kurzen Reihen; die lange Historie lädt erst nach dem Finder. Die Trade-Auswertung lief vorher und hatte deshalb noch keinen Alt-Index.
+- 6 neue Tests (1.055). Geprüft: alle Tests, vier Sätze verstellter Einstellungen, Startseite in iPhone-Größe mit nachgebildeten Daten (alle drei Ausschnitte, lineare und logarithmische Skala). Wächter: keine seiner Dateien berührt.
+- **Nicht getestet:** auf echten Kursen; wie weit die lange Historie wirklich zurückreicht.
 
 **Kleinigkeiten, die noch offen sind:** `startCapital: 1500` in `config.js` ist ein Platzhalter (geklärt am 07.10. über den Export: Der Nutzer hat einen eigenen Wert als Abweichung gespeichert, er liegt nur auf dem iPhone und geht nicht an den Wächter); die Zeile bleibt, wie sie ist · `core-totalrisk.js` enthält noch die alte Funktion `totalRiskStatus` (wird nicht mehr benutzt, die Tests dazu laufen weiter).
 

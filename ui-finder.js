@@ -43,7 +43,8 @@ async function scan() {
     const fresh = buildIndex(dailyAll), stored = loadIndex();
     const rebuild = needsRebuild(stored) || !extendIndex(stored, fresh);
     let idx = rebuild ? fresh : extendIndex(stored, fresh);
-    if (!rebuild) saveIndex(idx);
+    // 8n1: sofort speichern (beim Neuaufbau als „kurz“ markiert), damit Startseite und Trade-Auswertung ihn gleich haben
+    if (idx.alt.length) { saveIndex(idx, undefined, rebuild ? { full: false, tried: Date.now() } : { full: stored?.full !== false, tried: stored?.tried ?? null }); indexChanged(); }
     bias = marketBias(btc, idx); paint();
     // Stufe 2: nur Märkte im Tagestrend aufwärts brauchen die langen 4H-Kerzen
     const found = [];
@@ -74,7 +75,7 @@ async function scan() {
         try { const now = Date.now(); await sleep(CONFIG.signals.hot.requestGapMs); const d = closedCandles(await hl.candles(names[k], '1d', IDX.from, now), now); if (d.length >= dailyAll[names[k]].length) { long[names[k]] = d; ok++; } }
         catch (err) { if (/Rate-Limit/.test(err.message)) { note = 'Hyperliquid bremst, kurze Pause …'; status(); await sleep(60e3); k--; } }
       }
-      if (!stop) { const full = buildIndex(long); if (full.alt.length >= idx.alt.length) { idx = full; if (ok >= names.length * 0.7) saveIndex(idx); bias = marketBias(btc, idx); } }
+      if (!stop) { const full = buildIndex(long); if (full.alt.length >= idx.alt.length) { idx = full; saveIndex(idx, undefined, { full: ok >= names.length * 0.7, tried: Date.now() }); indexChanged(); bias = marketBias(btc, idx); } }
       else idxNote = 'Die lange Index-Historie wurde nicht fertig geladen; sie wird beim nächsten Durchlauf nachgeholt.';
     }
     info = { coins: coins.length, up: up.length, source: uni.source };
@@ -84,6 +85,7 @@ async function scan() {
 }
 
 const tradeBtn = (e) => (onTrade ? `<button type="button" class="small-btn fd-take" data-take="${esc(e.coin)}">In Trade-Karte übernehmen</button>` : '');
+const indexChanged = () => { try { window.dispatchEvent(new Event('wolfdesk-index')); } catch { /* egal */ } };
 const status = () => { const s = $('finder-status'); if (s) s.textContent = note; };
 
 function row(e) {

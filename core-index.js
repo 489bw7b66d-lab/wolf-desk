@@ -22,7 +22,8 @@ export const IDX = {
   even: 1,          // Prozentpunkte: innerhalb davon heißt es „gleichauf“
   fast: 20, slow: 100, // Trend wie beim Tagestrend der Coins
   from: Date.UTC(2023, 0, 1), // lange Historie: so weit zurück wird bei Hyperliquid gefragt
-  maxGapDays: 140,  // ist der gespeicherte Index älter, wird er neu aufgebaut statt fortgeschrieben
+  maxGapDays: 140,
+  retryHours: 20,   // 8n1: so lange nach einem fehlgeschlagenen Versuch wird die lange Historie nicht erneut geladen  // ist der gespeicherte Index älter, wird er neu aufgebaut statt fortgeschrieben
 };
 const dayOf = (t) => Math.floor(t / DAY) * DAY;
 
@@ -156,20 +157,40 @@ export function capExBtcText(global) {
 // ---- Speicher: der Index als kurze Zahlenreihen (nur öffentliche Marktdaten) ----
 const KEY = 'wolfdesk.hlindex', VER = 1;
 const sig = (x) => Number(x.toPrecision(6));
-export const packIndex = (idx) => ({ v: VER, alt: idx.alt.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), small: idx.small.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]) });
+export const packIndex = (idx, meta = {}) => ({ v: VER, full: meta.full !== false, tried: meta.tried ?? null, alt: idx.alt.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), small: idx.small.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]) });
 export function unpackIndex(p) {
   if (!p || p.v !== VER || !Array.isArray(p.alt) || !Array.isArray(p.small)) return null;
   const un = (r) => ({ t: r[0], T: r[0] + DAY - 1, o: r[1], h: r[2], l: r[3], c: r[4], n: r[5] });
-  return { alt: p.alt.map(un), small: p.small.map(un) };
+  return { alt: p.alt.map(un), small: p.small.map(un), full: p.full !== false, tried: p.tried ?? null };
 }
 export function loadIndex(store = globalThis.localStorage) {
   try { return unpackIndex(JSON.parse(store.getItem(KEY))); } catch { return null; }
 }
-export function saveIndex(idx, store = globalThis.localStorage) {
-  try { store.setItem(KEY, JSON.stringify(packIndex(idx))); return true; } catch { return false; }
+export function saveIndex(idx, store = globalThis.localStorage, meta = {}) {
+  try { store.setItem(KEY, JSON.stringify(packIndex(idx, meta))); return true; } catch { return false; }
 }
 // Reicht der gespeicherte Index, um ihn mit den kurzen Reihen fortzuschreiben?
+// 8n1: Ein Index nur aus den kurzen Reihen (full: false) wird sofort gespeichert, damit Startseite und Trade-Auswertung ihn haben;
+// die lange Historie wird höchstens einmal je retryHours erneut versucht.
 export function needsRebuild(stored, now = Date.now(), cfg = IDX) {
   const last = stored?.alt?.[stored.alt.length - 1]?.t;
-  return !(last > 0) || now - last > cfg.maxGapDays * DAY;
+  if (!(last > 0) || now - last > cfg.maxGapDays * DAY) return true;
+  return stored.full === false && !(now - (stored.tried || 0) < cfg.retryHours * 36e5);
+}
+
+// 8n1: Daten für das Bild auf der Startseite. Alt- und Small-Index über die letzten `days` Tage, beide am ersten Tag auf 100 gesetzt,
+// dazu EMA 20 und EMA 100 des Alt-Index (über die ganze Reihe gerechnet, dann abgeschnitten) und der nächste Tages-Sell-Block darüber.
+export function indexChart(idx, days = 180, cfg = IDX) {
+  const alt = idx?.alt || [], small = idx?.small || [];
+  if (alt.length < 2) return null;
+  const from = alt[Math.max(0, alt.length - days)].t, closes = alt.map((x) => x.c);
+  const ef = ema(closes, cfg.fast), es = ema(closes, cfg.slow);
+  const k0 = alt.findIndex((x) => x.t >= from), base = alt[k0].c;
+  const a = alt.slice(k0).map((x, j) => ({ t: x.t, y: (x.c / base) * 100, fast: ef[k0 + j] != null ? (ef[k0 + j] / base) * 100 : null, slow: alt.length >= cfg.minDays && es[k0 + j] != null ? (es[k0 + j] / base) * 100 : null }));
+  const sm = small.filter((x) => x.t >= from), sb = sm[0]?.c;
+  const s = sb > 0 ? sm.map((x) => ({ t: x.t, y: (x.c / sb) * 100 })) : [];
+  const px = alt[alt.length - 1].c;
+  const blk = sellBlocks(alt).filter((b) => b.top > px).sort((x, y) => Math.max(0, x.bottom - px) - Math.max(0, y.bottom - px))[0];
+  return { alt: a, small: s, block: blk ? { lo: (blk.bottom / base) * 100, hi: (blk.top / base) * 100 } : null,
+    altPct: a[a.length - 1].y - 100, smallPct: s.length ? s[s.length - 1].y - 100 : null, from, to: alt[alt.length - 1].t, full: idx.full !== false };
 }
