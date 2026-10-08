@@ -80,10 +80,10 @@ export function bmAlert(r, price, sent = {}, now = Date.now(), cfg = CONFIG.aler
 export const bmStrength = (r) => (r?.state?.atr > 0 ? (r.state.fast - r.state.slow) / r.state.atr : 0);
 
 // Kennzeichen im Tagebuch (Versionsschnitt): 'bm' = Maßstab, sonst alte Engine
-export const engineOf = (e) => (e?.eng === 'bm' ? 'bm' : 'alt');
-export const splitByEngine = (list = []) => ({ bm: list.filter((e) => engineOf(e) === 'bm'), alt: list.filter((e) => engineOf(e) === 'alt') });
+export const engineOf = (e) => (e?.eng === 'bm' ? 'bm' : e?.eng === 'obs' ? 'obs' : 'alt'); // 8r: 'obs' = Beobachtung aus dem Setup-Finder
+export const splitByEngine = (list = []) => ({ bm: list.filter((e) => engineOf(e) === 'bm'), obs: list.filter((e) => engineOf(e) === 'obs'), alt: list.filter((e) => engineOf(e) === 'alt') });
 
 // 8c: So lange läuft ein Maßstab-Signal höchstens (Telegram-Hinweis und Tagebuch-Fenster). Der Backtest-Gewinn kommt aus diesem Zeit-Ausstieg.
 export const bmHoldDays = (cfg = BM()) => (cfg.holdDays > 0 ? cfg.holdDays : 10);
 // Tagebuch-Fenster in Tagen: Maßstab-Signale nach holdDays, alle anderen wie bisher nach Stil
-export const journalWindow = (e, alerts = CONFIG.alerts, cfg = BM()) => (engineOf(e) === 'bm' ? bmHoldDays(cfg) : alerts.journalDays?.[e?.style] || 7);
+export const journalWindow = (e, alerts = CONFIG.alerts, cfg = BM()) => (engineOf(e) !== 'alt' ? bmHoldDays(cfg) : alerts.journalDays?.[e?.style] || 7);

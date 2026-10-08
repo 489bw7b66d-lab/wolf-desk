@@ -92,7 +92,8 @@ function indexSvg(c) {
   const log = lo > 0 && hi / lo > 3, g = (y) => (log ? Math.log(Math.max(y, 1e-9)) : y), gl = g(lo), gh = g(hi);
   const X = (t) => (P.l + ((t - t0) / Math.max(1, t1 - t0)) * (W - P.l - P.r)).toFixed(1), Y = (y) => (P.t + (1 - (g(y) - gl) / (gh - gl)) * (H - P.t - P.b)).toFixed(1);
   const path = (pts, k = 'y') => pts.filter((p) => p[k] != null && p[k] >= lo && p[k] <= hi).map((p, j) => `${j ? 'L' : 'M'}${X(p.t)} ${Y(p[k])}`).join('');
-  const band = c.block && c.block.lo < hi ? `<rect x="${P.l}" y="${Y(Math.min(c.block.hi, hi))}" width="${W - P.l - P.r}" height="${Math.max(1, Y(c.block.lo) - Y(Math.min(c.block.hi, hi)))}" fill="var(--bad)" opacity=".18"/><text x="${W - P.r + 3}" y="${Number(Y(c.block.lo)) + 3}" fill="var(--bad)" font-size="9" font-weight="700">Sell</text>` : '';
+  c.blockShown = !!(c.block && c.block.lo < hi);
+  const band = c.blockShown ? `<rect x="${P.l}" y="${Y(Math.min(c.block.hi, hi))}" width="${W - P.l - P.r}" height="${Math.max(1, Y(c.block.lo) - Y(Math.min(c.block.hi, hi)))}" fill="var(--bad)" opacity=".18"/><text x="${W - P.r + 3}" y="${Number(Y(c.block.lo)) + 3}" fill="var(--bad)" font-size="9" font-weight="700">Sell</text>` : '';
   const last = c.alt[c.alt.length - 1], ls = c.small[c.small.length - 1];
   const day = (t) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   return `<svg viewBox="0 0 ${W} ${H}" class="mkt-idx-svg" role="img" aria-label="Alt-Index und Small-Index der letzten ${c.alt.length} Tage">
@@ -126,7 +127,7 @@ function indexBlock() {
     <div class="mkt-idx-head"><span class="k">Hyperliquid-Ledger-Perp-Index</span><span class="chips">${chips}</span></div>
     ${indexSvg(c)}
     <span class="mkt-parts"><b style="color:var(--gold)">Alts ${sgn(c.altPct)}</b> · ${c.topPct != null ? `<b style="color:var(--text)">Top 10 ${sgn(c.topPct)}</b> · ` : ''}<b style="color:#6ea8ff">Rest ${sgn(c.smallPct)}</b> im Ausschnitt · <b class="${up == null ? 'muted' : up ? 'long' : 'short'}">Alts ${up == null ? 'zu wenig Historie' : up ? 'aufwärts' : 'nicht aufwärts'}</b>
-    <br>gestrichelt: EMA 20 und EMA 100 der Alts${c.alt.length && (() => { const v = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)]; return Math.max(...v) / Math.min(...v) > 3; })() ? ' · logarithmische Skala' : ''}${c.block ? ' · rot: nächster Tages-Sell-Block' : ''}${c.full ? '' : ` · lange Historie folgt beim nächsten Durchlauf${idx.of ? ` (letzter Versuch: ${idx.got} von ${idx.of} Märkten lang geladen${idx.tried ? ', ' + new Date(idx.tried).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''})` : idx.tried ? ' (noch kein vollständiger Versuch)' : ''}`}</span>
+    <br>gestrichelt: EMA 20 und EMA 100 der Alts${c.alt.length && (() => { const v = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)]; return Math.max(...v) / Math.min(...v) > 3; })() ? ' · logarithmische Skala' : ''}${c.block && c.blockShown ? ' · rot: nächster Tages-Sell-Block' : ''}${c.full ? '' : ` · lange Historie folgt beim nächsten Durchlauf${idx.of ? ` (letzter Versuch: ${idx.got} von ${idx.of} Märkten lang geladen${idx.tried ? ', ' + new Date(idx.tried).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''})` : idx.tried ? ' (noch kein vollständiger Versuch)' : ''}`}</span>
   </div>`;
 }
 
@@ -134,7 +135,8 @@ function indexBlock() {
 function newParts(tb, nb, m) {
   const ar = (x) => (x == null ? '·' : x ? '▲' : '▼'), cl = (x) => (x == null ? 'muted' : x ? 'long' : 'short');
   const br = tb.parts.breadth, brT = br > 0 ? 'Rest stärker' : br < 0 ? 'Top 10 stärker' : 'Rest = Top 10';
-  return `<span class="mkt-parts"><b class="${cl(tb.parts.btc)}">BTC ${ar(tb.parts.btc)}</b> · <b class="${cl(tb.parts.alt)}">Alts ${ar(tb.parts.alt)}</b> · <b class="${br > 0 ? 'long' : br < 0 ? 'short' : 'muted'}" title="${breadthText(nb.breadth)}">${brT}</b>${m.breadth ? ` · <b class="muted">Breite ${f.pct(m.breadth.pct, 0)}</b>` : ''}</span>`;
+  const pull = (x, up) => (x ? (up ? ' (Rücksetzer)' : ' (Erholung)') : '');
+  return `<span class="mkt-parts"><b class="${cl(tb.parts.btc)}">BTC ${ar(tb.parts.btc)}${pull(tb.parts.btcPull, tb.parts.btc)}</b> · <b class="${cl(tb.parts.alt)}">Alts ${ar(tb.parts.alt)}${pull(tb.parts.altPull, tb.parts.alt)}</b> · <b class="${br > 0 ? 'long' : br < 0 ? 'short' : 'muted'}" title="${breadthText(nb.breadth)}">${brT}</b>${m.breadth ? ` · <b class="muted">Breite ${f.pct(m.breadth.pct, 0)}</b>` : ''}</span>`;
 }
 
 export function renderMarket() {

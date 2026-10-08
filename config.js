@@ -73,6 +73,7 @@ export const CONFIG = {
     maxPerRun: 3,               // höchstens so viele Signal-Meldungen pro Durchlauf
     risk: true,                 // Regelverstöße deiner Positionen melden (und Entwarnung)
     benchmark: true,            // 8b: Signale nach dem Maßstab (Trendfolge, „neu im Trend“) statt nach der alten Engine
+    observe: true,              // 8r: Beobachtungen aus dem Setup-Finder statt Maßstab-Signale (false = zurück zum Maßstab)
     appUrl: 'https://489bw7b66d-lab.github.io/wolf-desk/',
   },
 

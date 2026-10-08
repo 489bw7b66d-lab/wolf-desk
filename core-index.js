@@ -86,6 +86,13 @@ export function extendIndex(stored, fresh) {
 }
 
 // Trend wie bei den Coins: Tages-EMA 20 über EMA 100, mindestens 110 Tage. null = zu wenig Historie.
+// 8r: Liegt der letzte Tagesschluss über der EMA 20? (Rücksetzer im Trend erkennen, wie der Maßstab „im Trend“)
+export function aboveFast(candles, cfg = IDX) {
+  const n = candles?.length || 0;
+  if (n < cfg.fast) return null;
+  const e = ema(candles.map((x) => x.c), cfg.fast)[n - 1];
+  return e > 0 ? candles[n - 1].c > e : null;
+}
 export function trendOf(candles, cfg = IDX) {
   const n = candles?.length || 0;
   if (n < cfg.minDays) return null;
@@ -122,7 +129,7 @@ export function marketRoom(index) {
 export function marketBias(btc, idx, cfg = IDX) {
   const alt = idx?.alt || [], small = idx?.small || [], top = idx?.top || [];
   const breadth = relStrength(small, top, cfg.perfDays);
-  return { btcUp: trendOf(btc, cfg), altUp: trendOf(alt, cfg), breadth, room: marketRoom(alt),
+  return { btcUp: trendOf(btc, cfg), altUp: trendOf(alt, cfg), btcAbove: aboveFast(btc, cfg), altAbove: aboveFast(alt, cfg), breadth, room: marketRoom(alt),
     from: alt[0]?.t ?? null, to: alt[alt.length - 1]?.t ?? null, members: alt[alt.length - 1]?.n ?? 0, smallMembers: small[small.length - 1]?.n ?? 0, topMembers: top[top.length - 1]?.n ?? 0 };
 }
 
@@ -203,11 +210,13 @@ export function indexChart(idx, days = 180, cfg = IDX) {
 
 // 8o: Tacho der Startseite aus den drei Ebenen (Jensen, 08.10.: „die Karte soll mit einer Stimme sprechen“).
 // Nur die Zeigerstellung: BTC-Trend und Alt-Trend je ±40, Breite ±20 (Rest stärker / schwächer als die Top 10, mehr als ein Punkt).
+// 8r (Jensen, 08.10.: „Zeiger auf Anschlag kommt mir ungewöhnlich vor“): BTC und Alts mit Zwischenstufe. Volle ±40 nur, wenn
+// der Tagesschluss auf derselben Seite der EMA 20 liegt wie der Trend; sonst ±20 (Rücksetzer im Aufwärtstrend, Erholung im Abwärtstrend).
 // Kein Messwert und kein Signal; der Text nennt die drei Ebenen selbst.
 export function tachoFrom(b, cfg = IDX) {
   if (!b || (b.btcUp == null && b.altUp == null)) return null;
-  const one = (x) => (x == null ? 0 : x ? 1 : -1), br = b.breadth == null || Math.abs(b.breadth) < cfg.even ? 0 : b.breadth > 0 ? 1 : -1;
-  const value = 40 * one(b.btcUp) + 40 * one(b.altUp) + 20 * br;
+  const one = (x, above) => (x == null ? 0 : (x ? 1 : -1) * (above == null || above === x ? 1 : 0.5)), br = b.breadth == null || Math.abs(b.breadth) < cfg.even ? 0 : b.breadth > 0 ? 1 : -1;
+  const value = 40 * one(b.btcUp, b.btcAbove) + 40 * one(b.altUp, b.altAbove) + 20 * br;
   const label = value >= 60 ? 'Long-Markt' : value >= 20 ? 'Leicht bullisch' : value > -20 ? 'Gemischt' : value > -60 ? 'Leicht bärisch' : 'Short-Markt';
-  return { value, label, cls: value >= 20 ? 'long' : value <= -20 ? 'short' : 'muted', parts: { btc: b.btcUp, alt: b.altUp, breadth: br } };
+  return { value, label, cls: value >= 20 ? 'long' : value <= -20 ? 'short' : 'muted', parts: { btc: b.btcUp, alt: b.altUp, btcPull: b.btcUp != null && b.btcAbove != null && b.btcAbove !== b.btcUp, altPull: b.altUp != null && b.altAbove != null && b.altAbove !== b.altUp, breadth: br } };
 }

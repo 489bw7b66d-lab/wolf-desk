@@ -78,7 +78,8 @@ import { tests as ix } from './test-index.js';
 import { tests as tdd } from './test-tradedetail.js';
 import { tests as stc } from './test-stopcheck.js';
 import { tests as bk } from './test-backup.js';
-const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst, ...e2, ...xc, ...tk, ...jm, ...gs, ...po, ...bm, ...rg, ...ec, ...dc, ...bx, ...rb, ...rn, ...bn, ...lt, ...lr, ...fd, ...ix, ...tdd, ...stc, ...bk];
+import { tests as ob } from './test-observe.js';
+const tests = [...calc, ...risk, ...perf, ...sig, ...trades, ...mkt, ...bt, ...al, ...st, ...vw, ...fe, ...pa, ...pl, ...ap, ...gu, ...pt, ...fp, ...lp, ...tr, ...ch, ...tl, ...tg, ...hd, ...pv, ...s5, ...ps, ...pst, ...e2, ...xc, ...tk, ...jm, ...gs, ...po, ...bm, ...rg, ...ec, ...dc, ...bx, ...rb, ...rn, ...bn, ...lt, ...lr, ...fd, ...ix, ...tdd, ...stc, ...bk, ...ob];
 let pass = 0;
 const list = document.getElementById('list');
 for (const [name, fn] of tests) {
