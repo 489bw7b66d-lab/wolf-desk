@@ -731,3 +731,7 @@ button.pos-row:first-of-type { border-top: 0; }
 .fd-bias { display: grid; gap: 4px; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 13px; }
 .fd-bias b { font-size: 14px; }
 .fd-search { width: 100%; margin: 0 0 10px; }
+.td-row { grid-template-columns: 1.3fr .55fr .85fr .85fr .85fr; }
+.td-trade { display: grid; gap: 3px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.td-trade b { font-size: 15px; }
+#tdetail .sub-h { margin-top: 16px; }
