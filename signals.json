@@ -1,6 +1,64 @@
 {
  "signals": [
   {
+   "coin": "AVAX",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791476195572,
+   "px": 10.01,
+   "zone": [
+    10.01,
+    10.01
+   ],
+   "stop": 8.669560173407875,
+   "tps": [
+    12.690879653184247,
+    14.031319479776371,
+    15.371759306368496,
+    18.052638959552745
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 12,
+   "eng": "obs"
+  },
+  {
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791476195572,
+   "px": 0.0055,
+   "zone": [
+    0.0055,
+    0.0055
+   ],
+   "stop": 0.004237176541709642,
+   "tps": [
+    0.008025646916580715,
+    0.009288470374871072,
+    0.010551293833161429,
+    0.013076940749742144
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 13,
+   "eng": "obs"
+  },
+  {
    "coin": "ETH",
    "dir": "long",
    "style": "swing",
@@ -519,53 +577,6 @@
     "Doppelboden bestätigt"
    ],
    "id": "WLD|long|1790540644842"
-  },
-  {
-   "coin": "PUMP",
-   "dir": "long",
-   "style": "intraday",
-   "score": 75,
-   "seal": true,
-   "at": 1790510936619,
-   "px": 0.004507,
-   "zone": null,
-   "stop": 0.004267004503089267,
-   "tps": [
-    0.004669004503089268,
-    0.004870004503089269
-   ],
-   "status": "tp2",
-   "r": 1.5125471426003043,
-   "doneAt": 1790524799999,
-   "events": [
-    "Hammer",
-    "Bullish Engulfing",
-    "MACD-Kreuzung aufwärts"
-   ],
-   "id": "PUMP|long|1790510936619"
-  },
-  {
-   "coin": "ZEC",
-   "dir": "long",
-   "style": "swing",
-   "score": 82,
-   "seal": true,
-   "at": 1790501901046,
-   "px": 1664.7,
-   "zone": null,
-   "stop": 1493.0094913346175,
-   "tps": [
-    1789.409491334618,
-    1937.6094913346183
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1790625599999,
-   "events": [
-    "MACD-Kreuzung aufwärts",
-    "Ausbruch aus Dreieck"
-   ],
-   "id": "ZEC|long|1790501901046"
   }
  ],
  "archive": [
