@@ -1,6 +1,95 @@
 {
  "signals": [
   {
+   "coin": "SOL",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791490408312,
+   "px": 109.46,
+   "zone": [
+    109.46,
+    109.46
+   ],
+   "stop": 100.10514615236099,
+   "tps": [
+    128.169707695278,
+    137.524561542917,
+    146.879415390556,
+    165.589123085834
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep",
+    "Order Block"
+   ],
+   "id": 14,
+   "eng": "obs"
+  },
+  {
+   "coin": "XMR",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791490408312,
+   "px": 527.06,
+   "zone": [
+    527.06,
+    527.06
+   ],
+   "stop": 470.6477824312789,
+   "tps": [
+    639.884435137442,
+    696.296652706163,
+    752.708870274884,
+    865.533305412326
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep",
+    "Order Block"
+   ],
+   "id": 15,
+   "eng": "obs"
+  },
+  {
+   "coin": "BTC",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791490408312,
+   "px": 81849,
+   "zone": [
+    81849,
+    81849
+   ],
+   "stop": 77426.9980423809,
+   "tps": [
+    90693.0039152382,
+    95115.00587285729,
+    99537.0078304764,
+    108381.0117457146
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 16,
+   "eng": "obs"
+  },
+  {
    "coin": "AVAX",
    "dir": "long",
    "style": "swing",
@@ -490,93 +579,6 @@
     "EMA 8/21 Kreuzung aufwärts"
    ],
    "id": "CRV|long|1790640610315"
-  },
-  {
-   "coin": "LINK",
-   "dir": "long",
-   "style": "intraday",
-   "score": 81,
-   "seal": true,
-   "at": 1790622516553,
-   "px": 15.132,
-   "zone": [
-    14.905757051050324,
-    15.25
-   ],
-   "stop": 14.045149678676136,
-   "tps": [
-    16.110607372374186,
-    17.14333621922321,
-    18.176065066072237,
-    19.208793912921262
-   ],
-   "status": "abgelaufen",
-   "r": -0.598978522826431,
-   "doneAt": 1790881773662,
-   "events": [
-    "Volumen-Spike",
-    "Bullish Engulfing",
-    "Starkes Momentum"
-   ],
-   "id": "LINK|long|1790622516553"
-  },
-  {
-   "coin": "PUMP",
-   "dir": "long",
-   "style": "intraday",
-   "score": 80,
-   "seal": true,
-   "at": 1790615281666,
-   "px": 0.005308,
-   "zone": [
-    0.005156963248649577,
-    0.005384
-   ],
-   "stop": 0.004589371370273519,
-   "tps": [
-    0.005951591878376058,
-    0.006632702132427327,
-    0.007313812386478596,
-    0.007994922640529865
-   ],
-   "status": "tp1",
-   "r": 0.8955834095018127,
-   "doneAt": 1790874783231,
-   "events": [
-    "Volumen-Spike",
-    "MACD-Kreuzung aufwärts",
-    "Ausbruch aus Dreieck"
-   ],
-   "id": "PUMP|long|1790615281666"
-  },
-  {
-   "coin": "WLD",
-   "dir": "long",
-   "style": "swing",
-   "score": 88,
-   "seal": true,
-   "at": 1790540644842,
-   "px": 0.55863,
-   "zone": [
-    0.5350911080367442,
-    0.56043
-   ],
-   "stop": 0.4985105540183721,
-   "tps": [
-    0.5970105540183721,
-    0.6462605540183721,
-    0.6955105540183721,
-    0.7447605540183722
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1790607599999,
-   "events": [
-    "Starkes Momentum",
-    "Ausbruch aus Seitwärtsphase",
-    "Doppelboden bestätigt"
-   ],
-   "id": "WLD|long|1790540644842"
   }
  ],
  "archive": [
