@@ -743,3 +743,4 @@ button.pos-row:first-of-type { border-top: 0; }
 .mkt-idx-head .chips { flex-wrap: nowrap; gap: 4px; }
 .mkt-idx-head .chip-btn { height: 26px; padding: 0 8px; font-size: 11px; }
 .mkt-idx-head .chip-btn { white-space: nowrap; }
+.td-dice { font-size: 14px; font-weight: 600; line-height: 1.45; margin: 4px 0 8px; }

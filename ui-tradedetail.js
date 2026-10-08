@@ -2,15 +2,18 @@
 // Zeigt keine Beträge in Dollar, nur ATR, R und Prozent. Logik und Tests: core-tradedetail.js.
 import { CONFIG } from './config.js';
 import { hl, info } from './core-api.js';
-import { getCandles } from './core-scanner.js';
+import { getCandles, getMarketCtx } from './core-scanner.js';
+import { scanUniverse } from './core-universe.js';
+import { getTradeable } from './core-tradeable.js';
 import { closedCandles } from './core-signals.js';
 import { tradeHistory } from './core-trades.js';
 import { loadIndex } from './core-index.js';
-import { detailRow, splitStats, compareText, atrTxt, holdTxt, TD } from './core-tradedetail.js';
+import { detailRow, splitStats, compareText, atrTxt, holdTxt, TD, diceCompare, diceText } from './core-tradedetail.js';
 import { esc, dn, tipInline } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let dice = null, diceBusy = false, diceNote = '';
 let getState = () => ({}), getAddress = () => '', busy = false, stop = false, note = '', rows = null, stats = null, hasStop = 0, at = 0, showAll = false;
 
 async function run() {
@@ -46,6 +49,28 @@ async function run() {
   busy = false; paint();
 }
 
+// 8o: Würfel-Vergleich. Lädt einmal die 4H-Kerzen aller handelbaren Märkte für den Zeitraum der Trades.
+async function runDice() {
+  if (diceBusy || busy || !rows) return;
+  diceBusy = true; stop = false; dice = null; diceNote = 'Lade Marktliste …'; paint();
+  try {
+    const closed = rows.filter((r) => r.closed);
+    if (!closed.length) throw new Error('Keine abgeschlossenen Trades.');
+    const ctx = await getMarketCtx(), names = Object.values(getState().markets || {}).flat();
+    const uni = await scanUniverse(names, ctx.ctx, getTradeable());
+    const coins = [...new Set([...uni.coins.filter((c) => !(ctx.map[c] < CONFIG.signals.minDayVolumeUsd)), ...closed.map((r) => r.coin)])];
+    const from = Math.min(...closed.map((r) => r.openedAt)) - 5 * 864e5, h4 = {};
+    for (let k = 0; k < coins.length && !stop; k++) {
+      diceNote = `Würfel-Vergleich: Kerzen ${k + 1} von ${coins.length} Märkten …`; diceStatus();
+      try { const now = Date.now(); await sleep(CONFIG.signals.hot.requestGapMs); h4[coins[k]] = closedCandles(await hl.candles(coins[k], '4h', from, now), now); }
+      catch (err) { if (/Rate-Limit/.test(err.message)) { diceNote = 'Hyperliquid bremst, kurze Pause …'; diceStatus(); await sleep(60e3); k--; } }
+    }
+    if (stop) diceNote = 'Angehalten.';
+    else { dice = diceCompare(closed, h4); diceNote = `${Object.keys(h4).length} Märkte als Würfel (${uni.source}).`; }
+  } catch (e) { diceNote = `Abgebrochen: ${e.message}`; }
+  diceBusy = false; paint();
+}
+const diceStatus = () => { const el = $('td-dice-status'); if (el) el.textContent = diceNote; };
 const status = () => { const el = $('td-status'); if (el) el.textContent = note; };
 const pct = (x) => (x == null ? '–' : `${Math.round(x)} %`);
 const rTxt = (x) => (x == null ? '' : ` · ${x.toFixed(1).replace('.', ',').replace('-', '−')} R`);
@@ -54,7 +79,7 @@ const BIAS = { 'aufwärts': 'Markt aufwärts', 'abwärts': 'Markt abwärts', 'ge
 
 function table(groups) {
   const head = '<div class="bt-row td-row head" role="row"><span>Gruppe</span><span>Trades</span><span>Ø Ergebnis</span><span>Ø bester Stand</span><span>liegen gelassen</span></div>';
-  return `<div class="bt-table" role="table">${head}${groups.map(([name, g]) => `<div class="bt-row td-row" role="row"><span>${esc(name)}${g.n ? `<br><small class="muted">${pct(g.winPct)} im Plus</small>` : ''}</span><span>${g.n}</span><span>${atrTxt(g.resAtr)}</span><span>${atrTxt(g.bestAtr)}</span><span>${atrTxt(g.leftAtr)}</span></div>`).join('')}</div>`;
+  return `<div class="bt-table" role="table">${head}${groups.map(([name, g]) => `<div class="bt-row td-row" role="row"><span>${esc(name)}${g.n ? `<br><small class="muted">${pct(g.winPct)} im Plus · Ø ${holdTxt(g.holdH)}${g.stopAtr != null ? ` · Stop Ø ${atrTxt(g.stopAtr)}` : ''}</small>` : ''}</span><span>${g.n}</span><span>${atrTxt(g.resAtr)}</span><span>${atrTxt(g.bestAtr)}</span><span>${atrTxt(g.leftAtr)}</span></div>`).join('')}</div>`;
 }
 
 function rowHtml(r) {
@@ -67,7 +92,7 @@ function rowHtml(r) {
 function paint() {
   const el = $('tdetail');
   if (!el) return;
-  let h = `<div class="mk-actions"><button type="button" class="small-btn" id="td-go"${busy ? ' disabled' : ''}>Trades auswerten</button>${busy ? '<button type="button" class="small-btn ghost" id="td-stop">Anhalten</button>' : ''}</div>
+  let h = `<div class="mk-actions"><button type="button" class="small-btn" id="td-go"${busy ? ' disabled' : ''}>Trades auswerten</button>${busy || diceBusy ? '<button type="button" class="small-btn ghost" id="td-stop">Anhalten</button>' : ''}</div>
     <p class="set-hint" id="td-status" role="status">${esc(note)}</p>`;
   if (rows && stats) {
     const closed = rows.filter((r) => r.closed);
@@ -77,6 +102,13 @@ function paint() {
       h += `<p class="set-hint">${esc(compareText(stats.bias.mit, stats.bias.gegen, 'Mit dem Bias', 'gegen den Bias'))}</p>`;
       h += '<h3 class="sub-h">Einstieg und Coin-Trend</h3>' + table([['Zum Kurs', stats.kind.Kurs], ['Per Limit', stats.kind.Limit], ['Coin im Trend', stats.coin.im], ['Coin gegen Trend', stats.coin.gegen]]);
       h += `<p class="set-hint">„Bester Stand“ = so weit lief der Kurs höchstens in deine Richtung. „Liegen gelassen“ = bester Stand minus Ergebnis. Alles in Tages-ATR beim Einstieg, in R nur, wo der Stop bekannt ist.</p>`;
+    }
+    if (closed.length) {
+      h += `<h3 class="sub-h">Würfel-Vergleich: deine Coin-Wahl gegen den Zufall</h3>
+        <p class="set-hint">Gleicher Einstieg, gleiche Haltedauer, gleiche Richtung, aber ein zufälliger anderer Markt aus deiner Liste, ${500} Mal. Gemessen in 4H-ATR, ohne Stops und Teilverkäufe: Es geht nur um die Wahl des Coins. Lädt einmal die 4H-Kerzen aller handelbaren Märkte (ein paar Minuten).</p>
+        <div class="mk-actions"><button type="button" class="small-btn ghost" id="td-dice"${diceBusy || busy ? ' disabled' : ''}>Würfel-Vergleich starten</button></div>
+        <p class="set-hint" id="td-dice-status" role="status">${esc(diceNote)}</p>
+        ${dice ? `<p class="td-dice ${dice.n >= TD.minN && dice.beat >= 95 ? 'long' : ''}">${esc(diceText(dice))}</p>` : ''}`;
     }
     const list = showAll ? rows : rows.slice(0, 15);
     h += `<h3 class="sub-h">Je Trade</h3>${list.map(rowHtml).join('')}${rows.length > 15 ? `<button type="button" class="small-btn ghost" id="td-more">${showAll ? 'Weniger zeigen' : `Alle ${rows.length} zeigen`}</button>` : ''}`;
@@ -95,6 +127,7 @@ export function initTradeDetail(stateGetter, addressGetter) {
     if (!b) return;
     if (b.id === 'td-go') run();
     else if (b.id === 'td-stop') { stop = true; note = 'Halte an …'; status(); }
+    else if (b.id === 'td-dice') runDice();
     else if (b.id === 'td-more') { showAll = !showAll; paint(); }
   });
   paint();

@@ -7,6 +7,7 @@
 // Reine Funktionen, Tests in test-tradedetail.js.
 import { atr } from './core-indicators.js';
 import { trendOf } from './core-index.js';
+import { mulberry32 } from './core-randombase.js';
 
 export const TD = { atrPeriod: 14, minN: 10, stopWindowMs: 5 * 60e3 };
 
@@ -102,7 +103,7 @@ export function groupStats(rows) {
   const L = (rows || []).filter((r) => r.closed && r.resAtr != null);
   const avg = (k) => { const v = L.map((r) => r[k]).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   return { n: L.length, winPct: L.length ? (L.filter((r) => r.resAtr > 0).length / L.length) * 100 : null,
-    resAtr: avg('resAtr'), bestAtr: avg('bestAtr'), leftAtr: avg('leftAtr'), holdH: avg('holdH'), resPct: avg('resPct') };
+    resAtr: avg('resAtr'), bestAtr: avg('bestAtr'), leftAtr: avg('leftAtr'), holdH: avg('holdH'), resPct: avg('resPct'), stopAtr: avg('stopAtr') };
 }
 // Gruppen für die Tabelle
 export function splitStats(rows) {
@@ -123,4 +124,57 @@ export function compareText(a, b, nameA, nameB, minN = TD.minN) {
   if (!a?.n || !b?.n) return `Für den Vergleich ${nameA} gegen ${nameB} fehlen Trades in einer der beiden Gruppen.`;
   const base = `${nameA}: ${a.n} Trades, im Schnitt ${atrTxt(a.resAtr)} · ${nameB}: ${b.n} Trades, im Schnitt ${atrTxt(b.resAtr)}.`;
   return a.n < minN || b.n < minN ? `${base} Noch zu wenige Trades (je Gruppe mindestens ${minN}), der Unterschied kann reiner Zufall sein.` : `${base} Bei dieser Menge ist ein Unterschied von weniger als einer halben ATR noch kein Muster.`;
+}
+
+// ---- 8o: Würfel-Vergleich für die eigenen Trades (Jensen, 08.10.: „der Würfel ist genauso gut?“) ----
+// Frage: War die Wahl des Coins besser als der Zufall? Für jeden abgeschlossenen Trade derselbe Einstiegszeitpunkt, dieselbe
+// Haltedauer und dieselbe Richtung, aber ein zufälliger anderer Markt aus der handelbaren Liste. Gemessen wird bei beiden gleich:
+// Schluss der letzten abgeschlossenen 4H-Kerze vor dem Einstieg bis Schluss der letzten vor dem Ausstieg, in 4H-ATR(14) des Coins.
+// Stops und Teilverkäufe spielen dabei keine Rolle (sie hängen am eigenen Coin); verglichen wird nur die Wahl des Coins.
+// Trades, die kürzer als eine 4H-Kerze liefen, zählen nicht. Fester Würfel, damit derselbe Lauf dasselbe Ergebnis liefert.
+export const DICE = { runs: 500, seed: 20261008, minCand: 5, pass: 95 };
+
+// Je Coin einmal vorbereiten: Zeiten, Schlusskurse, 4H-ATR
+export function prepH4(candles) {
+  const cs = (candles || []).filter((c) => c && c.c > 0);
+  return { T: cs.map((c) => c.T), c: cs.map((c) => c.c), atr: atr(cs, TD.atrPeriod) };
+}
+// Index der letzten Kerze, die vor t abgeschlossen war (-1, wenn keine)
+export function lastBefore(P, t) {
+  let lo = 0, hi = P.T.length - 1, k = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (P.T[m] < t) { k = m; lo = m + 1; } else hi = m - 1; }
+  return k;
+}
+// Bewegung eines Coins zwischen zwei Zeitpunkten in 4H-ATR, in Richtung side. null, wenn nicht messbar.
+export function moveAtr(P, side, a, b) {
+  if (!P) return null;
+  const i = lastBefore(P, a), j = lastBefore(P, b);
+  if (i < 0 || j <= i || !(P.atr[i] > 0)) return null;
+  return (side === 'short' ? -1 : 1) * (P.c[j] - P.c[i]) / P.atr[i];
+}
+// trades: [{ coin, side, openedAt, closedAt }], h4: { COIN: Kerzen } → Ergebnis des Vergleichs
+export function diceCompare(trades, h4, cfg = DICE) {
+  const P = Object.fromEntries(Object.entries(h4 || {}).map(([k, v]) => [k, prepH4(v)]));
+  const coins = Object.keys(P), used = [];
+  for (const t of trades || []) {
+    if (t.closedAt == null) continue;
+    const own = moveAtr(P[t.coin], t.side, t.openedAt, t.closedAt);
+    if (own == null) continue;
+    const cand = coins.filter((c) => c !== t.coin).map((c) => moveAtr(P[c], t.side, t.openedAt, t.closedAt)).filter((x) => x != null);
+    if (cand.length < cfg.minCand) continue;
+    used.push({ own, cand });
+  }
+  if (!used.length) return { n: 0 };
+  const ownMean = used.reduce((s, u) => s + u.own, 0) / used.length, rnd = mulberry32(cfg.seed), means = [];
+  for (let r = 0; r < cfg.runs; r++) { let s = 0; for (const u of used) s += u.cand[Math.floor(rnd() * u.cand.length)]; means.push(s / used.length); }
+  means.sort((a, b) => a - b);
+  const q = (p) => means[Math.min(means.length - 1, Math.floor(p * means.length))];
+  const beat = (means.filter((m) => m < ownMean).length / means.length) * 100;
+  return { n: used.length, skipped: (trades || []).filter((t) => t.closedAt != null).length - used.length, own: ownMean, beat, p5: q(0.05), p50: q(0.5), p95: q(0.95), runs: cfg.runs };
+}
+export function diceText(d, cfg = DICE, minN = TD.minN) {
+  if (!d?.n) return 'Kein Trade ließ sich vergleichen (zu kurz oder zu wenige andere Märkte mit Kerzen).';
+  const base = `${d.n} Trades verglichen${d.skipped ? `, ${d.skipped} nicht (kürzer als 4 Stunden oder ohne Kerzen)` : ''}. Deine Coins: im Schnitt ${num(d.own)} ATR. Würfel: Mitte ${num(d.p50)} ATR, 90 % der Durchgänge zwischen ${num(d.p5)} und ${num(d.p95)} ATR. Deine Wahl lag über ${Math.round(d.beat)} % der ${d.runs} Würfel-Durchgänge.`;
+  const verdict = d.n < minN ? 'Noch zu wenige Trades für ein Urteil.' : d.beat >= cfg.pass ? `Das ist besser als der Zufall (dieselbe Hürde wie im Testplan: ${cfg.pass} %).` : d.beat <= 100 - cfg.pass ? 'Das ist schlechter als der Zufall.' : 'Das ist vom Zufall nicht zu unterscheiden.';
+  return `${base} ${verdict}`;
 }

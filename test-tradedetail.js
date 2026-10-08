@@ -1,5 +1,5 @@
 // Tests für „Deine Trades im Detail“ (8n): core-tradedetail.js
-import { TD, closedBefore, atrAt, exitAvg, entryKind, stopFor, bestPrice, biasAt, withBias, detailRow, groupStats, splitStats, compareText, atrTxt, holdTxt } from './core-tradedetail.js';
+import { TD, closedBefore, atrAt, exitAvg, entryKind, stopFor, bestPrice, biasAt, withBias, detailRow, groupStats, splitStats, compareText, atrTxt, holdTxt, prepH4, lastBefore, moveAtr, diceCompare, diceText, DICE } from './core-tradedetail.js';
 import { tradeHistory } from './core-trades.js';
 
 const DAY = 864e5, H = 36e5, T0 = Date.UTC(2026, 0, 1), near = (a, b, eps = 1e-9) => a != null && b != null && Math.abs(a - b) < eps;
@@ -26,6 +26,10 @@ const CTX = { fills: F, orders: ORD, daily: { AAA: D }, hourly: { ['AAA|' + ENTR
 const ROW = detailRow(TR, CTX);
 const r = (o) => ({ closed: true, resAtr: 1, bestAtr: 2, leftAtr: 1, holdH: 10, resPct: 2, fit: 'mit', kind: 'Kurs', coinUp: true, side: 'long', ...o });
 
+// 8o: Würfel. 4H-Kerzen mit Spanne 1 (ATR = 1) und festem Schritt je Kerze
+const h4 = (n, step, p = 100) => Array.from({ length: n }, (_, k) => { const c = p + step * k; return { t: T0 + k * 4 * H, T: T0 + (k + 1) * 4 * H - 1, o: c, h: c + 0.5, l: c - 0.5, c }; });
+const W = { OWN: h4(100, 0.5), A: h4(100, 0), B: h4(100, 0), C: h4(100, 0.1), D: h4(100, -0.2), E: h4(100, 0), F: h4(100, 0) };
+const tr = (coin, k0, k1, side = 'long') => ({ coin, side, openedAt: T0 + k0 * 4 * H + 60e3, closedAt: T0 + k1 * 4 * H + 60e3 });
 export const tests = [
   ['Tagesdaten: nur Tage, die vor dem Einstieg abgeschlossen waren', () => closedBefore(D, ENTRY).length === 150 && closedBefore(D, T0).length === 0 && closedBefore(null, ENTRY).length === 0],
   ['Tages-ATR beim Einstieg', () => near(atrAt(D, ENTRY), 2) && atrAt(D.slice(0, 10), ENTRY) === null],
@@ -48,4 +52,12 @@ export const tests = [
   ['Statistik: Gruppen mit / gegen Bias, Kurs / Limit, Coin im Trend / gegen Trend', () => { const s = splitStats([r({}), r({ fit: 'gegen', kind: 'Limit', coinUp: false }), r({ fit: 'gemischt' }), r({ side: 'short', coinUp: false })]); return s.all.n === 4 && s.bias.mit.n === 2 && s.bias.gegen.n === 1 && s.bias.gemischt.n === 1 && s.kind.Kurs.n === 3 && s.kind.Limit.n === 1 && s.coin.im.n === 3 && s.coin.gegen.n === 1; }],
   ['Vergleich: sagt ehrlich, wenn es zu wenige Trades sind', () => /zu wenige Trades.*mindestens 10/.test(compareText({ n: 3, resAtr: 1 }, { n: 12, resAtr: -1 }, 'A', 'B')) && /fehlen Trades/.test(compareText({ n: 0 }, { n: 5 }, 'A', 'B')) && /noch kein Muster/.test(compareText({ n: 10, resAtr: 1 }, { n: 10, resAtr: 0 }, 'A', 'B')) && TD.minN === 10],
   ['Texte: ATR und Haltedauer', () => atrTxt(-1.26) === '−1,3 ATR' && atrTxt(null) === '–' && holdTxt(5.4) === '5 Std.' && holdTxt(72) === '3,0 Tage' && holdTxt(null) === '–'],
+  ['8o Gruppen: Ø Stop-Abstand in ATR (nur wo bekannt) und Ø Haltedauer', () => { const g = groupStats([r({ stopAtr: 2 }), r({ stopAtr: 1 }), r({ stopAtr: null })]); return near(g.stopAtr, 1.5) && near(g.holdH, 10) && groupStats([r({ stopAtr: null })]).stopAtr === null; }],
+  ['8o Würfel: Kurs der letzten abgeschlossenen 4H-Kerze vor dem Zeitpunkt', () => { const P = prepH4(W.OWN); return lastBefore(P, T0 + 20 * 4 * H + 60e3) === 19 && lastBefore(P, T0) === -1 && lastBefore(P, T0 + 4 * H) === 0; }],
+  ['8o Würfel: Bewegung in 4H-ATR, Short umgekehrt, zu kurz heißt nicht messbar', () => { const P = prepH4(W.OWN); return near(moveAtr(P, 'long', T0 + 20 * 4 * H + 1, T0 + 30 * 4 * H + 1), 5) && near(moveAtr(P, 'short', T0 + 20 * 4 * H + 1, T0 + 30 * 4 * H + 1), -5) && moveAtr(P, 'long', T0 + 20 * 4 * H + 1, T0 + 20 * 4 * H + 3 * H) === null && moveAtr(null, 'long', 0, 1) === null; }],
+  ['8o Würfel: ein Coin, der klar besser lief als alle anderen, schlägt fast jeden Durchgang', () => { const d = diceCompare([tr('OWN', 20, 30), tr('OWN', 40, 55)], W); return d.n === 2 && near(d.own, 6.25) && d.beat === 100 && d.p95 < d.own && d.runs === DICE.runs; }],
+  ['8o Würfel: ein Coin wie der Durchschnitt liegt in der Mitte; ein schlechter ganz unten', () => { const mid = diceCompare([tr('A', 20, 30)], W), bad = diceCompare([tr('D', 20, 30)], W); return mid.beat > 10 && mid.beat < 90 && bad.beat === 0; }],
+  ['8o Würfel: der eigene Coin ist nie unter den Würfel-Märkten; laufende und zu kurze Trades zählen nicht', () => { const d = diceCompare([tr('OWN', 20, 30), { ...tr('OWN', 20, 30), closedAt: null }, tr('OWN', 20, 20)], W); return d.n === 1 && d.skipped === 1 && d.beat === 100; }],
+  ['8o Würfel: zu wenige andere Märkte heißt kein Vergleich; fester Würfel, gleiches Ergebnis', () => { const few = diceCompare([tr('OWN', 20, 30)], { OWN: W.OWN, A: W.A }), a = diceCompare([tr('A', 20, 30), tr('C', 40, 50)], W), b = diceCompare([tr('A', 20, 30), tr('C', 40, 50)], W); return few.n === 0 && a.beat === b.beat && a.p50 === b.p50 && diceCompare(null, W).n === 0; }],
+  ['8o Würfel: Text mit Urteil (Hürde 95 % wie im Testplan), ehrlich bei wenigen Trades', () => /Noch zu wenige Trades/.test(diceText({ n: 3, own: 1, beat: 99, p5: 0, p50: 0.2, p95: 0.5, runs: 500 })) && /besser als der Zufall/.test(diceText({ n: 30, own: 1, beat: 97, p5: 0, p50: 0.2, p95: 0.5, runs: 500 })) && /nicht zu unterscheiden/.test(diceText({ n: 30, own: 1, beat: 60, p5: 0, p50: 0.2, p95: 0.5, runs: 500 })) && /schlechter als der Zufall/.test(diceText({ n: 30, own: -1, beat: 3, p5: 0, p50: 0.2, p95: 0.5, runs: 500 })) && /Kein Trade/.test(diceText({ n: 0 }))],
 ];

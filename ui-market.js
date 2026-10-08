@@ -1,7 +1,8 @@
 // Marktüberblick auf der Startseite: Markt-Bias als Tacho, Fear & Greed als Bogen, Marktkapitalisierung, BTC-Dominanz.
 import { market, onMarket, refreshMarket, fngLabel, fngStand, ETF_URL } from './core-market.js';
 import * as f from './core-format.js';
-import { loadIndex, indexChart, trendOf } from './core-index.js';
+import { loadIndex, indexChart, trendOf, marketBias, tachoFrom, breadthText } from './core-index.js';
+import { getCandles } from './core-scanner.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -73,12 +74,16 @@ function biasParts(bias, m) {
     <b class="${acls(m.breadth?.value ?? null)}">${breadth}</b>${r ? ` · <b class="${acls(p.ratio)}">${r}</b>` : ''}</span>`;
 }
 
-// 8n1: Bild des Hyperliquid-Ledger-Perp-Index (Alts gold, Small Caps blau, beide am ersten Tag des Ausschnitts = 100),
+// 8o: BTC-Tageskerzen für den Tacho (aus dem Zwischenspeicher der App)
+let btcDaily = null;
+async function loadBtc() { try { btcDaily = await getCandles('BTC', '1d', true); renderMarket(); } catch { /* Tacho bleibt beim alten Bias */ } }
+
+// 8n1: Bild des Hyperliquid-Ledger-Perp-Index (Alts gold, Rest ohne Top 10 blau, Top 10 weiß (8o), beide am ersten Tag des Ausschnitts = 100),
 // dazu EMA 20 und EMA 100 der Alts gestrichelt und der nächste Tages-Sell-Block über dem Index als roter Streifen.
 let idxDays = 180;
 function indexSvg(c) {
   const W = 320, H = 130, P = { l: 4, r: 40, t: 8, b: 16 };
-  const ys = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)].filter((y) => y != null && Number.isFinite(y));
+  const ys = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y), ...(c.top || []).map((x) => x.y)].filter((y) => y != null && Number.isFinite(y));
   let lo = Math.min(...ys), hi = Math.max(...ys);
   if (c.block && c.block.lo < hi * 1.15) hi = Math.max(hi, Math.min(c.block.hi, hi * 1.15));
   if (lo > 0 && hi / lo > 3) { lo /= 1.08; hi *= 1.08; } else { const pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad; }
@@ -94,13 +99,20 @@ function indexSvg(c) {
     ${band}
     <path d="${path(c.alt, 'slow')}" stroke="var(--muted)" stroke-width="1" fill="none" stroke-dasharray="4 3" opacity=".8"/>
     <path d="${path(c.alt, 'fast')}" stroke="var(--gold)" stroke-width="1" fill="none" stroke-dasharray="2 2" opacity=".7"/>
+    ${c.top?.length ? `<path d="${path(c.top)}" stroke="var(--text)" stroke-width="1.2" fill="none" opacity=".75"/>` : ''}
     ${c.small.length ? `<path d="${path(c.small)}" stroke="#6ea8ff" stroke-width="1.6" fill="none"/>` : ''}
     <path d="${path(c.alt)}" stroke="var(--gold)" stroke-width="2" fill="none"/>
-    <text x="${W - P.r + 3}" y="${Number(Y(last.y)) + 3}" fill="var(--gold)" font-size="9" font-weight="800">Alts</text>
-    ${ls ? `<text x="${W - P.r + 3}" y="${Number(Y(ls.y)) + (Math.abs(Y(ls.y) - Y(last.y)) < 10 ? 12 : 3)}" fill="#6ea8ff" font-size="9" font-weight="800">Small</text>` : ''}
+    ${labels(c, Y, W - P.r + 3, last, ls)}
     <text x="${P.l}" y="${H - 3}" fill="var(--muted)" font-size="9">${day(t0)}</text>
     <text x="${W - P.r}" y="${H - 3}" fill="var(--muted)" font-size="9" text-anchor="end">${day(t1)}</text>
   </svg>`;
+}
+// Beschriftungen rechts, auseinandergeschoben, wenn sie übereinander lägen
+function labels(c, Y, x, last, ls) {
+  const lt = c.top?.[c.top.length - 1];
+  const L = [[Number(Y(last.y)), 'Alts', 'var(--gold)'], ls ? [Number(Y(ls.y)), 'Rest', '#6ea8ff'] : null, lt ? [Number(Y(lt.y)), 'Top 10', 'var(--text)'] : null].filter(Boolean).sort((a, b) => a[0] - b[0]);
+  for (let k = 1; k < L.length; k++) if (L[k][0] - L[k - 1][0] < 10) L[k][0] = L[k - 1][0] + 10;
+  return L.filter((l) => l[1] !== 'Alts').map(([y, t, col]) => `<text x="${x}" y="${(y + 3).toFixed(1)}" fill="${col}" font-size="9" font-weight="800">${t}</text>`).join('') + L.filter((l) => l[1] === 'Alts').map(([y, t, col]) => `<text x="${x}" y="${(y + 3).toFixed(1)}" fill="${col}" font-size="9" font-weight="800">${t}</text>`).join('');
 }
 const sgn = (x) => (x == null ? '–' : `${x >= 0 ? '+' : '−'}${f.pct(Math.abs(x), 1)}`);
 function indexBlock() {
@@ -113,9 +125,16 @@ function indexBlock() {
   return `<div class="mkt-idx">
     <div class="mkt-idx-head"><span class="k">Hyperliquid-Ledger-Perp-Index</span><span class="chips">${chips}</span></div>
     ${indexSvg(c)}
-    <span class="mkt-parts"><b style="color:var(--gold)">Alts ${sgn(c.altPct)}</b> · <b style="color:#6ea8ff">Small Caps ${sgn(c.smallPct)}</b> im Ausschnitt · <b class="${up == null ? 'muted' : up ? 'long' : 'short'}">Alts ${up == null ? 'zu wenig Historie' : up ? 'aufwärts' : 'nicht aufwärts'}</b>
+    <span class="mkt-parts"><b style="color:var(--gold)">Alts ${sgn(c.altPct)}</b> · ${c.topPct != null ? `<b style="color:var(--text)">Top 10 ${sgn(c.topPct)}</b> · ` : ''}<b style="color:#6ea8ff">Rest ${sgn(c.smallPct)}</b> im Ausschnitt · <b class="${up == null ? 'muted' : up ? 'long' : 'short'}">Alts ${up == null ? 'zu wenig Historie' : up ? 'aufwärts' : 'nicht aufwärts'}</b>
     <br>gestrichelt: EMA 20 und EMA 100 der Alts${c.alt.length && (() => { const v = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)]; return Math.max(...v) / Math.min(...v) > 3; })() ? ' · logarithmische Skala' : ''}${c.block ? ' · rot: nächster Tages-Sell-Block' : ''}${c.full ? '' : ' · lange Historie folgt beim nächsten Durchlauf'}</span>
   </div>`;
+}
+
+// 8o: Zeile unter dem Tacho, wenn er aus dem Index kommt: BTC ▲ · Alts ▲ · Breite (Rest gegen Top 10) · Marktbreite (Top 50 über EMA 50)
+function newParts(tb, nb, m) {
+  const ar = (x) => (x == null ? '·' : x ? '▲' : '▼'), cl = (x) => (x == null ? 'muted' : x ? 'long' : 'short');
+  const br = tb.parts.breadth, brT = br > 0 ? 'Rest stärker' : br < 0 ? 'Top 10 stärker' : 'Rest = Top 10';
+  return `<span class="mkt-parts"><b class="${cl(tb.parts.btc)}">BTC ${ar(tb.parts.btc)}</b> · <b class="${cl(tb.parts.alt)}">Alts ${ar(tb.parts.alt)}</b> · <b class="${br > 0 ? 'long' : br < 0 ? 'short' : 'muted'}" title="${breadthText(nb.breadth)}">${brT}</b>${m.breadth ? ` · <b class="muted">Breite ${f.pct(m.breadth.pct, 0)}</b>` : ''}</span>`;
 }
 
 export function renderMarket() {
@@ -125,12 +144,15 @@ export function renderMarket() {
   const fl = fng ? fngLabel(fng.value) : null;
   const fngDiff = fng && Number.isFinite(fng.prev) ? fng.value - fng.prev : null;
   const stand = fng ? fngStand(fng.ts) : null;
+  // 8o: Tacho aus dem eigenen Index (BTC-Trend, Alt-Trend, Breite), sobald er gespeichert ist; vorher der alte Bias
+  const idx = loadIndex(), nb = idx?.alt?.length && btcDaily?.length ? marketBias(btcDaily, idx) : null, tb = tachoFrom(nb);
+  const shown = tb || bias;
   box.innerHTML = `<div class="mkt-gauges">
       <div class="mkt-bias">
-        ${biasGauge(bias)}
-        <b class="mkt-label ${bias?.cls || 'muted'}">${bias ? bias.label : errors.bias ? 'Nicht verfügbar' : 'Lädt …'}</b>
+        ${biasGauge(shown)}
+        <b class="mkt-label ${shown?.cls || 'muted'}">${shown ? shown.label : errors.bias ? 'Nicht verfügbar' : 'Lädt …'}</b>
         <span class="k">Markt-Bias</span>
-        ${biasParts(bias, market)}
+        ${tb ? newParts(tb, nb, market) : biasParts(bias, market)}
       </div>
       <div class="mkt-fng">
         ${fngGauge(fng?.value ?? null)}
@@ -153,6 +175,7 @@ export function renderMarket() {
 export function initMarket() {
   onMarket(renderMarket);
   window.addEventListener('wolfdesk-index', renderMarket);
+  loadBtc(); setInterval(loadBtc, 30 * 60e3);
   $('market')?.addEventListener('click', (e) => { const b = e.target.closest('button[data-idxdays]'); if (b) { idxDays = Number(b.dataset.idxdays); renderMarket(); } });
   renderMarket();
   refreshMarket();
