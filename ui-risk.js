@@ -5,7 +5,8 @@ import { getWatchlist } from './core-watchlist.js';
 import { accountRisk } from './core-positions.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, leverageIssues } from './core-risk.js';
 import { exitTable, fitHint, levSlider, updateLevOut } from './ui-parts.js';
-import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText, atrFor, setupTf } from './core-guard.js';
+import { suggestImpact, cooldown, cooledRisk, leftText, atrFor, setupTf } from './core-guard.js';
+import { stopNoiseDaily } from './core-stopcheck.js';
 import { tradeHistory } from './core-trades.js';
 import * as f from './core-format.js';
 
@@ -70,10 +71,10 @@ function renderCalc() {
   const exits = exitPlan(dir, entry, tps, res.size, CONFIG.exitPlan);
   const st = riskPct >= CONFIG.rules.riskPerTradeMaxPct ? 'bad' : riskPct >= CONFIG.rules.riskPerTradeWarnPct ? 'warn' : 'ok';
   // Stop-Check gegen ATR (Setup-Zeitebene des Plans bzw. deines Stils) und Abkühlphase
-  const tf = fromPlan ? CONFIG.signals.modes[calcPlan.mode].tfs[1] : setupTf();
+  const tf = '1d'; // 8p: Stop-Check gegen die Tages-ATR
   const atrV = atrFor($('calc-coin').value, tf);
   if (atrV == null) setTimeout(() => { if (atrFor($('calc-coin').value, tf) != null) renderCalc(); }, 2500);
-  const noise = stopNoise(entry, stop, atrV);
+  const noise = stopNoiseDaily(entry, stop, atrV);
   const imp = noise?.suggest ? suggestImpact(equity, riskPct, entry, stop, noise.suggest.stop) : null;
   const cd = cooldown(tradeHistory(s.fills));
   calcCtx = { notional: res.notional, available: r.summary.available, liqMax: maxLeverageForStop(res.stopDistPct, CONFIG.rules.liqBufferPct, 200, exchangeMax), exchangeMax, styleMax, budgetPct: CONFIG.rules.marginBudgetPct,
@@ -81,8 +82,8 @@ function renderCalc() {
     note: `Der Hebel ändert nur die Margin, nicht Positionsgröße und Risiko. Empfehlung: so niedrig wie möglich, Margin höchstens ${CONFIG.rules.marginBudgetPct} % vom verfügbaren Kapital (${f.usd(r.summary.available)}). Höchsthebel: Liquidation mind. ${String(CONFIG.rules.liqBufferPct).replace('.', ',')} % hinter dem Stop${mode ? `, ${mode.label} max. ${mode.maxLeverage}×` : ''}${exchangeMax ? `, Hyperliquid max. ${exchangeMax}×` : ''}. Der Balken zeigt, wo die Liquidation bei diesem Hebel ungefähr liegt.` };
 
   out.innerHTML = `${cd.active ? `<p class="cap-note bad" style="margin:0 0 12px">🧊 Abkühlphase: ${cd.streak} Verlust-Trades in Folge, noch ${leftText(cd.until)}, Vorschlag: höchstens ${String(cooledRisk(CONFIG.rules.riskSteps[0], true)).replace('.', ',')} % Risiko.</p>` : ''}
-  ${noise ? (noise.status === 'ok' ? `<p class="stop-check ok">✓ ${noise.text} (${tf.toUpperCase()})</p>`
-    : `<div class="stop-check ${noise.status}"><b>${noise.status === 'bad' ? '⚠️ ' : ''}${noise.text}</b><span>Sinnvoller: Stop bei <b>${f.price(noise.suggest.stop)}</b> (${String(noise.suggest.atrMult).replace('.', ',')}× ATR auf ${tf.toUpperCase()}, ${f.pct(noise.suggest.distPct, 1)} Abstand)${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, also weniger Hebel nötig.` : ''}</span></div>`)
+  ${noise ? (noise.status === 'ok' ? `<p class="stop-check ok">✓ ${noise.text}</p>`
+    : `<div class="stop-check ${noise.status}"><b>${noise.status === 'bad' ? '⚠️ ' : ''}${noise.text}</b><span>Sinnvoller: Stop bei <b>${f.price(noise.suggest.stop)}</b> (Rahmen-Stop ${String(noise.suggest.atrMult).replace('.', ',')}× Tages-ATR, ${f.pct(noise.suggest.distPct, 1)} Abstand)${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, also weniger Hebel nötig.` : ''}</span></div>`)
     : atrV == null ? '<p class="empty" style="font-size:12px;margin:0 0 8px">Stop-Check: Schwankung (ATR) wird geladen …</p>' : ''}
   <div class="kv">
     <div class="span2"><span class="k">Positionsgröße (${dir === 'long' ? 'Long' : 'Short'})</span><span class="v big" style="color:var(--gold)">${f.size(res.size)}</span></div>

@@ -101,6 +101,8 @@ function paint() {
       h += '<h3 class="sub-h">Mit oder gegen den Markt-Bias</h3>' + table([['Alle', stats.all], ['Mit dem Bias', stats.bias.mit], ['Gegen den Bias', stats.bias.gegen], ['Markt gemischt', stats.bias.gemischt]]);
       h += `<p class="set-hint">${esc(compareText(stats.bias.mit, stats.bias.gegen, 'Mit dem Bias', 'gegen den Bias'))}</p>`;
       h += '<h3 class="sub-h">Einstieg und Coin-Trend</h3>' + table([['Zum Kurs', stats.kind.Kurs], ['Per Limit', stats.kind.Limit], ['Coin im Trend', stats.coin.im], ['Coin gegen Trend', stats.coin.gegen]]);
+      h += '<h3 class="sub-h">Stop-Abstand</h3>' + table([['Stop unter 1 ATR', stats.stop.eng], ['1 bis 1,5 ATR', stats.stop.mittel], ['Ab 1,5 ATR', stats.stop.weit]]);
+      h += `<p class="set-hint">${esc(compareText(stats.stop.eng, stats.stop.weit, 'Stop unter 1 ATR', 'ab 1,5 ATR'))} Der Rahmen aus dem Testplan nimmt 2 ATR.</p>`;
       h += `<p class="set-hint">„Bester Stand“ = so weit lief der Kurs höchstens in deine Richtung. „Liegen gelassen“ = bester Stand minus Ergebnis. Alles in Tages-ATR beim Einstieg, in R nur, wo der Stop bekannt ist.</p>`;
     }
     if (closed.length) {

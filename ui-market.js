@@ -126,7 +126,7 @@ function indexBlock() {
     <div class="mkt-idx-head"><span class="k">Hyperliquid-Ledger-Perp-Index</span><span class="chips">${chips}</span></div>
     ${indexSvg(c)}
     <span class="mkt-parts"><b style="color:var(--gold)">Alts ${sgn(c.altPct)}</b> · ${c.topPct != null ? `<b style="color:var(--text)">Top 10 ${sgn(c.topPct)}</b> · ` : ''}<b style="color:#6ea8ff">Rest ${sgn(c.smallPct)}</b> im Ausschnitt · <b class="${up == null ? 'muted' : up ? 'long' : 'short'}">Alts ${up == null ? 'zu wenig Historie' : up ? 'aufwärts' : 'nicht aufwärts'}</b>
-    <br>gestrichelt: EMA 20 und EMA 100 der Alts${c.alt.length && (() => { const v = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)]; return Math.max(...v) / Math.min(...v) > 3; })() ? ' · logarithmische Skala' : ''}${c.block ? ' · rot: nächster Tages-Sell-Block' : ''}${c.full ? '' : ' · lange Historie folgt beim nächsten Durchlauf'}</span>
+    <br>gestrichelt: EMA 20 und EMA 100 der Alts${c.alt.length && (() => { const v = [...c.alt.map((x) => x.y), ...c.small.map((x) => x.y)]; return Math.max(...v) / Math.min(...v) > 3; })() ? ' · logarithmische Skala' : ''}${c.block ? ' · rot: nächster Tages-Sell-Block' : ''}${c.full ? '' : ` · lange Historie folgt beim nächsten Durchlauf${idx.of ? ` (letzter Versuch: ${idx.got} von ${idx.of} Märkten lang geladen${idx.tried ? ', ' + new Date(idx.tried).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''})` : idx.tried ? ' (noch kein vollständiger Versuch)' : ''}`}</span>
   </div>`;
 }
 

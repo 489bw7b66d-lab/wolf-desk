@@ -162,11 +162,11 @@ export function capExBtcText(global) {
 // ---- Speicher: der Index als kurze Zahlenreihen (nur öffentliche Marktdaten) ----
 const KEY = 'wolfdesk.hlindex', VER = 2; // 8o: Fassung 2 mit Top-10-Reihe; Fassung 1 wird einmal neu aufgebaut
 const sig = (x) => Number(x.toPrecision(6));
-export const packIndex = (idx, meta = {}) => ({ v: VER, full: meta.full !== false, tried: meta.tried ?? null, alt: idx.alt.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), small: idx.small.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), top: (idx.top || []).map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]) });
+export const packIndex = (idx, meta = {}) => ({ v: VER, full: meta.full !== false, tried: meta.tried ?? null, got: meta.got ?? null, of: meta.of ?? null, alt: idx.alt.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), small: idx.small.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), top: (idx.top || []).map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]) });
 export function unpackIndex(p) {
   if (!p || p.v !== VER || !Array.isArray(p.alt) || !Array.isArray(p.small) || !Array.isArray(p.top)) return null;
   const un = (r) => ({ t: r[0], T: r[0] + DAY - 1, o: r[1], h: r[2], l: r[3], c: r[4], n: r[5] });
-  return { alt: p.alt.map(un), small: p.small.map(un), top: p.top.map(un), full: p.full !== false, tried: p.tried ?? null };
+  return { alt: p.alt.map(un), small: p.small.map(un), top: p.top.map(un), full: p.full !== false, tried: p.tried ?? null, got: p.got ?? null, of: p.of ?? null };
 }
 export function loadIndex(store = globalThis.localStorage) {
   try { return unpackIndex(JSON.parse(store.getItem(KEY))); } catch { return null; }

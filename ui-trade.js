@@ -6,7 +6,10 @@ import { drawChart, chartTools } from './ui-chartview.js';
 import { switchStyle, getCandles } from './core-scanner.js';
 import { getViews, viewFor, alignment, viewLines, BIAS_TXT } from './core-views.js';
 import { estimateFees, DEFAULT_RATES } from './core-fees.js';
-import { stopNoise, suggestImpact, cooldown, cooledRisk, leftText, planWithStop, planOrigStop } from './core-guard.js';
+import { suggestImpact, cooldown, cooledRisk, leftText, planWithStop, planOrigStop, atrFor } from './core-guard.js';
+import { stopNoiseDaily } from './core-stopcheck.js';
+// 8p: übernommener Vorschlag heißt in der Leiter „Rahmen-Stop“
+const frameStop = (p, stop) => planWithStop(p, stop, 'Rahmen-Stop (2× Tages-ATR)');
 import { tradeHistory } from './core-trades.js';
 import { accountRisk } from './core-positions.js';
 import { totalRisk } from './core-totalrisk.js';
@@ -229,20 +232,20 @@ export function initTrade(stateGetter, onFull, onCalc) {
     if (sp) {
       const p = current.plan;
       if (sp.dataset.stop === 'sug' && !p.stopAdjusted) {
-        const n = stopNoise(p.entry, p.stop, current.analyses?.[1]?.atr);
-        if (n?.suggest) { adoptStop = n.suggest.stop; current = { ...current, plan: planWithStop(p, adoptStop) }; }
+        const n = stopNoiseDaily(p.entry, p.stop, atrFor(current.coin, '1d'));
+        if (n?.suggest) { adoptStop = n.suggest.stop; current = { ...current, plan: frameStop(p, adoptStop) }; }
       } else if (sp.dataset.stop === 'orig' && p.stopAdjusted) {
         adoptStop = null; current = { ...current, plan: planOrigStop(p) };
       }
       render(); renderLive(); return;
     }
     if (e.target.id === 'live-take') {
-      let np = withEntry(adoptStop ? planWithStop(basePlan, adoptStop) : basePlan, getState().prices?.[current.coin]);
+      let np = withEntry(adoptStop ? frameStop(basePlan, adoptStop) : basePlan, getState().prices?.[current.coin]);
       if (np && adoptStop) np = { ...np, stopAdjusted: true };
       if (np) { current = { ...current, plan: np }; render(); renderLive(); }
       return;
     }
-    if (e.target.id === 'live-reset') { current = { ...current, plan: adoptStop ? planWithStop(basePlan, adoptStop) : basePlan }; render(); renderLive(); return; }
+    if (e.target.id === 'live-reset') { current = { ...current, plan: adoptStop ? frameStop(basePlan, adoptStop) : basePlan }; render(); renderLive(); return; }
     const sb = e.target.closest('button[data-style]');
     if (sb) {
       // Zurück auf den Stil des gemeldeten Signals = wieder dessen Plan
@@ -289,12 +292,13 @@ export function coolBox() {
   return `<p class="cap-note bad">🧊 Abkühlphase: ${cd.streak} Verlust-Trades in Folge. Noch ${leftText(cd.until)}. Risiko-Vorschlag halbiert, lieber abwarten als nachlegen.</p>`;
 }
 
-// Stop-Check gegen die normale Schwankung (ATR der Setup-Zeitebene)
+// Stop-Check gegen die normale Schwankung. Seit 8p gegen die Tages-ATR, Vorschlag = Rahmen-Stop 2 × Tages-ATR (core-stopcheck.js)
 export function stopBox(r, p, sum, size) {
-  const a = r.analyses?.[1]?.atr;
+  const a = atrFor(r.coin, '1d');
+  if (a == null) { setTimeout(() => { if (atrFor(r.coin, '1d') != null) refreshTrade(); }, 2500); return ''; }
   // Prüfung immer gegen den ursprünglichen Stop, damit die Wahl zwischen beiden sichtbar bleibt (5f)
   const orig = p.stopAdjusted ? p.origStop : p.stop;
-  const n = stopNoise(p.entry, orig, a);
+  const n = stopNoiseDaily(p.entry, orig, a);
   if (!n) return '';
   if (n.status === 'ok' && !p.stopAdjusted) return `<p class="stop-check ok">✓ ${esc(n.text)}</p>`;
   const sug = n.suggest?.stop ?? p.stop;
@@ -304,6 +308,6 @@ export function stopBox(r, p, sum, size) {
       <button type="button" data-stop="sug" aria-pressed="${!!p.stopAdjusted}">${p.stopAdjusted ? '✓ ' : ''}Vorschlag<b>${f.price(sug)}</b></button>
     </div>`;
   return `<div class="stop-check ${p.stopAdjusted ? 'ok' : n.status}"><b>${p.stopAdjusted ? '✓ Vorgeschlagener Stop übernommen' : (n.status === 'bad' ? '⚠️ ' : '') + esc(n.text)}</b>
-    ${n.suggest ? `<span>Vorschlag: ${String(n.suggest.atrMult).replace('.', ',')}× ATR, ${f.pct(n.suggest.distPct, 1)} Abstand${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, du brauchst also weniger Hebel.` : ''}</span>` : ''}
+    ${n.suggest ? `<span>Vorschlag: Rahmen-Stop ${String(n.suggest.atrMult).replace('.', ',')}× Tages-ATR, ${f.pct(n.suggest.distPct, 1)} Abstand${imp ? `. Bei gleichem Risiko wird die Position ${f.pct((1 - imp.factor) * 100, 0)} kleiner, du brauchst also weniger Hebel.` : ''}</span>` : ''}
     ${n.suggest ? pick : ''}</div>`;
 }

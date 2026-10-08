@@ -113,6 +113,8 @@ export function splitStats(rows) {
     bias: { mit: g((r) => r.fit === 'mit'), gegen: g((r) => r.fit === 'gegen'), gemischt: g((r) => r.fit === 'gemischt') },
     kind: { Kurs: g((r) => r.kind === 'Kurs'), Limit: g((r) => r.kind === 'Limit') },
     coin: { im: g((r) => r.coinUp === (r.side === 'long')), gegen: g((r) => r.coinUp != null && r.coinUp !== (r.side === 'long')) },
+    // 8p: Stop-Abstand in Tages-ATR (nur wo der Stop bekannt ist)
+    stop: { eng: g((r) => r.stopAtr != null && r.stopAtr < 1), mittel: g((r) => r.stopAtr != null && r.stopAtr >= 1 && r.stopAtr < 1.5), weit: g((r) => r.stopAtr != null && r.stopAtr >= 1.5) },
   };
 }
 

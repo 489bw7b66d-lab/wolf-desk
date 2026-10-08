@@ -8,7 +8,8 @@ import { accountSummary } from './core-calc.js';
 import { tradePath } from './core-path.js';
 import { getPlans, planFor, signalFor, targetsFor } from './core-plans.js';
 import { getAutoPlan } from './core-autoplan.js';
-import { stopNoise, atrFor, setupTf, lossAtStop } from './core-guard.js';
+import { atrFor, setupTf, lossAtStop } from './core-guard.js';
+import { stopNoiseDaily } from './core-stopcheck.js';
 import { getFeedSignals } from './ui-feed.js';
 import { trailForPosition, hitsFromPath, trailText, trailCandles } from './core-trail.js';
 import { planState, structureBroken, viewInvalid, stopFirstProb, touchProb } from './core-planstate.js';
@@ -78,7 +79,8 @@ export function positionPlan(s, p, t) {
   const tf = setupTf(style);
   const c = trailCandles(p.coin, tf, getCandles);
   const atr = c?.atr ?? atrFor(p.coin, tf);
-  const noise = p.stop != null ? stopNoise(p.mark || p.entry, p.stop, atr, undefined, p.liq) : null;
+  const dAtr = atrFor(p.coin, '1d'); // 8p: Stop-Check gegen die Tages-ATR
+  const noise = p.stop != null ? stopNoiseDaily(p.mark || p.entry, p.stop, dAtr, p.liq) : null;
   const liqFirst = p.stop != null && p.liq > 0 && (p.side === 'long' ? p.stop <= p.liq : p.stop >= p.liq);
   const state = planState({
     hasStop: p.stop != null, liqFirst, noise,
