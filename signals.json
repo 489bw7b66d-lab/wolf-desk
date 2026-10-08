@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "ETH",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791449838791,
+   "px": 2558.7,
+   "zone": [
+    2558.7,
+    2558.7
+   ],
+   "stop": 2385.895034593674,
+   "tps": [
+    2904.3099308126516,
+    3077.1148962189773,
+    3249.919861625303,
+    3595.5297924379547
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 11,
+   "eng": "obs"
+  },
+  {
    "coin": "ENA",
    "dir": "long",
    "style": "swing",
@@ -537,30 +566,6 @@
     "Ausbruch aus Dreieck"
    ],
    "id": "ZEC|long|1790501901046"
-  },
-  {
-   "coin": "BTC",
-   "dir": "long",
-   "style": "intraday",
-   "score": 76,
-   "seal": false,
-   "at": 1790497536401,
-   "px": 84738,
-   "zone": null,
-   "stop": 83964.88419806746,
-   "tps": [
-    85345.08271566611,
-    86035.18197446543
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1790558099999,
-   "events": [
-    "EMA 8/21 Kreuzung aufwärts",
-    "Ausbruch aus Dreieck",
-    "EMA 21/55 Kreuzung aufwärts"
-   ],
-   "id": "BTC|long|1790497536401"
   }
  ],
  "archive": [
