@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "WLD",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791519097416,
+   "px": 0.49113,
+   "zone": [
+    0.49113,
+    0.49113
+   ],
+   "stop": 0.38501293917076607,
+   "tps": [
+    0.7033641216584678,
+    0.8094811824877017,
+    0.9155982433169356,
+    1.1278323649754036
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 17,
+   "eng": "obs"
+  },
+  {
    "coin": "SOL",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "MACD-Kreuzung aufwärts"
    ],
    "id": "XLM|long|1790647603098"
-  },
-  {
-   "coin": "CRV",
-   "dir": "long",
-   "style": "swing",
-   "score": 89,
-   "seal": true,
-   "at": 1790640610315,
-   "px": 0.37752,
-   "zone": [
-    0.3644921756408201,
-    0.37968
-   ],
-   "stop": 0.33016608782041,
-   "tps": [
-    0.41400608782041015,
-    0.4559260878204102,
-    0.4978460878204103,
-    0.5397660878204104
-   ],
-   "status": "tp1",
-   "r": 0.7704978562708064,
-   "doneAt": 1790704799999,
-   "events": [
-    "MACD-Kreuzung aufwärts",
-    "Ausbruch aus Dreieck",
-    "EMA 8/21 Kreuzung aufwärts"
-   ],
-   "id": "CRV|long|1790640610315"
   }
  ],
  "archive": [
