@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "XRP",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791734941539,
+   "px": 1.4188,
+   "zone": [
+    1.4188,
+    1.4188
+   ],
+   "stop": 1.2785307371297563,
+   "tps": [
+    1.6993385257404876,
+    1.8396077886107316,
+    1.9798770514809754,
+    2.260415577221463
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP"
+   ],
+   "id": 18,
+   "eng": "obs"
+  },
+  {
    "coin": "WLD",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "Bruch Abwärts-Trendlinie"
    ],
    "id": "ETH|long|1790683820436"
-  },
-  {
-   "coin": "XLM",
-   "dir": "long",
-   "style": "swing",
-   "score": 81,
-   "seal": true,
-   "at": 1790647603098,
-   "px": 0.22752,
-   "zone": [
-    0.22524267977639714,
-    0.23272
-   ],
-   "stop": 0.20654937921738994,
-   "tps": [
-    0.25141330055900724,
-    0.27384526122981584,
-    0.29627722190062444,
-    0.3187091825714331
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1791341999999,
-   "events": [
-    "Volumen-Spike",
-    "EMA 8/21 Kreuzung aufwärts",
-    "MACD-Kreuzung aufwärts"
-   ],
-   "id": "XLM|long|1790647603098"
   }
  ],
  "archive": [
