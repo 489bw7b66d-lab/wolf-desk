@@ -11,6 +11,7 @@ import { NEW_RULES } from './core-ltrules.js';
 import { withChartTargets } from './core-exitplan.js';
 import { trapForLevel, trapHtml } from './ui-trap.js';
 import { trapHead } from './core-trapcheck.js';
+import { agreeOf } from './core-compass.js';
 import { FINDER_RULES, PROVEN } from './core-finder.js';
 import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, tradeResult, withBias, searchEntries, atLeast, crowdNotes, sinceText, fibText, rsiText } from './core-finder.js';
 import { roomsText } from './core-sellblock.js';
@@ -104,9 +105,11 @@ function row(e) {
   const blocks = e.finds.map((f) => `<span class="chip strong">${esc(BLOCK_NAME[f.rule])} <small>${esc(agoText(f.t))}</small></span>`).join('');
   const open = openCoin === e.coin, inBlock = e.rooms.some((x) => x.state === 'im');
   const fib = fibText(e.fib), rs = rsiText(e.rsiDay, e.rsiH4), trap = keyTrap(e);
+  const ag = agreeOf({ up: e.up, vsBtc: e.vsBtc, breadthShare: scanned + skipped.length ? scanned / (scanned + skipped.length) : null, daily: e.M?.daily });
   let h = `<button type="button" class="fd-row" data-coin="${esc(e.coin)}" aria-expanded="${open}">
     <span class="fd-coin"><b>${esc(dn(e.coin))}</b> <span class="muted">Beobachtung · ${e.n} ${e.n === 1 ? 'Baustein' : 'Bausteine'}</span></span>
     ${coinBiasText(e.up, e.vsBtc) ? `<span class="fd-room muted">${esc(coinBiasText(e.up, e.vsBtc))}</span>` : ''}
+    ${ag.of ? `<span class="fd-room ${ag.n === ag.of ? 'long' : 'muted'}">Kompass: ${ag.n} von ${ag.of} stimmen überein (${ag.items.filter((i) => i.ok !== null).map((i) => `${i.k} ${i.ok ? '✓' : '✗'}`).join(' · ')})</span>` : ''}
     ${blocks ? `<span class="chips">${blocks}</span>` : ''}
     <span class="fd-room ${inBlock ? 'short' : 'muted'}">${esc(roomsText(e.rooms))}</span>
     ${fib ? `<span class="fd-room ${e.fib.gp ? 'gold' : 'muted'}">${esc(fib)}</span>` : ''}

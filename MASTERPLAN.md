@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 12.10.2026 · Code: Etappe 8v · 1.159 Tests · auf dem iPhone geprüft bis 8u (1.155 von 1.155 am 12.10. um 10:14) · **Donchian besteht die Prüfung (12.10.) und ist sechster Baustein** · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
+Stand: 12.10.2026 · Code: Etappe 8w · 1.172 Tests · auf dem iPhone geprüft bis 8u (1.155 von 1.155 am 12.10. um 10:14) · **Donchian besteht die Prüfung (12.10.) und ist sechster Baustein** · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -80,7 +80,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8v). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8w). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -105,7 +105,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8v` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8w` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -152,7 +152,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 - Risiko: `core-risk` (Regeln, Ausstiegsplan, Hebel), `core-guard` (Stop-Check gegen ATR, Abkühlphase), `core-trail` (Stop nachziehen nach Struktur), `core-levpreview` (Hebel-Vorschau), `core-totalrisk` (Summe, wenn alle Stops greifen), **`core-riskbudget`** (8e: Ampel fürs Gesamt-Risiko, Budget für neue Trades), `core-exitcalc` (Ausstiegsrechner)
 - Handel und Auswertung: `core-trades`, `core-performance` (Gewinn aus Hyperliquids PnL-Verlauf, größter Rückgang), `core-fees`, `core-patience`
 - Signale: `core-indicators`, `core-signals`, `core-scanner`, `core-fib`, `core-elliott`, `core-patterns`, `core-candlesticks`, `core-confirm`, `core-trendgate` (Short-Filter), `core-feedplan`, `core-reasons`, `core-engine2`, `core-benchmark` (Maßstab als Signalgeber, Haltedauer, Tagebuch-Fenster), `core-bmtext` (Telegram-Text)
-- Backtest: `core-backtest` (Simulation, Lauf), `core-btstore` (Speicher; Feldlisten `KEEP` je Trade und `compactRun` je Markt: **neue Felder müssen dort eingetragen werden, sonst gehen sie beim Speichern verloren**), `core-regime` (8c: BTC-Merker), `core-exitcompare` (8c: Ausstiegs-Varianten), `core-donchian` (8d), `core-btmetrics` (8d: Funding-Schätzung, Pareto, Haltedauer), `core-randombase` (8f: Zufalls-Maßstab), **`core-binance`** (8h: lange Historie von Binance, eigene Datenbank `wolfdesk-bn`, Protokoll in `wolfdesk.bn`), **`core-longtest`** (8i: Messmaschine für den Testplan, Ergebnisse in `wolfdesk.lt`), **`core-ltrules`** (8k: die Regeln 1, 2, 3, 4, 6 des Testplans), **`core-finder`** (8l: Setup-Finder, aktuelle Funde auf den handelbaren Märkten), **`core-sellblock`** (8l: Sell-Block und „Platz nach oben“), **`core-index`** (8m: Hyperliquid-Ledger-Perp-Index und Markt-Bias als Kopfzeile, Speicher `wolfdesk.hlindex`), **`core-tradedetail`** (8n: Deine Trades im Detail), **`core-stopcheck`** (8p: Stop-Check gegen die Tages-ATR), **`core-backup`** (8q: Datensicherung), **`core-observe`** (8r: Texte und Entscheidungen des Wächters für Beobachtung, Zeit-Ausstieg, Bias-Wechsel), **`core-tp2`** (8s: Messmaschine Testplan 2, Speicher `wolfdesk.tp2`), **`core-openmark`** (8s: laufende Trades zum Kurs von jetzt), **`core-exitplan`** (8t: Exit-Manager, Ziele aus Chart-Marken), **`core-trapcheck`** (8u: Bullenfallen-Detektor)
+- Backtest: `core-backtest` (Simulation, Lauf), `core-btstore` (Speicher; Feldlisten `KEEP` je Trade und `compactRun` je Markt: **neue Felder müssen dort eingetragen werden, sonst gehen sie beim Speichern verloren**), `core-regime` (8c: BTC-Merker), `core-exitcompare` (8c: Ausstiegs-Varianten), `core-donchian` (8d), `core-btmetrics` (8d: Funding-Schätzung, Pareto, Haltedauer), `core-randombase` (8f: Zufalls-Maßstab), **`core-binance`** (8h: lange Historie von Binance, eigene Datenbank `wolfdesk-bn`, Protokoll in `wolfdesk.bn`), **`core-longtest`** (8i: Messmaschine für den Testplan, Ergebnisse in `wolfdesk.lt`), **`core-ltrules`** (8k: die Regeln 1, 2, 3, 4, 6 des Testplans), **`core-finder`** (8l: Setup-Finder, aktuelle Funde auf den handelbaren Märkten), **`core-sellblock`** (8l: Sell-Block und „Platz nach oben“), **`core-index`** (8m: Hyperliquid-Ledger-Perp-Index und Markt-Bias als Kopfzeile, Speicher `wolfdesk.hlindex`), **`core-tradedetail`** (8n: Deine Trades im Detail), **`core-stopcheck`** (8p: Stop-Check gegen die Tages-ATR), **`core-backup`** (8q: Datensicherung), **`core-observe`** (8r: Texte und Entscheidungen des Wächters für Beobachtung, Zeit-Ausstieg, Bias-Wechsel), **`core-tp2`** (8s: Messmaschine Testplan 2, Speicher `wolfdesk.tp2`), **`core-openmark`** (8s: laufende Trades zum Kurs von jetzt), **`core-exitplan`** (8t: Exit-Manager, Ziele aus Chart-Marken), **`core-trapcheck`** (8u: Bullenfallen-Detektor), **`core-compass`** (8w: Zyklus-Kompass)
 - Märkte: `core-universe`, `core-hotscan`, `core-market`, `core-watchlist`, `core-tradeable`
 - Positionen: `core-path` (Trade-Weg), `core-plans`, `core-autoplan`, `core-planstate` (Plan-Ampel)
 - Sonstiges: `core-settings`, `core-views`, `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-journalmeasure`, `core-gesture`, `core-privacy`, `core-format`
@@ -161,7 +161,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 44 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8v">` und eine Import-Liste mit `?v=8v` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8w">` und eine Import-Liste mit `?v=8w` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -545,6 +545,16 @@ Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im T
 - 4 neue Tests (1.159). Geprüft: alle Tests, Trockenlauf des Wächters in Node (24 nachgebildete Märkte: drei Beobachtungen mit Chart-Zielen, Zeit-Ausstieg, Ziel-Meldung; Tagebuch mit `trap`), Finder in iPhone-Größe mit Donchian-Fund.
 - **Nicht getestet:** die Fallen-Meldung im echten Lauf (im Trockenlauf scheiterte kein Ausbruch); echte Kerzen.
 
+**Etappe 8w „Zyklus-Kompass“ (12.10., nur App, enthält 8v):**
+- Wunsch von Jensen (12.10., 12:08: „bau mir was Schönes, eine schöne Grafik für die Startseite“), Vorlage Abschnitt 15. Nur Anzeige, ohne Messung.
+- **Startseite, neue Karte unter dem Marktüberblick:** Rad mit den sieben Phasen (Kurznamen, Nummern), Zeiger und Bogen auf der aktuellen Phase; in der Mitte die **Ampel des Bull Market Support Bands** von BTC (Woche). Darunter Name der Phase, Bedeutung, „→ was tun“ aus Jensens Rahmen und die Fakten (Band, Alts gegen BTC 30 Tage, Breite Rest gegen Top 10, Fear & Greed mit BTC 30 Tage).
+- **Ampel** (`core-compass.js`, nur abgeschlossene Wochen aus den 260 Tageskerzen): grün = Wochenschluss über dem steigenden Band (SMA 20 höher als vor 4 Wochen) · gelb = erster Schluss darunter („Teil der Gewinne sichern“), im Band oder Band steigt nicht mehr · rot = mindestens zwei Schlüsse darunter und das Band fällt.
+- **Phase:** rot → 7 Risk-off, oder 1 Boden, wenn BTC oder Alts schon wieder im Tagestrend aufwärts · gelb nach Schwäche oder bei flachem Band → 6 Distributionsverdacht (gelb im Band ohne Schwäche: BTC aufwärts → 2, sonst 1) · grün: Gier ab 80 und BTC 30 Tage über +20 % → 6 Euphorie; Alt-Index minus BTC (30 Tage) bis −3 Pp. → 2 Bitcoin-Führung; unter +5 Pp. → 3 Frühe Rotation (wenn Alts aufwärts, sonst 2); ab +5 Pp. → 4 Breite Alt-Season, wenn der Rest stärker ist als die Top 10 und die Alts aufwärts laufen, sonst 3. **Phase 5 (Sektoren) ist nicht messbar** und im Rad gestrichelt. Ohne Alt-Index keine Phase, nur die Ampel.
+- **Finder:** je Coin „Kompass: x von 4 stimmen überein“ (Struktur = Tagestrend · Stärke gegen BTC 30 Tage · Breite = mehr als die Hälfte der geprüften Märkte im Tagestrend · Volumen der letzten Tageskerze über dem 20-Tage-Schnitt); nur Information, ändert die Reihenfolge nicht.
+- Einordnung: Testplan 2 hat gezeigt, dass das Band spät reagiert und als Regel nicht trennt; in der Karte steht das in der Fußzeile.
+- 13 neue Tests (1.172). Geprüft: alle Tests, Startseite und Finder mit nachgebildeten Kursen in iPhone-Größe.
+- **Nicht getestet:** echte Kerzen; die Ampel bei Gelb und Rot im echten Bild (nur in den Tests).
+
 **Testplan 3 „Relative Stärke“ (gemerkt, Jensen 12.10., 10:38):** Frage: Laufen Coins, die vor dem Markt laufen (neue Hochs, Stärke gegen den Alt-Index), auch danach besser? Anlass: Jensens Idee vom 08.10. und Donchian (in Entwicklung und Prüfung knapp besser als ein zufälliger Coin). Vorab festzuschreiben wie Testplan 1 und 2; Kandidat für den **noch geschlossenen Tresor** (letzte unverbrauchte Daten); optional BTC und Märkte bis 2017 für mehr Zyklen. Nicht vor der Schönheits-OP.
 
 **Notiert 08.10. (ohne eigenes Paket):**
@@ -855,7 +865,7 @@ Jeder Kandidat: Regel vorab festlegen, als eigene Backtest-Engine, nach A und B 
 
 ---
 
-## 15. Zyklus-Kompass (geplant)
+## 15. Zyklus-Kompass (seit 8w als Anzeige auf der Startseite)
 
 **Rahmen des Nutzers.** Zeitebenen: Monat/Woche = übergeordnete Marktphase · Tag = Rotation und Trendbestätigung · 4H und kleiner = Einstieg, kein Beweis für einen neuen Zyklus.
 

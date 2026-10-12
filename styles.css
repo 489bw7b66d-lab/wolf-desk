@@ -762,3 +762,13 @@ button.pos-row:first-of-type { border-top: 0; }
 .trap-list li.na { opacity: .7; }
 .trap-mini { margin-left: 6px; font-size: 11.5px; font-weight: 700; color: var(--warn); }
 .trap-mini.red { color: var(--bad); }
+/* 8w: Zyklus-Kompass */
+.compass-svg { display: block; width: 100%; max-width: 340px; margin: 0 auto; }
+.compass-phase { text-align: center; margin: 2px 0 10px; }
+.compass-phase .k { display: block; font-size: 12px; }
+.compass-phase b { display: block; font-size: 20px; font-weight: 800; margin: 2px 0 4px; letter-spacing: -.01em; }
+.compass-phase p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.compass-phase .compass-todo { margin-top: 6px; color: var(--gold); font-weight: 700; }
+.compass-facts { list-style: none; margin: 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: grid; gap: 5px; font-size: 13px; color: var(--muted); }
+.compass-facts b { color: var(--text); font-weight: 700; }
+.compass-foot { margin: 8px 0 0; font-size: 11.5px; color: var(--muted); }

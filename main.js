@@ -12,6 +12,7 @@ import { initTrade, openTrade } from './ui-trade.js';
 import { streamHealth, accountHealth } from './core-health.js';
 import { initPerformance, renderPerformance } from './ui-performance.js';
 import { initMarket } from './ui-market.js';
+import { initCompass } from './ui-compass.js';
 import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
 import { initBinance } from './ui-binance.js';
@@ -207,6 +208,7 @@ initCoin(getState, openAnalyze);
 initSignals(getState, tradeFromDetail, openCoin);
 initHome(getState, openTrade, openFull, openCoin);
 initMarket();
+initCompass();
 initBacktest(getState);
 initBinance(); // 8h: lange Historie von Binance
 initLongTest(); // 8i: Testplan-Läufe auf der langen Historie
