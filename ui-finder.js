@@ -11,6 +11,7 @@ import { NEW_RULES } from './core-ltrules.js';
 import { withChartTargets } from './core-exitplan.js';
 import { trapForLevel, trapHtml } from './ui-trap.js';
 import { trapHead } from './core-trapcheck.js';
+import { FINDER_RULES, PROVEN } from './core-finder.js';
 import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, tradeResult, withBias, searchEntries, atLeast, crowdNotes, sinceText, fibText, rsiText } from './core-finder.js';
 import { roomsText } from './core-sellblock.js';
 import { IDX, buildIndex, extendIndex, loadIndex, saveIndex, needsRebuild, marketBias, biasLines, coinBiasText, capExBtcText } from './core-index.js';
@@ -112,7 +113,7 @@ function row(e) {
     ${rs ? `<span class="fd-room muted">${esc(rs)}</span>` : ''}
     ${e.overlap ? '<span class="fd-room muted">Order Block in der Fib-Zone</span>' : ''}
     ${trap ? `<span class="fd-room ${trap.snapped ? 'short' : 'muted'}">${trap.snapped ? 'Key-Level: Ausbruch gescheitert · ' : 'Key-Level · '}${esc(trapHead(trap))}</span>` : ''}</button>`;
-  if (open && e.finds.length) h += `<div class="fd-detail">${e.finds.map((f) => `<div class="lt-bcard"><b>${esc(BLOCK_NAME[f.rule])}</b> <span class="muted">${esc([...Object.values(f.mk || {}), sinceText(f.since)].filter(Boolean).join(' · '))}</span>${blindHtml({ M: e.M, i: f.i, viz: vizWithRoom(f, e) })}</div>`).join('')}
+  if (open && e.finds.length) h += `<div class="fd-detail">${e.finds.map((f) => `<div class="lt-bcard"><b>${esc(BLOCK_NAME[f.rule])}</b>${PROVEN[f.rule] ? ` <span class="gold" style="font-size:12px">${esc(PROVEN[f.rule])}</span>` : ''} <span class="muted">${esc([...Object.values(f.mk || {}), sinceText(f.since)].filter(Boolean).join(' · '))}</span>${blindHtml({ M: e.M, i: f.i, viz: vizWithRoom(f, e) })}</div>`).join('')}
     ${trap ? trapHtml(trap, { id: 'trap-' + e.coin }) : ''}<p class="set-hint">Gold = Level oder Zone des Bausteins · Rot = nächste 4H-Sell-Blöcke über dem Kurs, ab der Kerze, aus der sie stammen (nur wenn sie nah liegen) · ▲ = Signalkerze · „jetzt“ = Kurs von eben. Das Bild endet an der Signalkerze.</p>${tradeBtn(e)}</div>`;
   else if (open) h += '<div class="fd-detail"><p class="set-hint">Kein Baustein hat hier ausgelöst. Der Coin steht nur wegen Fib-Lage oder RSI in der Liste.</p>' + tradeBtn(e) + '</div>';
   return h;
@@ -130,7 +131,7 @@ function paintList() {
   const miss = hits && !hits.length ? searchEntries(skipped.map((c) => ({ coin: c })), query, (e) => dn(e.coin)).map((e) => dn(e.coin)) : [];
   const b = (on, attrs, text) => `<button type="button" class="chip-btn${on ? ' ghost-chip' : ''}" ${attrs}>${text}</button>`;
   const mins = `<div class="chips fd-filter">${[[1, 'Alle'], [2, 'ab 2 Bausteinen'], [3, 'ab 3'], [0, 'Alle geprüften']].map(([k, t]) => b(minB === k && !isFlag && !hits, `data-min="${k}"`, `${t} ${k ? atLeast(withFind, k).length : list.length}`)).join('')}</div>`;
-  const rules = `<div class="chips fd-filter">${NEW_RULES.map((r) => b(filter === r, `data-f="${r}"`, `${esc(BLOCK_NAME[r])} ${cnt[r]}`)).join('')}</div>`;
+  const rules = `<div class="chips fd-filter">${FINDER_RULES.map((r) => b(filter === r, `data-f="${r}"`, `${esc(BLOCK_NAME[r])} ${cnt[r]}`)).join('')}</div>`;
   const flags = `<div class="chips fd-filter">${Object.keys(FLAG_NAME).map((k) => b(filter === k, `data-f="${k}"`, `${esc(FLAG_NAME[k])} ${list.filter((e) => e.flags[k]).length}`)).join('')}</div>`;
   const crowd = crowdNotes(list, scanned).map((t) => `<p class="set-hint fd-crowd">${esc(t)}</p>`).join('');
   const empty = hits ? (miss.length ? `${miss.slice(0, 5).join(', ')}: nicht im Tagestrend aufwärts, deshalb nicht geprüft.` : 'Kein geprüfter Markt mit diesem Namen.') : !withFind.length ? 'Kein Baustein hat in den letzten 24 Stunden ausgelöst oder gilt noch.' : isFlag ? 'Kein Markt erfüllt das gerade.' : filter ? 'Kein Fund für diesen Baustein in dieser Ansicht.' : minB === 0 ? 'Kein Markt geprüft.' : `Kein Coin hat gerade ${minB} oder mehr Bausteine. Tippe auf „Alle“.`;
@@ -166,7 +167,7 @@ export function initFinder(stateGetter, openTrade = null) {
   if (!el) return;
   getState = stateGetter;
   const tip = $('finder-tip');
-  if (tip) tip.innerHTML = tipInline('Sucht auf deinen handelbaren Märkten nach den fünf Bausteinen, die du in den Blindproben abgenommen hast: Key-Level mit Retest, Fib-Rücklauf, VWAP, Sweep und Order Block, jeweils nur im Tagestrend aufwärts. Gezeigt wird, was in den letzten 24 Stunden ausgelöst hat und noch gilt. Das ist ein Hinweisgeber für deine eigene Analyse und kein geprüftes Signal: In der Messung war kein Baustein besser als der Zufall. Sortiert wird nach der Zahl der Bausteine je Coin, nicht nach Güte. „Platz nach oben“ nennt je Zeitebene den Abstand bis zum nächsten Sell-Block über dem Kurs in R; ein R ist 2 × Tages-ATR. Fib-Lage (Tageschart, Kerzenkörper) und RSI mit Divergenz (Tag und 4H) sind zusätzliche Angaben; sie zählen nicht als Baustein und ändern die Reihenfolge nicht. Die Kopfzeile „Markt“ kommt aus einem eigenen Index deiner handelbaren Hyperliquid-Märkte: Alts = alle ohne BTC, jeder zählt gleich viel; „Breite“ vergleicht die zehn umsatzstärksten (Top 10) mit dem Rest; ein Markt zählt erst nach 110 Tagen mit. „Aufwärts“ heißt Tages-EMA 20 über EMA 100. Das ist Information und kein Filter.', 'finder-intro');
+  if (tip) tip.innerHTML = tipInline('Sucht auf deinen handelbaren Märkten nach sechs Bausteinen, jeweils nur im Tagestrend aufwärts: Key-Level mit Retest, Fib-Rücklauf, VWAP, Sweep und Order Block (in den Blindproben abgenommen) sowie Donchian (Tagesschluss über dem 20-Tage-Hoch). Gezeigt wird, was in den letzten 24 Stunden ausgelöst hat und noch gilt. Das ist ein Hinweisgeber für deine eigene Analyse und kein geprüftes Signal: Die ersten fünf waren in der Messung nicht besser als der Zufall; Donchian war es in Entwicklung und Prüfung, aber knapp. Sortiert wird nach der Zahl der Bausteine je Coin, nicht nach Güte. „Platz nach oben“ nennt je Zeitebene den Abstand bis zum nächsten Sell-Block über dem Kurs in R; ein R ist 2 × Tages-ATR. Fib-Lage (Tageschart, Kerzenkörper) und RSI mit Divergenz (Tag und 4H) sind zusätzliche Angaben; sie zählen nicht als Baustein und ändern die Reihenfolge nicht. Die Kopfzeile „Markt“ kommt aus einem eigenen Index deiner handelbaren Hyperliquid-Märkte: Alts = alle ohne BTC, jeder zählt gleich viel; „Breite“ vergleicht die zehn umsatzstärksten (Top 10) mit dem Rest; ein Markt zählt erst nach 110 Tagen mit. „Aufwärts“ heißt Tages-EMA 20 über EMA 100. Das ist Information und kein Filter.', 'finder-intro');
   el.addEventListener('input', (e) => { if (e.target.id === 'finder-q') { query = e.target.value; openCoin = ''; paintList(); } });
   el.addEventListener('click', (e) => {
     const b = e.target.closest('button');

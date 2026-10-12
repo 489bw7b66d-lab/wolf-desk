@@ -9,6 +9,11 @@ import { biasLines } from './core-index.js';
 import * as f from './core-format.js';
 
 export const OBS = { minBlocks: 2, holdDays: 10 };
+
+// 8v: Bullenfallen, Stufe 2: private Meldung, wenn bei einer offenen Long-Position der Ausbruch scheitert (Zeichen 1)
+export function trapText(coin, r) {
+  return `🪤 <b>${f.esc(dn(coin))}</b> Long: Ausbruch über ${f.price(r.L)} gescheitert, Tagesschluss zurück darunter. Fallen-Check ${r.count} von ${r.of} Warnzeichen. Gewinn sichern oder Stop prüfen.`;
+}
 const dn = (c) => String(c || '').replace(/^[a-z]+:/, '');
 
 // Telegram nur, wenn ein Baustein auf der LETZTEN abgeschlossenen 4H-Kerze ausgelöst hat und insgesamt mindestens
@@ -23,6 +28,19 @@ export function obsResult(e, price = null) {
   return { ...r, events: e.finds.map((x) => ({ name: BLOCK_NAME[x.rule], dir: 'long', strong: true })) };
 }
 
+// 8v: Ziele aus Chart-Marken (withChartTargets in core-exitplan.js) mit TP2-Prüfung; der gemessene Rahmen klein darunter.
+// Ohne Chart-Ziele bleiben die Rahmen-Ziele wie bisher.
+const crv = (r) => `1:${(Math.round(r * 10) / 10).toFixed(1).replace('.', ',')}`;
+export function targetLines(p) {
+  if (!p.chart) return [`Ziele im Rahmen: ${p.tps.slice(0, 4).map((t, i) => `TP${i + 1} ${f.price(t)}`).join(' · ')}`];
+  const r2 = p.tpR?.[1];
+  return [
+    `Ziele (Chart-Marken): ${p.tps.map((t, i) => `TP${i + 1} ${f.price(t)}`).join(' · ')}`,
+    p.chartOk === false ? `⚠️ ${f.esc(p.chartNote)}` : r2 != null ? `TP2 bei ${crv(r2)}${r2 >= 3 ? '' : ' (1:3 nicht erreicht)'}` : '',
+    p.frameTps ? `<i>Gemessener Rahmen: ${p.frameTps.slice(0, 4).map((t, i) => `${p.frameLabels?.[i] || 'TP' + (i + 1)} ${f.price(t)}`).join(' · ')}</i>` : '',
+  ].filter(Boolean);
+}
+
 // Text für Telegram
 export function obsText(e, r, { bias = null, id = null, appUrl = CONFIG.alerts?.appUrl, holdDays = OBS.holdDays } = {}) {
   const p = r.plan, line = '━━━━━━━━━━━━';
@@ -33,7 +51,7 @@ export function obsText(e, r, { bias = null, id = null, appUrl = CONFIG.alerts?.
     ...(bias ? biasLines(bias).slice(0, 2).map((t) => f.esc(t)) : []),
     line,
     `Kurs ${f.price(p.entry)} · Rahmen-Stop ${f.price(p.stop)} (2× Tages-ATR, −${f.pct(p.stopDistPct, 1)})`,
-    `Ziele im Rahmen: ${p.tps.slice(0, 4).map((t, i) => `TP${i + 1} ${f.price(t)}`).join(' · ')}`,
+    ...targetLines(p),
     e.rooms?.length ? f.esc(roomsText(e.rooms)) : '',
     `⏳ Zeit-Ausstieg im Rahmen nach ${holdDays} Tagen.`,
     line,

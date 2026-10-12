@@ -1,6 +1,6 @@
 // Tests für den Setup-Finder (8l, 8l1): core-sellblock.js (Sell-Block, „Platz nach oben“) und core-finder.js (Funde, Gültigkeit, Fib-Lage, RSI, Reihenfolge)
 import { sellBlocks, roomAbove, roomText, roomByTf, roomsText, blocksAbove } from './core-sellblock.js';
-import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, findsOf, fibBlockOverlap, sellSets, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, stillValid, fibPosition, fibText, rsiInfo, rsiText, atLeast, crowdNotes, sinceText, tradeResult, withBias, searchEntries } from './core-finder.js';
+import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, findsOf, fibBlockOverlap, sellSets, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, stillValid, fibPosition, fibText, rsiInfo, rsiText, atLeast, crowdNotes, sinceText, tradeResult, withBias, searchEntries, FINDER_RULES, PROVEN, donchFind } from './core-finder.js';
 import { signalsOf, NEW_RULES } from './core-ltrules.js';
 import { LT } from './core-longtest.js';
 import { mulberry32 } from './core-randombase.js';
@@ -68,7 +68,15 @@ export const tests = [
   ['Platz nach oben: der nächste Block gewinnt, egal auf welcher Zeitebene', () => { const r = roomAbove(100, [{ tf: '4H', blocks: [{ bottom: 108, top: 109 }] }, { tf: 'Tag', blocks: [{ bottom: 104, top: 106 }] }, { tf: 'Woche', blocks: [{ bottom: 120, top: 130 }] }], 2); return r.tf === 'Tag' && near(r.r, 2); }],
   ['Platz nach oben: steht der Kurs im Block, wird das gesagt', () => { const r = roomAbove(104.5, [{ tf: 'Woche', blocks: [{ bottom: 104, top: 106 }] }], 2); return r.state === 'im' && roomText(r) === 'Kurs im Sell-Block (Woche)'; }],
   ['Platz nach oben: Text für frei', () => /frei/.test(roomText({ state: 'frei' })) && roomText(null) === ''],
-  ['Finder: fünf Bausteine, die festgeschriebenen Regeln', () => NEW_RULES.every((r) => BLOCK_NAME[r]) && Object.keys(BLOCK_NAME).join() === 'r1,r2,r3,r4,r6'],
+  ['Finder: fünf festgeschriebene Bausteine plus Donchian (8v)', () => NEW_RULES.every((r) => BLOCK_NAME[r]) && Object.keys(BLOCK_NAME).join() === 'r1,r2,r3,r4,r6,dc' && FINDER_RULES.join() === 'r1,r2,r3,r4,r6,dc' && !!PROVEN.dc],
+  ['8v Donchian: Tagesschluss über dem 20-Tage-Hoch wird Baustein, gilt bis ein Tagesschluss darunter fällt', () => {
+    const DAY = 864e5, H = 4 * 36e5, T0 = Date.UTC(2025, 0, 1), D = [], G = [];
+    for (let d = 0; d < 160; d++) { const base = d < 159 ? 100 + (d % 5) : 112; const o = d < 159 ? base : 104, c = base; D.push({ t: T0 + d * DAY, T: T0 + (d + 1) * DAY - 1, o, h: Math.max(o, c) + 0.5, l: Math.min(o, c) - 0.5, c, v: 10 });
+      for (let k = 0; k < 6; k++) { const oo = o + ((c - o) * k) / 6, cc = o + ((c - o) * (k + 1)) / 6; G.push({ t: T0 + d * DAY + k * H, T: T0 + d * DAY + (k + 1) * H - 1, o: oo, h: Math.max(oo, cc) + 0.2, l: Math.min(oo, cc) - 0.2, c: cc, v: 1 }); } }
+    const M = liveMarket('DC', D, G), f = donchFind(M);
+    const M2 = liveMarket('DC', [...D, { t: T0 + 160 * DAY, T: T0 + 161 * DAY - 1, o: 112, h: 112.5, l: 100, c: 101, v: 10 }], [...G, ...Array.from({ length: 6 }, (_, k) => ({ t: T0 + 160 * DAY + k * H, T: T0 + 160 * DAY + (k + 1) * H - 1, o: 112 - k * 1.8, h: 112.5 - k * 1.8, l: 110 - k * 1.8, c: 110.2 - k * 1.8, v: 1 }))]);
+    const f2 = findsOf(M2).find((x) => x.rule === 'dc');
+    return f && f.rule === 'dc' && f.level > 104 && f.level < 105.5 && stillValid(f, M) && findsOf(M).some((x) => x.rule === 'dc') && !stillValid(f, M2) && f2 === undefined; }],
   ['Finder: ein Fund in den letzten 24 Stunden (6 Kerzen) wird gemeldet, mit Alter', () => { const f = f3.find((x) => x.rule === 'r3'); return !!f && f.i === c3.i && f.ago === 2 && f.t === c3.M.g.t[c3.i] + H4 && !!f.viz && !!f.mk; }],
   ['Finder: ein Fund, der 6 Kerzen zurückliegt, zählt nicht mehr als aktuell', () => !findsOf(c3old.M).some((x) => x.rule === 'r3' && x.i === c3old.i)],
   ['Finder: je Baustein nur der jüngste Fund', () => f3.length === new Set(f3.map((x) => x.rule)).size && f3.every((x) => [...signalsOf(x.rule, c3.M).keys()].every((i) => i <= x.i || i < c3.M.n - FINDER.bars))],

@@ -28,7 +28,9 @@ import * as fmt from './core-format.js';
 // 8r „Umstellen“: Beobachtungen aus dem Setup-Finder, Zeit-Ausstieg, Bias-Wechsel
 import { trendNow, liveMarket, coinEntry, FINDER } from './core-finder.js';
 import { buildIndex, marketBias, tachoFrom } from './core-index.js';
-import { OBS, obsFresh, obsKey, obsResult, obsText, timeExitDue, timeExitText, biasSide, biasTurn, biasTurnText } from './core-observe.js';
+import { OBS, obsFresh, obsKey, obsResult, obsText, timeExitDue, timeExitText, biasSide, biasTurn, biasTurnText, trapText } from './core-observe.js';
+import { withChartTargets } from './core-exitplan.js';
+import { findBreakout, trapSigns } from './core-trapcheck.js';
 
 const { TELEGRAM_TOKEN: TOKEN, TELEGRAM_CHAT: CHAT, TELEGRAM_CHANNEL: CHANNEL, WALLET, TEST_RUN } = process.env;
 // Signale gehen in den Kanal (falls hinterlegt), Regelverstöße immer nur privat an dich
@@ -253,11 +255,11 @@ async function main() {
   const useBm = !observe && !!CONFIG.alerts.benchmark;
 
   // 8r: Markt-Bias aus dem eigenen Index (dieselben Tageskerzen, kein Abruf mehr)
-  let bias = null, tacho = null;
+  let bias = null, tacho = null, btc = null, altIdx = null;
   try {
-    let btc = dailyAll.BTC || null;
+    btc = dailyAll.BTC || null;
     if (!btc) btc = await getCandles('BTC', '1d', true).catch(() => null);
-    const idx = buildIndex(dailyAll);
+    const idx = buildIndex(dailyAll); altIdx = idx.alt?.length ? idx.alt : null;
     if (idx.alt.length) { bias = marketBias(btc, idx); tacho = tachoFrom(bias); }
     log('Markt-Bias:', tacho ? `${tacho.label} (${tacho.value})` : 'unbekannt');
   } catch (err) { log('Markt-Bias:', err.message); }
@@ -265,7 +267,7 @@ async function main() {
   const alerts = useBm ? bm
     .map((r) => ({ r, a: bmAlert(r, prices[r.coin], state.sent, now, CONFIG.alerts, { volume: volumes[r.coin] }) }))
     .filter((x) => x.a)
-    .filter((x) => { const why = blockReason(x.r.coin, openCoins, state.journal); if (why) log('Kein Signal für', x.r.coin + ':', why); return !why; })
+    .filter((x) => { const why = blockReason(x.r.coin, openCoins, state.journal); if (why) log('Kein Signal:', why === 'Position offen' ? 'ein Markt mit offener Position' : `${x.r.coin}: ${why}`); return !why; })
     .sort((x, y) => bmStrength(y.r) - bmStrength(x.r))
     .slice(0, CONFIG.alerts.maxPerRun)
   : results
@@ -273,7 +275,7 @@ async function main() {
     .filter(Boolean)
     .map((r) => ({ r, a: signalAlert(r, prices[r.coin], state.sent, now, CONFIG.alerts, { volume: volumes[r.coin], lastDir: state.lastDir }) }))
     .filter((x) => x.a)
-    .filter((x) => { const why = blockReason(x.r.coin, openCoins, state.journal); if (why) log('Kein Signal für', x.r.coin + ':', why); return !why; })
+    .filter((x) => { const why = blockReason(x.r.coin, openCoins, state.journal); if (why) log('Kein Signal:', why === 'Position offen' ? 'ein Markt mit offener Position' : `${x.r.coin}: ${why}`); return !why; })
     .sort((x, y) => heat(y.r) - heat(x.r))
     .slice(0, CONFIG.alerts.maxPerRun);
   // 8r: Beobachtungen. Nur einmal je neuer 4H-Kerze (die Bausteine ändern sich nur dann), nur Märkte im Tagestrend aufwärts.
@@ -281,7 +283,7 @@ async function main() {
   if (observe) {
     const H4 = 4 * 36e5, slot = Math.floor(now / H4) * H4;
     if (state.obsAt !== slot) {
-      let checked = 0;
+      let checked = 0; const met = { n: 0, seen: 0, vol: 0, pos: 0, sig: 0 };
       for (const c of up) {
         try {
           await new Promise((res) => setTimeout(res, CONFIG.signals.hot.requestGapMs));
@@ -290,25 +292,32 @@ async function main() {
           checked++;
           const e = coinEntry(c, liveMarket(c, dailyAll[c], h4), null, prices[c]);
           if (!obsFresh(e)) continue;
+          met.n++;
           const key = obsKey(c, h4.at(-1).t);
-          if (state.sent[key]) continue;
-          if (volumes[c] != null && CONFIG.alerts.minVolumeUsd && volumes[c] < CONFIG.alerts.minVolumeUsd) continue;
+          if (state.sent[key]) { met.seen++; continue; }
+          if (volumes[c] != null && CONFIG.alerts.minVolumeUsd && volumes[c] < CONFIG.alerts.minVolumeUsd) { met.vol++; continue; }
           const why = blockReason(c, openCoins, state.journal);
-          if (why) { log('Keine Beobachtung für', c + ':', why); continue; }
+          // Öffentliches Protokoll: offene Positionen ohne Namen (das Repository und seine Läufe sind öffentlich)
+          if (why) { if (why === 'Position offen') met.pos++; else { met.sig++; log('Keine Beobachtung für', c + ':', why); } continue; }
           const r = obsResult(e, prices[c]);
-          if (r) obs.push({ e, r, key });
+          // 8v: Telegram zeigt Ziele aus Chart-Marken; das Tagebuch misst weiter im gemessenen Rahmen (r)
+          let shown = r; try { shown = withChartTargets(r, e.M?.daily, e.M?.g); } catch { shown = r; }
+          // 8v: Bullenfallen-Zeichen zum Zeitpunkt der Beobachtung (nur beschreibend, fürs Tagebuch)
+          let trap = null; try { const bo = findBreakout(e.M?.daily); const tr = bo ? trapSigns({ D: e.M.daily, L: bo.L, bi: bo.bi, btc, alt: altIdx }) : null; trap = tr ? { count: tr.count, of: tr.of, snapped: tr.snapped } : 'kein'; } catch { trap = null; }
+          if (r) obs.push({ e, r, shown, key, trap });
         } catch (err) { log('Beobachtung', c, err.message); }
       }
       state.obsAt = slot;
-      log(`Beobachtung: ${checked} Märkte geprüft, ${obs.length} mit frischem Baustein und mindestens ${OBS.minBlocks} Bausteinen`);
+      const skip = [met.seen && `${met.seen} schon gemeldet`, met.vol && `${met.vol} zu wenig Umsatz`, met.pos && `${met.pos} Position offen`, met.sig && `${met.sig} Signal läuft`].filter(Boolean).join(', ');
+      log(`Beobachtung: ${checked} Märkte geprüft, ${met.n} erfüllt (frischer Baustein und mindestens ${OBS.minBlocks} Bausteine)${skip ? `, davon übersprungen: ${skip}` : ''}, ${obs.length} zu melden`);
     }
     obs.sort((x, y) => y.e.n - x.e.n || (x.e.coin < y.e.coin ? -1 : 1));
-    for (const { e, r, key } of obs.slice(0, CONFIG.alerts.maxPerRun)) {
+    for (const { e, r, shown, key, trap } of obs.slice(0, CONFIG.alerts.maxPerRun)) {
       state.sigNo = (state.sigNo || 0) + 1;
-      await send(obsText(e, r, { bias, id: state.sigNo }), CHANNEL || CHAT);
+      await send(obsText(e, shown || r, { bias, id: state.sigNo }), CHANNEL || CHAT);
       state.sent[key] = now;
       // Tagebuch schreibt still mit, welche Bausteine beteiligt waren (eng = 'obs'), und vermisst wie bisher
-      state.journal.push({ ...journalEntry(r, { score: null, pos: { state: 'zone' }, price: r.plan.entry }, now, alignment(viewFor(CONFIG.views, r.coin, now), 'long')), id: state.sigNo, eng: 'obs', blocks: e.finds.map((x) => x.rule) });
+      state.journal.push({ ...journalEntry(r, { score: null, pos: { state: 'zone' }, price: r.plan.entry }, now, alignment(viewFor(CONFIG.views, r.coin, now), 'long')), id: state.sigNo, eng: 'obs', blocks: e.finds.map((x) => x.rule), ...(trap ? { trap } : {}) });
       log('Beobachtung gemeldet:', e.coin, e.n, 'Bausteine');
     }
   }
@@ -351,6 +360,21 @@ async function main() {
     const turn = biasTurn(state.biasSide, tacho);
     if (turn && risk?.positions?.length) { try { await send(biasTurnText(turn, tacho, bias, risk.positions)); } catch (err) { log('Bias-Wechsel:', err.message); } }
     state.biasSide = biasSide(tacho);
+  }
+
+  // 8v: Bullenfallen, Stufe 2 → privat an dich: Bei einer offenen Long-Position scheitert ein Ausbruch der letzten 5 Tage
+  // (Tagesschluss zurück unter dem überwundenen Körper-Hoch). Einmal je Ausbruch.
+  if (risk?.positions?.length) {
+    state.trapHits = state.trapHits || {};
+    for (const p of risk.positions.filter((x) => x.side === 'long')) {
+      try {
+        const D = dailyAll[p.coin] || await getCandles(p.coin, '1d', true);
+        const bo = findBreakout(D), r = bo ? trapSigns({ D, L: bo.L, bi: bo.bi, btc, alt: altIdx }) : null;
+        const key = r ? `trap|${p.coin}|${r.t}|${r.L}` : null;
+        if (r?.snapped && !state.trapHits[key]) { await send(trapText(p.coin, r)); state.trapHits[key] = now; }
+      } catch (err) { log('Fallen-Check:', err.message); }
+    }
+    Object.keys(state.trapHits).forEach((k) => { if (now - state.trapHits[k] > 30 * 864e5) delete state.trapHits[k]; });
   }
 
   // Ziele deiner offenen Positionen (eigener Plan oder zugehöriges Signal) → privat an dich

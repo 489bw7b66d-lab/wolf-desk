@@ -2,7 +2,7 @@
 // abgenommen hat. Er behauptet KEINEN Vorteil: In Testplan 1 war kein Baustein besser als der Zufall. Jede Zeile heißt
 // „Beobachtung“. Es gibt keinen Score und keine Trefferquote; sortiert wird nach der Zahl der Bausteine je Coin.
 // Die Bausteine sind die festgeschriebenen Regeln aus core-ltrules.js, unverändert (dieselbe Fassung wie in den Blindproben).
-import { prepare, LT } from './core-longtest.js';
+import { prepare, LT, fireDonch } from './core-longtest.js';
 import { signalsOf, NEW_RULES, bodyBottomAt } from './core-ltrules.js';
 import { pack } from './core-binance.js';
 import { ema, rsi } from './core-indicators.js';
@@ -20,7 +20,13 @@ export const FINDER = {
   minBlocks: 2,     // Standardansicht: Coins ab zwei Bausteinen (Jensens „Mehrheit der Faktoren“), umschaltbar
   crowd: 1 / 3,     // löst ein Baustein bei mehr als einem Drittel der geprüften Märkte aus, ist es der Markt, nicht der Coin
 };
-export const BLOCK_NAME = { r1: 'Key-Level', r2: 'Fib-Rücklauf', r3: 'VWAP', r4: 'Sweep', r6: 'Order Block' };
+export const BLOCK_NAME = { r1: 'Key-Level', r2: 'Fib-Rücklauf', r3: 'VWAP', r4: 'Sweep', r6: 'Order Block', dc: 'Donchian' };
+// 8v: Donchian 20/10 als sechster Baustein (Jensen, 12.10.2026, 10:38). Er ist der einzige, der in Testplan 1 in Entwicklung UND
+// Prüfung besser war als ein zufälliger Markt zur selben Kerze (99 % und 95 %, Protokoll vom 12.10.). Auslöser wie im Test:
+// Tagesschluss über dem höchsten Hoch der 20 Tage davor (Hochs, nicht Körper: so wurde er gemessen). Gilt, bis ein Tagesschluss
+// wieder unter dieses Hoch fällt.
+export const FINDER_RULES = [...NEW_RULES, 'dc'];
+export const PROVEN = { dc: 'Einziger Baustein, der in Entwicklung und Prüfung besser war als der Zufall (knapp, Testplan 1).' };
 export const FLAG_NAME = { gp: 'Golden Pocket', os: 'RSI überverkauft', div: 'bullische Divergenz' };
 
 // Braucht der Markt überhaupt die langen 4H-Kerzen? Nur im Tagestrend aufwärts (Tages-EMA 20 über EMA 100) und mit genug Historie.
@@ -43,7 +49,20 @@ export function findsOf(M, bars = FINDER.bars) {
     for (const [i, s] of signalsOf(rule, M)) if (i >= M.n - bars && M.dOf[i] + 1 >= LT.minDays && (!hit || i > hit.i)) hit = { rule, i, ago: M.n - 1 - i, t: M.g.t[i] + H4, mk: s.mk, viz: s.viz };
     if (hit) out.push(hit);
   }
+  const dc = donchFind(M, bars);
+  if (dc) out.push(dc);
   return out;
+}
+
+// Donchian-Fund: jüngste 4H-Kerze in den letzten `bars`, mit der ein Tag über dem 20-Tage-Hoch schloss
+export function donchFind(M, bars = FINDER.bars) {
+  for (let i = M.n - 1; i >= Math.max(0, M.n - bars); i--) {
+    if (M.dOf[i] + 1 < LT.minDays || !fireDonch(M, i)) continue;
+    const lvl = M.hi[M.dOf[i]];
+    return { rule: 'dc', i, ago: M.n - 1 - i, t: M.g.t[i] + H4, level: lvl, mk: { Auslöser: 'Tagesschluss über dem 20-Tage-Hoch' },
+      viz: { h: { from: Math.max(0, i - 70), lines: [{ y: lvl, l: '20T-Hoch', hot: true }], marks: [{ k: i, l: 'A' }] } } };
+  }
+  return null;
 }
 
 // Liegt der Order Block (Regel 6) in der Fib-Zone (Regel 2)? Reine Information.
@@ -77,6 +96,7 @@ export function stillValid(find, M) {
   if (find.rule === 'r3') { const L = (v.h?.lines || []).find((x) => x.hot); if (!L) return true; for (let k = i + 1; k < M.n; k++) { const a = M.atr[M.dOf[k]]; if (a > 0 && g.c[k] < L.y - 0.5 * a) return false; } return true; }
   if (find.rule === 'r1') { const b = (v.h?.bands || [])[0]; return !(b && dayBelow(b[0])); }
   if (find.rule === 'r2') { const L = (v.d?.lines || []).find((x) => x.l === '0,786'); return !(L && dayBelow(L.y)); }
+  if (find.rule === 'dc') return !(find.level > 0 && dayBelow(find.level));
   return true;
 }
 
@@ -158,7 +178,7 @@ export const atLeast = (list, k) => (list || []).filter((e) => e.n >= k);
 export function crowdNotes(list, scanned, share = FINDER.crowd) {
   if (!(scanned > 0)) return [];
   const c = countByBlock((list || []).filter((e) => e.n > 0));
-  return NEW_RULES.filter((r) => c[r] / scanned > share).map((r) => `${BLOCK_NAME[r]} löst gerade bei ${c[r]} von ${scanned} Märkten aus. Das ist der Markt, nicht der einzelne Coin.`);
+  return FINDER_RULES.filter((r) => c[r] / scanned > share).map((r) => `${BLOCK_NAME[r]} löst gerade bei ${c[r]} von ${scanned} Märkten aus. Das ist der Markt, nicht der einzelne Coin.`);
 }
 export const sinceText = (r) => (r == null || !Number.isFinite(r) ? '' : `seit der Signalkerze ${r > 0.05 ? '+' : r < -0.05 ? '−' : '±'}${Math.abs(Math.round(r * 10) / 10).toFixed(1).replace('.', ',')} R`);
 
@@ -168,7 +188,7 @@ export function sortEntries(list) {
   const fresh = (e) => (e.finds.length ? Math.min(...e.finds.map((f) => f.ago)) : 99);
   return [...list].sort((a, b) => b.n - a.n || fresh(a) - fresh(b) || (a.coin < b.coin ? -1 : 1));
 }
-export const countByBlock = (list) => Object.fromEntries(NEW_RULES.map((r) => [r, list.filter((e) => e.finds.some((f) => f.rule === r)).length]));
+export const countByBlock = (list) => Object.fromEntries(FINDER_RULES.map((r) => [r, list.filter((e) => e.finds.some((f) => f.rule === r)).length]));
 export const agoText = (t, now = Date.now()) => { const h = Math.max(0, Math.round((now - t) / 36e5)); return h < 1 ? 'gerade eben' : `vor ${h} Std.`; };
 
 // Zeichnung für einen Fund: die Zeichenhilfe der Regel, dazu die nächsten 4H-Sell-Blöcke über dem Kurs (rot, ab der Kerze,

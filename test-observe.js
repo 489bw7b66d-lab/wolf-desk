@@ -1,5 +1,5 @@
 // Tests für „Umstellen“ (8r): core-observe.js, abgestufter Tacho (core-index.js), Tagebuch-Kennzeichen (core-benchmark.js)
-import { OBS, obsFresh, obsKey, obsResult, obsText, timeExitDue, timeExitText, biasSide, biasTurn, biasTurnText } from './core-observe.js';
+import { OBS, obsFresh, obsKey, obsResult, obsText, timeExitDue, timeExitText, biasSide, biasTurn, biasTurnText, targetLines, trapText } from './core-observe.js';
 import { tachoFrom, aboveFast } from './core-index.js';
 import { engineOf, splitByEngine, journalWindow, bmHoldDays } from './core-benchmark.js';
 import { journalEntry, publicSignals } from './core-alerts.js';
@@ -23,4 +23,7 @@ export const tests = [
   ['Tacho abgestuft: Erholung im Abwärtstrend zählt halb, ohne EMA-Angabe wie bisher', () => tachoFrom({ btcUp: false, altUp: false, btcAbove: true, altAbove: false, breadth: 0 }).value === -60 && tachoFrom({ btcUp: true, altUp: true, breadth: 0 }).value === 80],
   ['Über der EMA 20: letzter Tagesschluss gegen EMA 20', () => aboveFast(line(40, 1.01)) === true && aboveFast(line(40, 0.99)) === false && aboveFast(line(5, 1.01)) === null],
   ['Tagebuch: Beobachtungen eigene Gruppe in der Auswertung, Fenster 10 Tage wie im Rahmen', () => engineOf({ eng: 'obs' }) === 'obs' && engineOf({ eng: 'bm' }) === 'bm' && engineOf({}) === 'alt' && splitByEngine([{ eng: 'obs' }, { eng: 'bm' }, {}]).obs.length === 1 && journalWindow({ eng: 'obs' }) === bmHoldDays()],
+  ['8v Telegram: Chart-Ziele mit TP2-Prüfung und Rahmen klein darunter', () => { const L = targetLines({ chart: true, tps: [11, 13, 15], tpR: [1.1, 2.4, 3.2], frameTps: [12, 13, 14, 16], frameLabels: ['2R', '3R', '4R', '6R'], chartOk: true }); return L.length === 3 && /^Ziele \(Chart-Marken\): TP1 11/.test(L[0]) && /TP2 bei 1:2,4 \(1:3 nicht erreicht\)/.test(L[1]) && /Gemessener Rahmen: 2R 12/.test(L[2]); }],
+  ['8v Telegram: ohne Chart-Ziele wie bisher, ohne 1:2 eine Warnung', () => /^Ziele im Rahmen: TP1/.test(targetLines({ tps: [2, 3] })[0]) && /⚠️ Kein Chartziel/.test(targetLines({ chart: true, tps: [11], tpR: [1.2], chartOk: false, chartNote: 'Kein Chartziel mit mindestens 1:2 für TP2.' }).join('\n'))],
+  ['8v Fallen-Meldung privat: Coin, Level, Zahl der Zeichen, Hinweis', () => { const t = trapText('xyz:SUI', { L: 3.5, count: 3, of: 6 }); return /SUI/.test(t) && !/xyz:/.test(t) && /3 von 6/.test(t) && /Gewinn sichern oder Stop prüfen/.test(t); }],
 ];

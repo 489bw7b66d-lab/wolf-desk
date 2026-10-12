@@ -359,3 +359,13 @@ Einigkeit der Schalter in der Entwicklung: BMSB/Breite 83 %, BMSB/EMA 100 96 %, 
 
 - Index und Markt-Bias in der App bleiben Anzeige (wie vorgesehen).
 - Für später notiert (nicht Teil von Testplan 2, wäre ein eigener, neu festzuschreibender Testplan): mehr Zyklen, z. B. BTC bis 2017 mit dem Bärenmarkt 2018.
+
+## Testplan 1: Prüfung der Vergleichsregel Donchian 20/10 geöffnet (12.10.2026, App 8u, auf Jensens iPhone)
+
+Anlass: Jensens Frage, ob Donchian (in der Entwicklung die beste Regel) im Finder steckt (nein). Die Prüfung war nie geöffnet; Jensen hat sie nach Rückfrage einmalig geöffnet. Messlatte unverändert seit 06.10. (A: besser als mindestens 95 % der Zufalls-Durchgänge, B: im Plus nach Kosten, mindestens 300 Trades), Zufalls-Vergleich Fassung 2.
+
+- **Entwicklung:** 883 Trades · Ø +0,26R (Spanne +0,07R bis +0,43R, 48 Monate) · Treffer 47 % · Zufall selbe Kerze Ø +0,21R (+0,18R bis +0,25R, 200 Durchgänge) · besser als 99 % · Rahmen allein Ø +0,09R
+- **Prüfung:** 701 Trades · Ø +0,19R (Spanne −0,13R bis +0,47R, 21 Monate) · Treffer 44 % · Zufall selbe Kerze Ø +0,15R (+0,12R bis +0,19R, 200 Durchgänge) · **besser als 95 %** · Rahmen allein Ø +0,02R
+- **A: Entwicklung ja, Prüfung ja (genau an der Hürde). B: ja, ja. Trades gesamt 1.584.**
+
+**Einordnung:** Donchian ist die einzige Regel, die in zwei getrennten Zeiträumen besser war als ein zufälliger Markt zur selben Kerze. Der Vorsprung ist klein (rund +0,04R bis +0,05R je Trade) und in der Prüfung genau an der Hürde. Donchian lief als Vergleichsregel, nicht als Kandidat; der Zufalls-Vergleich zieht bei Donchian aus allen Märkten (ohne Bedingung Tagestrend), der Vorsprung misst also auch „Coin mit neuem 20-Tage-Hoch statt irgendein Coin“, das heißt relative Stärke. Mehrfaches Testen: Mit den Regeln 1 bis 6 und zwei Vergleichsregeln wurden acht Regeln angesehen; dass eine davon in zwei Zeiträumen besteht, ist deutlich weniger zufallsverdächtig als ein einzelnes Bestehen, aber kein Beweis. **Der Tresor bleibt zu.**

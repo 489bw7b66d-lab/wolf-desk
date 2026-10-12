@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 12.10.2026 · Code: Etappe 8u · 1.155 Tests · auf dem iPhone geprüft bis 8s1 (1.125 von 1.125 am 08.10.) · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
+Stand: 12.10.2026 · Code: Etappe 8v · 1.159 Tests · auf dem iPhone geprüft bis 8u (1.155 von 1.155 am 12.10. um 10:14) · **Donchian besteht die Prüfung (12.10.) und ist sechster Baustein** · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -80,7 +80,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8u). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8v). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -105,7 +105,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8u` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8v` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -161,7 +161,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 44 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8u">` und eine Import-Liste mit `?v=8u` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8v">` und eine Import-Liste mit `?v=8v` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -534,6 +534,18 @@ Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im T
 - 13 neue Tests (1.155). Geprüft: alle Tests, Positions-Blatt, Startseite, Finder und „Trades im Detail“ mit nachgebildeten Kursen in iPhone-Größe.
 - **Nicht getestet:** die Finder-Zeile mit einem echten Key-Level (in den nachgebildeten Kursen löste keiner aus); echte Kerzen.
 - **Stufe 2 (Wächter, vorher benennen):** private Meldung bei Zeichen 1 für offene Positionen; Zeichen bei jeder Beobachtung ins Tagebuch.
+
+**Etappe 8v „Wächter-Paket: Donchian, Chart-Ziele, Fallen-Meldung“ (12.10., fasst den Wächter an):**
+- **Tempo-Regel:** angekündigt am 08.10. (Protokollzeile) und am 12.10. (Chart-Ziele, Stufe 2 des Detektors); gebaut am selben Tag wie 8t und 8u **auf Jensens ausdrücklichen Wunsch** (12.10., 10:38: „mach das Wächterpaket jetzt sinnvoll fertig“). Claude hatte empfohlen, den Tag Abstand zu halten.
+- **Donchian als sechster Baustein** (Jensen, 12.10., 10:38: „genau so integrieren“; Anlass: Prüfung bestanden, siehe Protokoll): `donchFind` in `core-finder.js`, Auslöser wie im Test (`fireDonch`: Tagesschluss über dem höchsten Hoch der 20 Tage davor, Hochs wie gemessen), gilt bis ein Tagesschluss wieder darunter fällt. Zählt als voller Baustein (auch für „ab 2 Bausteinen“ und die Beobachtungen des Wächters). Im Finder mit dem Vermerk „einziger Baustein, der in Entwicklung und Prüfung besser war als der Zufall (knapp)“. `core-ltrules.js` unverändert.
+- **Telegram-Beobachtung mit Chart-Zielen** (wie die Trade-Karte aus 8t): TP2-Prüfung „TP2 bei 1:x“ oder Warnung ohne 1:2, gemessener Rahmen klein darunter. **Das Tagebuch misst weiter im gemessenen Rahmen** (Stop 2× Tages-ATR, 2R/3R/4R/6R), damit die Auswertung vergleichbar bleibt.
+- **Protokollzeile:** „X Märkte geprüft, Y erfüllt …, davon übersprungen: … schon gemeldet / zu wenig Umsatz / Position offen / Signal läuft, Z zu melden“.
+- **Datenschutz:** Die Läufe des Wächters sind öffentlich wie das Repository. Bisher stand bei übersprungenen Märkten der Coin mit „Position offen“ im Protokoll (verrät offene Positionen). Jetzt nur noch „ein Markt mit offener Position“ bzw. als Zahl.
+- **Bullenfallen, Stufe 2:** privat an Jensen, wenn bei einer offenen Long-Position ein Ausbruch der letzten 5 Tage scheitert (Zeichen 1), einmal je Ausbruch („🪤 … Gewinn sichern oder Stop prüfen“). Beobachtungen bekommen im Tagebuch das Feld `trap` (kein Ausbruch, oder Zahl der Zeichen und ob zugeschnappt), nur beschreibend.
+- 4 neue Tests (1.159). Geprüft: alle Tests, Trockenlauf des Wächters in Node (24 nachgebildete Märkte: drei Beobachtungen mit Chart-Zielen, Zeit-Ausstieg, Ziel-Meldung; Tagebuch mit `trap`), Finder in iPhone-Größe mit Donchian-Fund.
+- **Nicht getestet:** die Fallen-Meldung im echten Lauf (im Trockenlauf scheiterte kein Ausbruch); echte Kerzen.
+
+**Testplan 3 „Relative Stärke“ (gemerkt, Jensen 12.10., 10:38):** Frage: Laufen Coins, die vor dem Markt laufen (neue Hochs, Stärke gegen den Alt-Index), auch danach besser? Anlass: Jensens Idee vom 08.10. und Donchian (in Entwicklung und Prüfung knapp besser als ein zufälliger Coin). Vorab festzuschreiben wie Testplan 1 und 2; Kandidat für den **noch geschlossenen Tresor** (letzte unverbrauchte Daten); optional BTC und Märkte bis 2017 für mehr Zyklen. Nicht vor der Schönheits-OP.
 
 **Notiert 08.10. (ohne eigenes Paket):**
 - **Wächter abgenommen (08.10.):** Handstart 13:47 und geplanter Lauf 14:15 grün; 74 Märkte geprüft; ein Markt hätte die Bedingung erfüllt, wurde wegen offener Position nicht gemeldet (gewollt); erste echte Beobachtungen #WD-0012 (AVAX) und #WD-0013 (PUMP) um 18:21, beide VWAP + Sweep auf derselben Kerze.
