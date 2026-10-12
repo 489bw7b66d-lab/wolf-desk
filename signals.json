@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "ONDO",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791807409652,
+   "px": 0.50512,
+   "zone": [
+    0.50512,
+    0.50512
+   ],
+   "stop": 0.42658397871326215,
+   "tps": [
+    0.6621920425734757,
+    0.7407280638602137,
+    0.8192640851469516,
+    0.9763361277204274
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Fib-Rücklauf",
+    "VWAP"
+   ],
+   "id": 19,
+   "eng": "obs"
+  },
+  {
    "coin": "XRP",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "EMA 21/55 Kreuzung aufwärts"
    ],
    "id": "CRV|long|1790683820436"
-  },
-  {
-   "coin": "ETH",
-   "dir": "long",
-   "style": "intraday",
-   "score": 87,
-   "seal": true,
-   "at": 1790683820436,
-   "px": 2731.3,
-   "zone": [
-    2713.7747037984254,
-    2733.7
-   ],
-   "stop": 2663.96146329449,
-   "tps": [
-    2783.5132405039353,
-    2843.289129108658,
-    2903.0650177133807,
-    2962.8409063181034
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1790749799999,
-   "events": [
-    "EMA 8/21 Kreuzung aufwärts",
-    "MACD-Kreuzung aufwärts",
-    "Bruch Abwärts-Trendlinie"
-   ],
-   "id": "ETH|long|1790683820436"
   }
  ],
  "archive": [
