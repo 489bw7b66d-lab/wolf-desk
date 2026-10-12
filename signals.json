@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "HYPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791835756658,
+   "px": 83.727,
+   "zone": [
+    83.727,
+    83.727
+   ],
+   "stop": 75.06365282832954,
+   "tps": [
+    101.05369434334094,
+    109.7170415150114,
+    118.38038868668187,
+    135.70708303002277
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 23,
+   "eng": "obs"
+  },
+  {
    "coin": "DOGE",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "Volumen-Spike"
    ],
    "id": 4
-  },
-  {
-   "coin": "PUMP",
-   "dir": "long",
-   "style": "intraday",
-   "score": 82,
-   "seal": true,
-   "at": 1790885268677,
-   "px": 0.005856,
-   "zone": [
-    0.005699448403194361,
-    0.005874
-   ],
-   "stop": 0.005290724201597181,
-   "tps": [
-    0.006282724201597179,
-    0.006778724201597178,
-    0.007274724201597177,
-    0.007770724201597176
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1790966699999,
-   "events": [
-    "Bullish Engulfing",
-    "EMA 8/21 Kreuzung aufwärts",
-    "MACD-Kreuzung aufwärts"
-   ],
-   "id": 3
   }
  ],
  "archive": [
