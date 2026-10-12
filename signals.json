@@ -1,6 +1,93 @@
 {
  "signals": [
   {
+   "coin": "DOGE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791821731739,
+   "px": 0.085236,
+   "zone": [
+    0.085236,
+    0.085236
+   ],
+   "stop": 0.07592105516784349,
+   "tps": [
+    0.10386588966431305,
+    0.11318083449646957,
+    0.1224957793286261,
+    0.14112566899293913
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 20,
+   "eng": "obs"
+  },
+  {
+   "coin": "SUI",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791821731739,
+   "px": 1.0898,
+   "zone": [
+    1.0898,
+    1.0898
+   ],
+   "stop": 0.9265285214577277,
+   "tps": [
+    1.416342957084545,
+    1.5796144356268171,
+    1.7428859141690896,
+    2.0694288712536344
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 21,
+   "eng": "obs"
+  },
+  {
+   "coin": "TAO",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791821731739,
+   "px": 286.57,
+   "zone": [
+    286.57,
+    286.57
+   ],
+   "stop": 245.44004803321192,
+   "tps": [
+    368.82990393357613,
+    409.9598559003642,
+    451.0898078671522,
+    533.3497118007283
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP"
+   ],
+   "id": 22,
+   "eng": "obs"
+  },
+  {
    "coin": "ONDO",
    "dir": "long",
    "style": "swing",
@@ -492,93 +579,6 @@
     "MACD-Kreuzung aufwärts"
    ],
    "id": 3
-  },
-  {
-   "coin": "ETH",
-   "dir": "long",
-   "style": "intraday",
-   "score": 88,
-   "seal": true,
-   "at": 1790827715934,
-   "px": 2696.3,
-   "zone": [
-    2688.8184,
-    2698.4
-   ],
-   "stop": 2653.881440743773,
-   "tps": [
-    2739,
-    2761.0864,
-    2789.1816,
-    2820.2
-   ],
-   "status": "tp2",
-   "r": 1.527312599389834,
-   "doneAt": 1790929799999,
-   "events": [
-    "EMA 8/21 Kreuzung aufwärts",
-    "MACD-Kreuzung aufwärts",
-    "EMA 21/55 Kreuzung aufwärts"
-   ],
-   "id": 2
-  },
-  {
-   "coin": "WLD",
-   "dir": "long",
-   "style": "swing",
-   "score": 83,
-   "seal": true,
-   "at": 1790783915065,
-   "px": 0.53523,
-   "zone": [
-    0.5081146617078126,
-    0.53573
-   ],
-   "stop": 0.4629023308539063,
-   "tps": [
-    0.5809423308539062,
-    0.6399623308539062,
-    0.6989823308539062,
-    0.7580023308539061
-   ],
-   "status": "tp1",
-   "r": 0.6320171988616491,
-   "doneAt": 1790967599999,
-   "events": [
-    "Volumen-Spike",
-    "Ausbruch aus Seitwärtsphase",
-    "Doppelboden bestätigt"
-   ],
-   "id": 1
-  },
-  {
-   "coin": "CRV",
-   "dir": "long",
-   "style": "swing",
-   "score": 85,
-   "seal": true,
-   "at": 1790683820436,
-   "px": 0.39111,
-   "zone": [
-    0.3773212536045999,
-    0.39338
-   ],
-   "stop": 0.3371743876160995,
-   "tps": [
-    0.4335268659885003,
-    0.4817031051747007,
-    0.5298793443609011,
-    0.5780555835471015
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1791475199999,
-   "events": [
-    "MACD-Kreuzung aufwärts",
-    "Ausbruch aus Dreieck",
-    "EMA 21/55 Kreuzung aufwärts"
-   ],
-   "id": "CRV|long|1790683820436"
   }
  ],
  "archive": [
