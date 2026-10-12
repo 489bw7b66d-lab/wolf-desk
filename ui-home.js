@@ -10,6 +10,7 @@ import { hot, onHot, startHot, stopHot } from './core-hotscan.js';
 import { badge, esc, dn, topReasons, seal, viewMark, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, alignment } from './core-views.js';
 import * as f from './core-format.js';
+import { trapForCoin, trapMini } from './ui-trap.js';
 
 const $ = (id) => document.getElementById(id);
 const HOT_KEY = 'wolfdesk.hotOn';
@@ -89,7 +90,7 @@ export function renderHome(s) {
     return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}" aria-label="${esc(dn(p.coin))}: Positions-Blatt öffnen"><span class="dot r-${st}"></span>
       <span class="sym">${coinIcon(p.coin)}${esc(dn(p.coin))} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
         <span class="pos-px">${f.price(p.mark)} <b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2)}</b></span></span>
-      <span class="meta">Liq ${f.pct(p.liqDist)}</span>
+      <span class="meta">Liq ${f.pct(p.liqDist)}${p.side === 'long' ? trapMini((() => { try { return trapForCoin(p.coin); } catch { return null; } })()) : ''}</span>
       <span class="${p.upnl >= 0 ? 'long' : 'short'}" style="font-weight:800">${f.signedUsd(p.upnl)}</span>${mini(p)}</button>`;
   }).join('') : '<p class="empty">Keine offenen Positionen.</p>';
 }

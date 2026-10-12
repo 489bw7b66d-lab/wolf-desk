@@ -9,6 +9,8 @@ import { scanUniverse } from './core-universe.js';
 import { getTradeable } from './core-tradeable.js';
 import { NEW_RULES } from './core-ltrules.js';
 import { withChartTargets } from './core-exitplan.js';
+import { trapForLevel, trapHtml } from './ui-trap.js';
+import { trapHead } from './core-trapcheck.js';
 import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, tradeResult, withBias, searchEntries, atLeast, crowdNotes, sinceText, fibText, rsiText } from './core-finder.js';
 import { roomsText } from './core-sellblock.js';
 import { IDX, buildIndex, extendIndex, loadIndex, saveIndex, needsRebuild, marketBias, biasLines, coinBiasText, capExBtcText } from './core-index.js';
@@ -89,10 +91,18 @@ const tradeBtn = (e) => (onTrade ? `<button type="button" class="small-btn fd-ta
 const indexChanged = () => { try { window.dispatchEvent(new Event('wolfdesk-index')); } catch { /* egal */ } };
 const status = () => { const s = $('finder-status'); if (s) s.textContent = note; };
 
+// 8u: Fallen-Check beim Baustein Key-Level (Level = Mitte des Bandes, Ausbruch = Kerze „A“ der Zeichnung)
+function keyTrap(e) {
+  const k = e.finds.find((x) => x.rule === 'r1');
+  const band = k?.viz?.w?.bands?.[0], a = k?.viz?.w?.marks?.find((m) => m.l === 'A');
+  if (!band || !a || !e.M?.g) return null;
+  try { return trapForLevel(e.M.daily, (band[0] + band[1]) / 2, e.M.g.t[a.k]); } catch { return null; }
+}
+
 function row(e) {
   const blocks = e.finds.map((f) => `<span class="chip strong">${esc(BLOCK_NAME[f.rule])} <small>${esc(agoText(f.t))}</small></span>`).join('');
   const open = openCoin === e.coin, inBlock = e.rooms.some((x) => x.state === 'im');
-  const fib = fibText(e.fib), rs = rsiText(e.rsiDay, e.rsiH4);
+  const fib = fibText(e.fib), rs = rsiText(e.rsiDay, e.rsiH4), trap = keyTrap(e);
   let h = `<button type="button" class="fd-row" data-coin="${esc(e.coin)}" aria-expanded="${open}">
     <span class="fd-coin"><b>${esc(dn(e.coin))}</b> <span class="muted">Beobachtung · ${e.n} ${e.n === 1 ? 'Baustein' : 'Bausteine'}</span></span>
     ${coinBiasText(e.up, e.vsBtc) ? `<span class="fd-room muted">${esc(coinBiasText(e.up, e.vsBtc))}</span>` : ''}
@@ -100,9 +110,10 @@ function row(e) {
     <span class="fd-room ${inBlock ? 'short' : 'muted'}">${esc(roomsText(e.rooms))}</span>
     ${fib ? `<span class="fd-room ${e.fib.gp ? 'gold' : 'muted'}">${esc(fib)}</span>` : ''}
     ${rs ? `<span class="fd-room muted">${esc(rs)}</span>` : ''}
-    ${e.overlap ? '<span class="fd-room muted">Order Block in der Fib-Zone</span>' : ''}</button>`;
+    ${e.overlap ? '<span class="fd-room muted">Order Block in der Fib-Zone</span>' : ''}
+    ${trap ? `<span class="fd-room ${trap.snapped ? 'short' : 'muted'}">${trap.snapped ? 'Key-Level: Ausbruch gescheitert · ' : 'Key-Level · '}${esc(trapHead(trap))}</span>` : ''}</button>`;
   if (open && e.finds.length) h += `<div class="fd-detail">${e.finds.map((f) => `<div class="lt-bcard"><b>${esc(BLOCK_NAME[f.rule])}</b> <span class="muted">${esc([...Object.values(f.mk || {}), sinceText(f.since)].filter(Boolean).join(' · '))}</span>${blindHtml({ M: e.M, i: f.i, viz: vizWithRoom(f, e) })}</div>`).join('')}
-    <p class="set-hint">Gold = Level oder Zone des Bausteins · Rot = nächste 4H-Sell-Blöcke über dem Kurs, ab der Kerze, aus der sie stammen (nur wenn sie nah liegen) · ▲ = Signalkerze · „jetzt“ = Kurs von eben. Das Bild endet an der Signalkerze.</p>${tradeBtn(e)}</div>`;
+    ${trap ? trapHtml(trap, { id: 'trap-' + e.coin }) : ''}<p class="set-hint">Gold = Level oder Zone des Bausteins · Rot = nächste 4H-Sell-Blöcke über dem Kurs, ab der Kerze, aus der sie stammen (nur wenn sie nah liegen) · ▲ = Signalkerze · „jetzt“ = Kurs von eben. Das Bild endet an der Signalkerze.</p>${tradeBtn(e)}</div>`;
   else if (open) h += '<div class="fd-detail"><p class="set-hint">Kein Baustein hat hier ausgelöst. Der Coin steht nur wegen Fib-Lage oder RSI in der Liste.</p>' + tradeBtn(e) + '</div>';
   return h;
 }

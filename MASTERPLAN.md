@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 12.10.2026 · Code: Etappe 8t · 1.142 Tests · auf dem iPhone geprüft bis 8s1 (1.125 von 1.125 am 08.10.) · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
+Stand: 12.10.2026 · Code: Etappe 8u · 1.155 Tests · auf dem iPhone geprüft bis 8s1 (1.125 von 1.125 am 08.10.) · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -80,7 +80,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8t). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8u). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -105,7 +105,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8t` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8u` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -152,7 +152,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 - Risiko: `core-risk` (Regeln, Ausstiegsplan, Hebel), `core-guard` (Stop-Check gegen ATR, Abkühlphase), `core-trail` (Stop nachziehen nach Struktur), `core-levpreview` (Hebel-Vorschau), `core-totalrisk` (Summe, wenn alle Stops greifen), **`core-riskbudget`** (8e: Ampel fürs Gesamt-Risiko, Budget für neue Trades), `core-exitcalc` (Ausstiegsrechner)
 - Handel und Auswertung: `core-trades`, `core-performance` (Gewinn aus Hyperliquids PnL-Verlauf, größter Rückgang), `core-fees`, `core-patience`
 - Signale: `core-indicators`, `core-signals`, `core-scanner`, `core-fib`, `core-elliott`, `core-patterns`, `core-candlesticks`, `core-confirm`, `core-trendgate` (Short-Filter), `core-feedplan`, `core-reasons`, `core-engine2`, `core-benchmark` (Maßstab als Signalgeber, Haltedauer, Tagebuch-Fenster), `core-bmtext` (Telegram-Text)
-- Backtest: `core-backtest` (Simulation, Lauf), `core-btstore` (Speicher; Feldlisten `KEEP` je Trade und `compactRun` je Markt: **neue Felder müssen dort eingetragen werden, sonst gehen sie beim Speichern verloren**), `core-regime` (8c: BTC-Merker), `core-exitcompare` (8c: Ausstiegs-Varianten), `core-donchian` (8d), `core-btmetrics` (8d: Funding-Schätzung, Pareto, Haltedauer), `core-randombase` (8f: Zufalls-Maßstab), **`core-binance`** (8h: lange Historie von Binance, eigene Datenbank `wolfdesk-bn`, Protokoll in `wolfdesk.bn`), **`core-longtest`** (8i: Messmaschine für den Testplan, Ergebnisse in `wolfdesk.lt`), **`core-ltrules`** (8k: die Regeln 1, 2, 3, 4, 6 des Testplans), **`core-finder`** (8l: Setup-Finder, aktuelle Funde auf den handelbaren Märkten), **`core-sellblock`** (8l: Sell-Block und „Platz nach oben“), **`core-index`** (8m: Hyperliquid-Ledger-Perp-Index und Markt-Bias als Kopfzeile, Speicher `wolfdesk.hlindex`), **`core-tradedetail`** (8n: Deine Trades im Detail), **`core-stopcheck`** (8p: Stop-Check gegen die Tages-ATR), **`core-backup`** (8q: Datensicherung), **`core-observe`** (8r: Texte und Entscheidungen des Wächters für Beobachtung, Zeit-Ausstieg, Bias-Wechsel), **`core-tp2`** (8s: Messmaschine Testplan 2, Speicher `wolfdesk.tp2`), **`core-openmark`** (8s: laufende Trades zum Kurs von jetzt), **`core-exitplan`** (8t: Exit-Manager, Ziele aus Chart-Marken)
+- Backtest: `core-backtest` (Simulation, Lauf), `core-btstore` (Speicher; Feldlisten `KEEP` je Trade und `compactRun` je Markt: **neue Felder müssen dort eingetragen werden, sonst gehen sie beim Speichern verloren**), `core-regime` (8c: BTC-Merker), `core-exitcompare` (8c: Ausstiegs-Varianten), `core-donchian` (8d), `core-btmetrics` (8d: Funding-Schätzung, Pareto, Haltedauer), `core-randombase` (8f: Zufalls-Maßstab), **`core-binance`** (8h: lange Historie von Binance, eigene Datenbank `wolfdesk-bn`, Protokoll in `wolfdesk.bn`), **`core-longtest`** (8i: Messmaschine für den Testplan, Ergebnisse in `wolfdesk.lt`), **`core-ltrules`** (8k: die Regeln 1, 2, 3, 4, 6 des Testplans), **`core-finder`** (8l: Setup-Finder, aktuelle Funde auf den handelbaren Märkten), **`core-sellblock`** (8l: Sell-Block und „Platz nach oben“), **`core-index`** (8m: Hyperliquid-Ledger-Perp-Index und Markt-Bias als Kopfzeile, Speicher `wolfdesk.hlindex`), **`core-tradedetail`** (8n: Deine Trades im Detail), **`core-stopcheck`** (8p: Stop-Check gegen die Tages-ATR), **`core-backup`** (8q: Datensicherung), **`core-observe`** (8r: Texte und Entscheidungen des Wächters für Beobachtung, Zeit-Ausstieg, Bias-Wechsel), **`core-tp2`** (8s: Messmaschine Testplan 2, Speicher `wolfdesk.tp2`), **`core-openmark`** (8s: laufende Trades zum Kurs von jetzt), **`core-exitplan`** (8t: Exit-Manager, Ziele aus Chart-Marken), **`core-trapcheck`** (8u: Bullenfallen-Detektor)
 - Märkte: `core-universe`, `core-hotscan`, `core-market`, `core-watchlist`, `core-tradeable`
 - Positionen: `core-path` (Trade-Weg), `core-plans`, `core-autoplan`, `core-planstate` (Plan-Ampel)
 - Sonstiges: `core-settings`, `core-views`, `core-alerts` (Wächter-Logik, Tagebuch, Berichte), `core-journalmeasure`, `core-gesture`, `core-privacy`, `core-format`
@@ -161,7 +161,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 44 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8t">` und eine Import-Liste mit `?v=8t` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8u">` und eine Import-Liste mit `?v=8u` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -525,6 +525,15 @@ Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im T
 - 17 neue Tests (1.142). Geprüft: alle Tests, Positions-Blatt und Trade-Karte mit nachgebildeten Kursen in iPhone-Größe (mehrere Varianten: Ziele erreicht mit Nachzieh-Vorschlag, kein Chartziel mit 1:2, nur zwei Chartziele), Charts auf 15M, 1H, 4H, 1D.
 - **Nicht getestet:** mit echten Positionen und echten Kerzen; wie viele Chart-Marken echte Märkte typischerweise liefern.
 - **Angekündigtes Wächter-Paket (eigener Schritt, frühestens einen Tag nach 8t):** Telegram-Beobachtung mit Chart-Zielen und TP2-Prüfung; genauere Protokollzeile („1 erfüllt, davon 1 übersprungen, Position offen“).
+
+**Etappe 8u „Bullenfallen-Detektor, Stufe 1“ (12.10., nur App, Wächter-Code unberührt; enthält 8t):**
+- Wunsch von Jensen (08.10., 22:53 und 22:55) mit der Abstimmung von 23:05. Warnliste, kein Signal, kein Filter, kein Score, ohne Messung. Grundsatz Körper, Tageschart.
+- **Wo:** Positions-Blatt (offene Longs, Box „Bullenfallen-Check“ oben), Startseite (kurz an der Position: „Falle zugeschnappt“ rot oder „Fallen-Check x/y“), Setup-Finder (Baustein Key-Level: Zeile in der Liste, ausführlich im aufgeklappten Eintrag; Level = Mitte des Bandes, Ausbruch = Kerze „A“). Bei Positionen zählt ein Ausbruch, wenn in den letzten 5 Tagen ein Tagesschluss über ein bestätigtes, bis dahin ungebrochenes Körper-Swing-Hoch (5 Kerzen links und rechts) ging.
+- **Zeichen:** 1 Tagesschluss innerhalb von 5 Tagen zurück unter dem Level (rot, eigene Zeile; bei Positionen „Gewinn sichern oder Stop prüfen“) · 2 oberer Docht länger als der Körper oder Schluss weniger als ¼ Tages-ATR über dem Level · 3 Volumen unter dem 20-Tage-Schnitt · 4 bärische RSI-Divergenz auf dem Tag (vorhandene Erkennung, klassisch oder im Entstehen) · 5 weder BTC noch Alt-Index mit neuem 20-Tage-Hoch ab dem Ausbruchstag (ohne Alt-Index nicht prüfbar) · 6 Funding/Open Interest: nicht prüfbar, die App kennt keinen Verlauf · 7 Fib-Zone auf Tag oder Woche: Körper-Hoch der Ausbruchskerze innerhalb ½ ATR der Zeitebene um 1,272 / 1,618 / 2,618 des letzten Anstiegs (gemessen ab dem Swing-Tief), oder Schluss im 0,618–0,786-Rücklauf des letzten Rückgangs von mindestens 6 ATR. „x von y“ zählt nur prüfbare Zeichen.
+- **Trades im Detail:** neue Tabelle „Bullenfallen-Zeichen beim Einstieg“ (nur Longs, nur Kerzen vor dem Einstieg): kein Ausbruch · Ausbruch ohne · mit Warnzeichen. Beschreibend; ohne neuen Testplan keine Regel.
+- 13 neue Tests (1.155). Geprüft: alle Tests, Positions-Blatt, Startseite, Finder und „Trades im Detail“ mit nachgebildeten Kursen in iPhone-Größe.
+- **Nicht getestet:** die Finder-Zeile mit einem echten Key-Level (in den nachgebildeten Kursen löste keiner aus); echte Kerzen.
+- **Stufe 2 (Wächter, vorher benennen):** private Meldung bei Zeichen 1 für offene Positionen; Zeichen bei jeder Beobachtung ins Tagebuch.
 
 **Notiert 08.10. (ohne eigenes Paket):**
 - **Wächter abgenommen (08.10.):** Handstart 13:47 und geplanter Lauf 14:15 grün; 74 Märkte geprüft; ein Markt hätte die Bedingung erfüllt, wurde wegen offener Position nicht gemeldet (gewollt); erste echte Beobachtungen #WD-0012 (AVAX) und #WD-0013 (PUMP) um 18:21, beide VWAP + Sweep auf derselben Kerze.

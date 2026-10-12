@@ -19,6 +19,7 @@ import { esc, dn, TFL, CHART_TFS, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
 import * as f from './core-format.js';
 import { exitPlanFor, tp2Note, rText } from './core-exitplan.js';
+import { trapForCoin, trapHtml } from './ui-trap.js';
 import { tipInline } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
@@ -125,7 +126,7 @@ export function openCoin(name) {
     </div>
     ${viewSummary(coin)}
     <div id="coin-live" class="live-box" aria-live="polite"></div>
-    ${p ? `<div id="coin-pos"></div>${exitBoxHtml()}${stopBoxHtml(p)}<h3 class="sub-h">Chart</h3>` : ''}
+    ${p ? `<div id="coin-pos"></div>${p.side === 'long' ? '<div id="coin-trap"></div>' : ''}${exitBoxHtml()}${stopBoxHtml(p)}<h3 class="sub-h">Chart</h3>` : ''}
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((t) => `<button type="button" data-ktf="${t}" aria-pressed="${t === tf}">${TFL[t]}</button>`).join('')}</div>
     <div id="coin-chart" class="chart-box"></div>
     ${chartTools('coin-chart', coin)}
@@ -259,7 +260,16 @@ function exitCtx() {
     split: CONFIG.exitPlan, szDecimals: s.szDec?.[coin], openedAt: c.t?.openedAt || 0, curStop: c.p.stop ?? null });
   return { ...c, x, stop0 };
 }
+function renderTrap() {
+  const box = $('coin-trap');
+  if (!box) return;
+  const open = !!box.querySelector('details[open]');
+  let r = null; try { r = trapForCoin(coin); } catch { r = null; }
+  box.innerHTML = r ? `<h3 class="sub-h">Bullenfallen-Check</h3>${trapHtml(r, { position: true, id: 'trap-pos' })}` : '';
+  if (open) box.querySelector('details')?.setAttribute('open', '');
+}
 function renderExit() {
+  renderTrap();
   const box = $('coin-exit');
   if (!box) return;
   const c = exitCtx();

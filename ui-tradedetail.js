@@ -105,6 +105,8 @@ function paint() {
       h += '<h3 class="sub-h">Mit oder gegen den Markt-Bias</h3>' + table([['Alle', st.all], ['Mit dem Bias', st.bias.mit], ['Gegen den Bias', st.bias.gegen], ['Markt gemischt', st.bias.gemischt]]);
       h += `<p class="set-hint">${esc(compareText(st.bias.mit, st.bias.gegen, 'Mit dem Bias', 'gegen den Bias'))}</p>`;
       h += '<h3 class="sub-h">Einstieg und Coin-Trend</h3>' + table([['Zum Kurs', st.kind.Kurs], ['Per Limit', st.kind.Limit], ['Coin im Trend', st.coin.im], ['Coin gegen Trend', st.coin.gegen]]);
+      h += '<h3 class="sub-h">Bullenfallen-Zeichen beim Einstieg</h3>' + table([['Kein Ausbruch in den 5 Tagen davor', st.trap.kein], ['Ausbruch ohne Warnzeichen', st.trap.ohne], ['Ausbruch mit Warnzeichen', st.trap.mit]]);
+      h += `<p class="set-hint">${esc(compareText(st.trap.mit, st.trap.ohne, 'mit Warnzeichen', 'ohne'))} Nur Longs, nur Kerzen vor dem Einstieg (Zeichen 1 nur, wenn es schon geschehen war). Beschreibend, daraus wird ohne neuen Testplan keine Regel.</p>`;
       h += '<h3 class="sub-h">Stop-Abstand</h3>' + table([['Stop unter 1 ATR', st.stop.eng], ['1 bis 1,5 ATR', st.stop.mittel], ['Ab 1,5 ATR', st.stop.weit]]);
       h += `<p class="set-hint">${esc(compareText(st.stop.eng, st.stop.weit, 'Stop unter 1 ATR', 'ab 1,5 ATR'))} Der Rahmen aus dem Testplan nimmt 2 ATR.</p>`;
       h += `<p class="set-hint">„Bester Stand“ = so weit lief der Kurs höchstens in deine Richtung. „Liegen gelassen“ = bester Stand minus Ergebnis. Alles in Tages-ATR beim Einstieg, in R nur, wo der Stop bekannt ist.</p>`;

@@ -5,6 +5,7 @@
 // Bewusst OHNE Beträge in Dollar: Alles steht in Tages-ATR, in R (wenn der Stop bekannt ist) und in Prozent vom Kurs.
 // So lassen sich Screenshots dieser Karte teilen, ohne das Konto offenzulegen. Den Hebel von damals liefern die Fills nicht.
 // Reine Funktionen, Tests in test-tradedetail.js.
+import { trapAtEntry } from './core-trapcheck.js';
 import { atr } from './core-indicators.js';
 import { trendOf } from './core-index.js';
 import { markTrade } from './core-openmark.js';
@@ -76,6 +77,7 @@ export function withBias(side, state) {
 
 // Eine Zeile je Trade. ctx: { fills, orders, daily: {COIN: [...]}, hourly: {key: [...]}, btc, alt }
 // 8s: ctx.priceOf(coin) gesetzt → laufende Trades werden zum Kurs von jetzt bewertet (marked), ihr bester Stand läuft bis jetzt.
+const trapGroup = (D, t, btc, alt) => { try { return trapAtEntry(D, t, btc?.length ? btc : null, alt?.length ? alt : null).group; } catch { return null; } };
 export function detailRow(trade0, ctx = {}) {
   const mk = trade0.closedAt == null && ctx.priceOf ? markTrade(trade0, ctx.priceOf(trade0.coin), ctx.now ?? Date.now()) : null;
   const trade = mk ? { ...mk, closedAt: null } : trade0; // für Haltedauer und besten Stand bleibt er laufend
@@ -99,6 +101,8 @@ export function detailRow(trade0, ctx = {}) {
     leftAtr: res != null && top != null ? inA(top - res) : null,
     coinUp: trendOf(closedBefore(daily, trade.openedAt)),
     bias: bias.state, btcUp: bias.btcUp, altUp: bias.altUp, fit: withBias(trade.side, bias.state),
+    // 8u: Bullenfallen-Zeichen beim Einstieg (nur Long, nur Kerzen davor): 'kein' Ausbruch · 'ohne' · 'mit' Warnzeichen
+    trap: trade.side === 'long' && daily?.length ? trapGroup(daily, trade.openedAt, ctx.btc, ctx.alt) : null,
   };
 }
 
@@ -118,6 +122,7 @@ export function splitStats(rows, open = false) {
     kind: { Kurs: g((r) => r.kind === 'Kurs'), Limit: g((r) => r.kind === 'Limit') },
     coin: { im: g((r) => r.coinUp === (r.side === 'long')), gegen: g((r) => r.coinUp != null && r.coinUp !== (r.side === 'long')) },
     // 8p: Stop-Abstand in Tages-ATR (nur wo der Stop bekannt ist)
+    trap: { kein: g((r) => r.trap === 'kein'), ohne: g((r) => r.trap === 'ohne'), mit: g((r) => r.trap === 'mit') },
     stop: { eng: g((r) => r.stopAtr != null && r.stopAtr < 1), mittel: g((r) => r.stopAtr != null && r.stopAtr >= 1 && r.stopAtr < 1.5), weit: g((r) => r.stopAtr != null && r.stopAtr >= 1.5) },
   };
 }
