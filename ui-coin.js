@@ -18,11 +18,14 @@ import { accountSummary } from './core-calc.js';
 import { esc, dn, TFL, CHART_TFS, coinIcon } from './ui-parts.js';
 import { getViews, viewFor, viewLines, BIAS_TXT } from './core-views.js';
 import * as f from './core-format.js';
+import { exitPlanFor, tp2Note, rText } from './core-exitplan.js';
+import { tipInline } from './ui-parts.js';
 
 const $ = (id) => document.getElementById(id);
 let getState = () => ({});
 let onAnalyze = () => {};
 let coin = null, tf = '4h', timer = null, lastFocus = null;
+let lastExit = 0;
 let live = null; // { p, t, pp, szDecimals } der gerade gezeigten Position (für Ausstiegsrechner und Stop-Eingabe)
 const cache = new Map(); // "coin|tf" -> Kerzen
 
@@ -72,6 +75,7 @@ function renderLive() {
     if ($('coin-hist')) $('coin-hist').innerHTML = `${partials(trade)}${costLine(trade, s)}`;
     // Ausstiegsrechner: nur die Zahlen laufen mit dem Kurs mit, die Eingabe bleibt stehen
     if ($('ex-pct')) updateExit(p, trade, pp, live.szDecimals);
+    if ($('coin-exit') && Date.now() - lastExit > 15000) { lastExit = Date.now(); renderExit(); }
   } else { live = null; $('coin-pos').innerHTML = ''; if ($('coin-hist')) $('coin-hist').innerHTML = ''; }
 
   const cs = cache.get(coin + '|' + tf);
@@ -110,7 +114,7 @@ function loadChart() {
 
 export function openCoin(name) {
   if (!name) return;
-  coin = name;
+  coin = name; exitMsg = ''; lastExit = Date.now();
   const p = position(getState());
   tf = p ? '1h' : '4h';
   $('sheet-body').innerHTML = `<div id="coin-view">
@@ -127,6 +131,7 @@ export function openCoin(name) {
     ${chartTools('coin-chart', coin)}
     ${p ? '<div id="coin-hist"></div>' : '<div id="coin-pos"></div>'}
     <div id="coin-plan"></div>
+    ${p && p.side === 'long' ? '<div id="coin-exit"></div>' : ''}
     <div class="sheet-actions"><button type="button" id="coin-analyze" class="span-2">Signal analysieren</button></div>
   </div>`;
   lastFocus = document.activeElement;
@@ -136,8 +141,9 @@ export function openCoin(name) {
   loadChart();
   renderLive();
   renderPlan();
+  renderExit();
   // Der automatische Plan wird im Hintergrund berechnet: kurz danach neu zeichnen
-  [3000, 8000, 15000].forEach((ms) => setTimeout(() => { if (!planEdit && $('coin-plan') && coin === name) renderPlan(); }, ms));
+  [3000, 8000, 15000].forEach((ms) => setTimeout(() => { if (!planEdit && $('coin-plan') && coin === name) renderPlan(); if (coin === name) renderExit(); }, ms));
   clearInterval(timer);
   timer = setInterval(renderLive, 1000);
   $('sheet-close').focus();
@@ -227,15 +233,70 @@ function renderPlan() {
     <p class="empty" style="font-size:12px;margin-top:6px">Damit der Wächter dich beim Erreichen eines Ziels erinnert: ⚙️ → „Für den Wächter übernehmen“ und my-settings.js hochladen. Ziele aus Telegram-Signalen kennt er von selbst.</p>`;
 }
 
-function storePlan(tps, source) {
+function storePlan(tps, source, stop = undefined) {
   const c = planCtx();
   if (!c) return;
-  savePlan(coin, { side: c.p.side, openedAt: c.t?.openedAt || null, entry: c.p.entry, tps, source, at: Date.now() });
+  savePlan(coin, { side: c.p.side, openedAt: c.t?.openedAt || null, entry: c.p.entry, tps, source, at: Date.now(), ...(stop > 0 ? { stop } : {}) });
   planEdit = false; planMsg = 'Gespeichert.';
   renderPlan(); renderLive();
 }
 
+// ===== Exit-Manager (8t): Ziele aus Chart-Marken, Ordergrößen, Stop nachziehen auf dem Tageschart =====
+// Nur Long. Kerzen: Tag (260 Tage) und 4H. R aus dem ursprünglichen Stop (Plan-SL, sonst der jetzige Stop).
+let exitMsg = '';
+function exitCtx() {
+  const c = planCtx();
+  if (!c || c.p.side !== 'long') return null;
+  const d = cache.get(coin + '|1d'), h = cache.get(coin + '|4h');
+  if (!d) {
+    const k = coin;
+    getCandles(k, '1d').then((cs) => { cache.set(k + '|1d', cs.slice(-300)); if (coin === k) renderExit(); }).catch(() => {});
+    if (!h) getCandles(k, '4h').then((cs) => { cache.set(k + '|4h', cs.slice(-300)); if (coin === k) renderExit(); }).catch(() => {});
+    return { ...c, loading: true };
+  }
+  const s = getState(), stop0 = (c.plan?.source === 'chart' && c.plan.stop > 0 ? c.plan.stop : null) ?? (c.p.stop > 0 && c.p.stop < c.p.entry ? c.p.stop : null) ?? c.targets?.stop ?? null;
+  const x = exitPlanFor({ daily: d, h4: h || null, entry: c.p.entry, stop: stop0, price: s.prices?.[coin] ?? c.p.mark, size: c.t?.maxSz || c.p.size,
+    split: CONFIG.exitPlan, szDecimals: s.szDec?.[coin], openedAt: c.t?.openedAt || 0, curStop: c.p.stop ?? null });
+  return { ...c, x, stop0 };
+}
+function renderExit() {
+  const box = $('coin-exit');
+  if (!box) return;
+  const c = exitCtx();
+  if (!c) { box.innerHTML = ''; return; }
+  const head = `<h3 class="sub-h">Exit-Manager <small class="muted" style="font-weight:600">Chart-Marken</small> ${tipInline('Ziele aus Chart-Marken (Körper): Sell-Blocks auf Woche, Tag und 4H, ungebrochene Swing-Hochs auf Tag und Woche, Fib-Extensionen 1,272 / 1,618 / 2,618 des letzten Anstiegs. Marken näher als ½ Tages-ATR sind eine Zone. TP2 ist die erste Zone mit mindestens 1:2 (R = Einstieg bis ursprünglicher Stop). Aufteilung wie in den Einstellungen. Nur Anzeige, ohne Messung.', 'xp')}</h3>`;
+  if (c.loading) { box.innerHTML = `${head}<p class="empty">Lade Tages- und 4H-Kerzen …</p>`; return; }
+  const x = c.x;
+  if (!x) { box.innerHTML = `${head}<p class="empty">Zu wenig Tageskerzen für Chart-Ziele.</p>`; return; }
+  const usd = (v) => (v == null ? '–' : f.signedUsd(v));
+  const rows = x.rows.map((r) => `<div class="xp-row${r.reached ? ' done' : ''}"><div class="xp-top"><span><b>${r.reached ? '✓ ' : ''}TP${r.n}</b> ${f.price(r.price)}</span>
+      <span class="long">+${f.pct(r.move, 1)}</span>${r.r != null ? `<span class="${r.n === 2 ? (r.r >= 2 ? 'long' : 'short') : 'muted'}">${rText(r.r)}</span>` : ''}</div>
+      <div class="xp-why muted">${esc(r.label)}</div>
+      <div class="xp-sz">verkaufe ${f.pct(r.pct, 0)}${r.qty != null ? ` = ${String(r.qty).replace('.', ',')} Stück` : ''} · Gewinn dieses Teils ${usd(r.usd)} · gesichert bis hier ${usd(r.cum)}</div></div>`).join('');
+  const runner = x.runnerPct > 0 ? `<p class="meta" style="font-size:12px;margin:4px 0 0">Runner ${f.pct(x.runnerPct, 0)}${x.unusedPct > 0 ? ` (davon ${f.pct(x.unusedPct, 0)} ohne eigenes Chartziel)` : ''}: läuft mit dem nachgezogenen Stop.</p>` : '';
+  const note = tp2Note(x);
+  const tr = x.trail;
+  const trail = tr ? `<p class="trail-hint">↗ Stop nachziehen (Tag) auf <b>${f.price(tr.price)}</b> · ${esc(tr.why)}${tr.lockUsd != null ? ` · sichert ${usd(tr.lockUsd)} (${tr.lockPct >= 0 ? '+' : '−'}${f.pct(Math.abs(tr.lockPct), 1)}) für den Rest von ${String(+tr.restQty.toFixed(6)).replace('.', ',')} Stück` : ''}</p>`
+    : `<p class="meta" style="font-size:12px">${x.hits >= 1 ? 'Stop nachziehen (Tag): gerade kein besserer Stop als dein jetziger.' : 'Stop nachziehen (Tag): ab TP1.'}</p>`;
+  box.innerHTML = `${head}
+    ${x.rows.length ? `<div class="xp-list">${rows}</div>` : `<p class="empty">${esc(x.reason || 'Keine Chart-Marke über dem Einstieg.')}</p>`}
+    ${runner}
+    ${note ? `<p class="${x.ok2 === false ? 'short' : 'meta'}" style="font-size:12.5px;margin:6px 0">${esc(note)}</p>` : ''}
+    ${trail}
+    ${x.rows.length ? '<div class="set-actions"><button type="button" id="xp-take" class="ghost">Als Ziele für diesen Trade übernehmen</button></div>' : ''}
+    ${exitMsg ? `<p class="meta" style="color:var(--gold);font-size:12.5px">${esc(exitMsg)}</p>` : ''}
+    <p class="empty" style="font-size:11.5px;margin-top:4px">R aus dem Stop ${c.stop0 != null ? f.price(c.stop0) : '–'} (dein jetziger Stop, solange er unter dem Einstieg liegt; sonst der Plan-SL). Beträge nach Gebühren (geschätzt), nur hier auf deinem iPhone.</p>`;
+}
+
 function planClicks() {
+$('sheet-body').addEventListener('click', (e) => {
+  if (e.target.id !== 'xp-take' || !$('coin-exit')) return;
+  const c = exitCtx();
+  if (!c?.x?.rows?.length) return;
+  storePlan(c.x.rows.map((r) => r.price), 'chart', c.stop0);
+  exitMsg = 'Übernommen: Trade-Weg, Ausstiegsrechner und (nach „Für den Wächter übernehmen“) der Wächter nutzen jetzt diese Ziele.';
+  renderExit();
+});
 $('sheet-body').addEventListener('click', async (e) => {
   if (!$('coin-plan') || !e.target.closest('#coin-plan')) return;
   const id = e.target.id, c = planCtx();

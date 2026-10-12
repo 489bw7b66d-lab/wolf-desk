@@ -8,6 +8,7 @@ import { closedCandles } from './core-signals.js';
 import { scanUniverse } from './core-universe.js';
 import { getTradeable } from './core-tradeable.js';
 import { NEW_RULES } from './core-ltrules.js';
+import { withChartTargets } from './core-exitplan.js';
 import { FINDER, BLOCK_NAME, FLAG_NAME, trendNow, liveMarket, coinEntry, sortEntries, countByBlock, agoText, vizWithRoom, tradeResult, withBias, searchEntries, atLeast, crowdNotes, sinceText, fibText, rsiText } from './core-finder.js';
 import { roomsText } from './core-sellblock.js';
 import { IDX, buildIndex, extendIndex, loadIndex, saveIndex, needsRebuild, marketBias, biasLines, coinBiasText, capExBtcText } from './core-index.js';
@@ -161,7 +162,7 @@ export function initFinder(stateGetter, openTrade = null) {
     if (!b) return;
     if (b.id === 'finder-go') scan();
     else if (b.id === 'finder-stop') { stop = true; note = 'Halte an …'; status(); }
-    else if (b.dataset.take) { const en = list?.find((x) => x.coin === b.dataset.take), r = en && tradeResult(en, getState().prices?.[en.coin]); if (r) onTrade(r); }
+    else if (b.dataset.take) { const en = list?.find((x) => x.coin === b.dataset.take), r = en && tradeResult(en, getState().prices?.[en.coin]); if (r) onTrade(withChartTargets(r, en.M?.daily, en.M?.g)); }
     else if (b.dataset.min) { minB = Number(b.dataset.min); if (FLAG_NAME[filter]) filter = ''; openCoin = ''; paintList(); }
     else if (b.dataset.f != null) { filter = filter === b.dataset.f ? '' : b.dataset.f; openCoin = ''; paintList(); }
     else if (b.dataset.coin) { openCoin = openCoin === b.dataset.coin ? '' : b.dataset.coin; paintList(); }

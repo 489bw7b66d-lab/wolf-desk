@@ -1,6 +1,7 @@
 // Trade-Karte: fertiger Plan mit Positionsgröße und Hebel-Empfehlung, von überall mit einem Tipp erreichbar.
 import { CONFIG } from './config.js';
 import { accountSummary } from './core-calc.js';
+import { rText } from './core-exitplan.js';
 import { positionSize, maxLeverageForStop, recommendLeverage, exitPlan, maxFit, priceVsPlan, withEntry, leverageIssues } from './core-risk.js';
 import { drawChart, chartTools } from './ui-chartview.js';
 import { switchStyle, getCandles } from './core-scanner.js';
@@ -71,6 +72,18 @@ function planText() {
   ].filter(Boolean).join('\n');
 }
 
+// 8t: Prüfung „TP2 mindestens 1:2“ für jede Karte, bei Chart-Zielen dazu die Marken und der gemessene Rahmen als graue Zeile
+function tp2Line(p) {
+  const R = Math.abs(p.entry - p.stop), s = p.dir === 'long' ? 1 : -1, t2 = p.tps?.[1];
+  const r2 = R > 0 && t2 != null ? (s * (t2 - p.entry)) / R : null;
+  const chk = r2 == null ? (p.chart ? '' : '<p class="meta" style="font-size:12.5px">Kein TP2: Chancen-Risiko-Verhältnis nicht prüfbar.</p>')
+    : `<p class="${r2 >= 2 ? 'meta' : 'short'}" style="font-size:12.5px;margin:0 0 6px">TP2 bei ${rText(r2)}${r2 >= 3 ? '' : r2 >= 2 ? ' (mindestens 1:2 erfüllt, 1:3 nicht erreicht)' : ' · unter 1:2: Der Trade passt so nicht in deinen Plan.'}</p>`;
+  const marks = p.chart ? `<p class="meta" style="font-size:12px;margin:0 0 4px;line-height:1.45">Ziele aus Chart-Marken:<br>${p.tps.map((x, i) => `<b>TP${i + 1}</b> ${esc(p.tpLabels?.[i] || '')}`).join('<br>')}</p>` : '';
+  const note = p.chart && p.chartOk === false ? `<p class="short" style="font-size:12.5px;margin:0 0 6px">${esc(p.chartNote)}</p>` : !p.chart && p.chartNote ? `<p class="meta" style="font-size:12px">${esc(p.chartNote)}</p>` : '';
+  const frame = p.frameTps ? `<p class="empty" style="font-size:11.5px;margin:0 0 6px">Gemessener Rahmen aus Testplan 1 zum Vergleich: ${p.frameTps.map((x, i) => `${p.frameLabels?.[i] ? p.frameLabels[i] + ' ' : ''}${f.price(x)}`).join(' · ')}</p>` : '';
+  return marks + (p.chart && p.chartOk === false ? note : chk) + (p.chart ? '' : note) + frame;
+}
+
 function render() {
   const r = current, p = r.plan;
   const { sum, size, maxLev, rec, cap, exits, lev, margin, exchangeMax, styleMax, levCtx } = calc();
@@ -85,7 +98,7 @@ function render() {
       ? `<p class="cap-note bad">Kein Kapital frei (${f.pct(Math.max(0, (sum.available / sum.equity) * 100), 1)}). Dieser Plan ist nur zur Beobachtung, erst eine Position schließen oder verkleinern.</p>` : ''}
     ${coolBox()}
     ${r.fromSignal && ['gedreht', 'weg'].includes(r.fromSignal.check.state) ? `<p class="sig-note">${esc(r.fromSignal.check.text)}</p>` : ''}
-    ${r.finder ? `<p class="sig-note">Aus dem Setup-Finder übernommen${r.blocks?.length ? ` (${esc(r.blocks.join(', '))})` : ''}. Das ist eine Beobachtung, kein geprüftes Signal. Stop und Ziele sind der feste Rahmen: 2 × Tages-ATR und Vielfache davon.</p>` : ''}
+    ${r.finder ? `<p class="sig-note">Aus dem Setup-Finder übernommen${r.blocks?.length ? ` (${esc(r.blocks.join(', '))})` : ''}. Das ist eine Beobachtung, kein geprüftes Signal. Der Stop ist der feste Rahmen (2 × Tages-ATR)${p.chart ? ', die Ziele kommen aus Chart-Marken' : ', die Ziele sind Vielfache davon'}.</p>` : ''}
     ${seal(r)}
     ${viewBox(r)}
     <div id="sheet-live" class="live-box" aria-live="polite"></div>
@@ -96,6 +109,7 @@ function render() {
     ${topReasons(r).length ? `<p class="reasons-line">${topReasons(r).map(esc).join(' · ')}</p>` : ''}
     ${p.liveEntry ? `<p class="plan-mode"><span class="chip">Einstieg = Live-Kurs ${f.price(p.entry)}</span></p>` : ''}
     ${ladder(p, size ? `<div class="lvl lvl-margin"><span class="dot" style="background:var(--gold)"></span><span class="lbl">Margin</span><span class="px" id="ladder-margin">${margin ? f.usd(margin) : 'Kapital reicht nicht'}</span><span class="pc muted" id="ladder-lev">${lev ? lev + '× · ' : ''}Position ${f.usd(size.notional)}</span></div>` : '')}
+    <div class="tp2-check">${tp2Line(p)}</div>
     ${stopBox(r, p, sum, size)}
     <h3 class="sub-h">Risiko pro Trade</h3>
     <div class="tabs risk-chips" role="group" aria-label="Risiko pro Trade">

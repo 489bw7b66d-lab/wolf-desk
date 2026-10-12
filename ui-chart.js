@@ -26,6 +26,18 @@ export function liveCandle(candles, tf, price, coin = '') {
   return live;
 }
 
+// Preisbereich (8t): Kerzen-Spanne [lo, hi] um Linien erweitern, die nächsten zuerst, solange die Kerzen mindestens
+// minShare der Höhe behalten. Reine Funktion (Test in test-exitplan.js).
+export function fitRange(lo, hi, levels = [], minShare = 0.5) {
+  const cs = hi - lo, max = cs > 0 ? cs / minShare : Infinity;
+  const dist = (p) => (p < lo ? lo - p : p > hi ? p - hi : 0);
+  for (const p of levels.filter((x) => x > 0).sort((a, b) => dist(a) - dist(b))) {
+    const nl = Math.min(lo, p), nh = Math.max(hi, p);
+    if (nh - nl <= max) { lo = nl; hi = nh; }
+  }
+  return { lo, hi };
+}
+
 // lines: zusätzliche Linien [{ price, col, label, dash }], z. B. Einstieg, Stop und Liquidation einer offenen Position
 // Ausschnitt: count = sichtbare Kerzen, back = wie viele Kerzen vom rechten Rand zurück (0 = aktuell)
 export function viewWindow(len, view) {
@@ -44,10 +56,14 @@ export function chartSvg({ coin = '', candles, tf, plan, price, events = [], con
   const all = lc ? [...cs, { ...lc, live: true }] : cs;
   const plotW = W - PAD_R, n = all.length, cw = plotW / (n + GAP);
 
-  // Preisbereich: Kerzen plus Stop und TP2 (weitere Ziele werden am Rand angezeigt)
+  // Preisbereich (8t): zuerst die sichtbaren Kerzen. Stop, Zone, TP2 und Linien kommen nur dazu, solange die Kerzen dabei
+  // mindestens die Hälfte der Höhe behalten (sonst sind sie auf kleinen Zeitebenen gestaucht). Was draußen bleibt, steht als
+  // Randmarke mit Pfeil am oberen oder unteren Rand.
   let lo = Math.min(...all.map((c) => c.l)), hi = Math.max(...all.map((c) => c.h));
-  if (plan) { lo = Math.min(lo, plan.stop, plan.zone[0], plan.tps[1]); hi = Math.max(hi, plan.stop, plan.zone[1], plan.tps[1]); }
-  lines.filter((l) => l.fit !== false && l.price > 0).forEach((l) => { lo = Math.min(lo, l.price); hi = Math.max(hi, l.price); });
+  ({ lo, hi } = fitRange(lo, hi, [
+    ...(plan ? [plan.stop, plan.zone[0], plan.zone[1], plan.tps[1]] : []),
+    ...lines.filter((l) => l.fit !== false && l.price > 0).map((l) => l.price),
+  ]));
   const span = hi - lo || 1; lo -= span * 0.04; hi += span * 0.04;
   const y = (p) => PAD_T + (1 - (p - lo) / (hi - lo)) * (H - PAD_T - PAD_B);
   if (key) GEO.set(key, { lo, hi, cw, n, plotW, len: candles.length, count: win.count, back: win.back, times: all.map((c) => c.t) });
@@ -60,8 +76,15 @@ export function chartSvg({ coin = '', candles, tf, plan, price, events = [], con
       <rect x="${(x - cw * 0.35).toFixed(1)}" y="${top.toFixed(1)}" width="${(cw * 0.7).toFixed(1)}" height="${Math.max(0.8, bot - top).toFixed(1)}" fill="${col}"${c.live ? ' opacity=".7"' : ''}/>`;
   }).join('');
 
-  const line = (p, col, label, dash = '') => {
-    if (!inRange(p)) return '';
+  const edge = { up: 0, down: 0 }; // gestapelte Randmarken für Linien außerhalb des Ausschnitts
+  const line = (p, col, label, dash = '', mark = false) => {
+    if (!(p > 0)) return '';
+    if (!inRange(p)) {
+      if (!mark) return '';
+      const up = p > hi, k = up ? edge.up++ : edge.down++;
+      const yy = up ? PAD_T + 8 + k * 11 : H - PAD_B - 3 - k * 11;
+      return `<text x="${plotW - 3}" y="${yy.toFixed(1)}" text-anchor="end" fill="${col}" font-size="9" font-weight="700">${label} ${up ? '↑' : '↓'}</text>`;
+    }
     const yy = y(p).toFixed(1);
     return `<line x1="0" x2="${plotW}" y1="${yy}" y2="${yy}" stroke="${col}" stroke-width="1" ${dash ? `stroke-dasharray="${dash}"` : ''}/>
       <text x="${plotW + 4}" y="${(+yy + 3.5).toFixed(1)}" fill="${col}" font-size="9" font-weight="700">${label}</text>`;
@@ -69,13 +92,13 @@ export function chartSvg({ coin = '', candles, tf, plan, price, events = [], con
   let marks = '';
   if (plan) {
     marks += `<rect x="0" width="${plotW}" y="${y(plan.zone[1]).toFixed(1)}" height="${Math.max(1, y(plan.zone[0]) - y(plan.zone[1])).toFixed(1)}" fill="var(--gold)" opacity=".13"/>`;
-    marks += line(plan.stop, 'var(--bad)', 'SL ' + f.price(plan.stop), '4 3');
-    marks += line(plan.entry, 'var(--gold)', 'E ' + f.price(plan.entry), '2 2');
-    plan.tps.forEach((tp, i) => { marks += line(tp, 'var(--ok)', `TP${i + 1}`, '4 3'); });
+    marks += line(plan.stop, 'var(--bad)', 'SL ' + f.price(plan.stop), '4 3', true);
+    marks += line(plan.entry, 'var(--gold)', 'E ' + f.price(plan.entry), '2 2', true);
+    plan.tps.forEach((tp, i) => { if (inRange(tp)) marks += line(tp, 'var(--ok)', `TP${i + 1}`, '4 3'); });
     const off = plan.tps.map((tp, i) => (!inRange(tp) ? `TP${i + 1}` : null)).filter(Boolean);
     if (off.length) marks += `<text x="6" y="${plan.dir === 'long' ? 14 : H - PAD_B - 4}" text-anchor="start" fill="var(--ok)" font-size="9" font-weight="700">${off.join(' ')} ${plan.dir === 'long' ? '↑' : '↓'}</text>`;
   }
-  lines.forEach((l) => { if (l.price > 0) marks += line(l.price, l.col, l.label, l.dash || ''); });
+  lines.forEach((l) => { if (l.price > 0) marks += line(l.price, l.col, l.label, l.dash || '', true); });
   events.filter((e) => e.level && e.tf === tf).forEach((e) => { marks += line(e.level, 'var(--muted)', 'Bruch', '1 3'); });
   confirms.filter((c) => c.tf === tf).forEach((c) => { marks += line(c.level, 'var(--gold)', '🛡 Retest', '1 2'); });
   // Eigene Linien: hell gepunktet mit Preis, links ein Griff zum Ziehen

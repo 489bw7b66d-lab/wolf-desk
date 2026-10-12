@@ -500,6 +500,14 @@ button.pos-row { width: 100%; height: auto; padding: 8px 0; background: transpar
 .plan-list div { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; font-size: 14px; }
 .plan-list b { font-weight: 800; }
 .plan-list small { font-size: 12px; font-weight: 700; }
+.xp-list { display: grid; gap: 8px; }
+.xp-row { padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--text) 5%, transparent); }
+.xp-row.done { opacity: .6; }
+.xp-top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: 14px; }
+.xp-top span:first-child { flex: 1; }
+.xp-top b { font-weight: 800; }
+.xp-why { font-size: 12px; margin-top: 2px; }
+.xp-sz { font-size: 12.5px; margin-top: 2px; }
 .path-secured { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, rgba(0,0,0,.55) 0 3px, rgba(0,0,0,0) 3px 7px); border-radius: 5px 0 0 5px; }
 .path-tick.sl0 { background: var(--muted); height: 12px; top: -1px; }
 .path-labels .sl0 { color: var(--muted); }
