@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "RENDER",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791922878221,
+   "px": 2.0947,
+   "zone": [
+    2.0947,
+    2.0947
+   ],
+   "stop": 1.80653997219156,
+   "tps": [
+    2.6710200556168795,
+    2.9591800834253195,
+    3.2473401112337594,
+    3.8236601668506394
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP"
+   ],
+   "id": 25,
+   "eng": "obs"
+  },
+  {
    "coin": "ARB",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "Volumen-Spike"
    ],
    "id": 6
-  },
-  {
-   "coin": "SAND",
-   "dir": "long",
-   "style": "swing",
-   "score": 80,
-   "seal": true,
-   "at": 1790988989547,
-   "px": 0.065747,
-   "zone": [
-    0.06419264581542761,
-    0.0682
-   ],
-   "stop": 0.054174260353996626,
-   "tps": [
-    0.07821838546143096,
-    0.09024044801514813,
-    0.1022625105688653,
-    0.11428457312258247
-   ],
-   "status": "tp1",
-   "r": 1.0776519513024676,
-   "doneAt": 1791266399999,
-   "events": [
-    "EMA 21/55 Kreuzung aufwärts",
-    "Starkes Momentum",
-    "Volumen-Spike"
-   ],
-   "id": 5
   }
  ],
  "archive": [
