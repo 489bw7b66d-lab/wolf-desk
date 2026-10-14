@@ -456,9 +456,9 @@
     0.4179479699434471,
     0.5076319549151707
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791982799999,
    "events": [
     "Neu im Aufwärtstrend"
    ],
@@ -903,6 +903,24 @@
    "sf": "mittel",
    "zoneH": 0.5,
    "mfe": 0.03,
+   "mae": 1,
+   "eng": "bm"
+  },
+  {
+   "key": "ENA|long|1791360936350",
+   "id": 10,
+   "coin": "ENA",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791360936350,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1791982799999,
+   "sf": "mittel",
+   "zoneH": 0.7,
+   "mfe": 0.19,
    "mae": 1,
    "eng": "bm"
   }
