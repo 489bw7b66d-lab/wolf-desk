@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "ZRO",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792009476117,
+   "px": 1.9093,
+   "zone": [
+    1.9093,
+    1.9093
+   ],
+   "stop": 1.4696059116818592,
+   "tps": [
+    2.7886881766362817,
+    3.2283822649544227,
+    3.6680763532725633,
+    4.547464529908845
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 26,
+   "eng": "obs"
+  },
+  {
    "coin": "RENDER",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "Volumen-Spike"
    ],
    "id": 7
-  },
-  {
-   "coin": "PUMP",
-   "dir": "long",
-   "style": "intraday",
-   "score": 82,
-   "seal": true,
-   "at": 1791051449120,
-   "px": 0.006052,
-   "zone": [
-    0.0058784050463879306,
-    0.006061
-   ],
-   "stop": 0.0054219176623577555,
-   "tps": [
-    0.006517487384030176,
-    0.007065272244866387,
-    0.007613057105702597,
-    0.008160841966538808
-   ],
-   "status": "tp1",
-   "r": 0.7387723099365404,
-   "doneAt": 1791311481878,
-   "events": [
-    "EMA 21/55 Kreuzung aufwärts",
-    "Starkes Momentum",
-    "Volumen-Spike"
-   ],
-   "id": 6
   }
  ],
  "archive": [
