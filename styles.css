@@ -772,3 +772,12 @@ button.pos-row:first-of-type { border-top: 0; }
 .compass-facts { list-style: none; margin: 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: grid; gap: 5px; font-size: 13px; color: var(--muted); }
 .compass-facts b { color: var(--text); font-weight: 700; }
 .compass-foot { margin: 8px 0 0; font-size: 11.5px; color: var(--muted); }
+/* 8x: Hintergrund Punktwelle in Gold (ui-bg.js); Karten leicht durchscheinend, damit die Welle dahinter zu ahnen ist */
+.bg-wave { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.bg-wave canvas { width: 100%; height: 100%; display: block; }
+body { background: transparent; }
+.card { background: var(--surface); }
+/* 8x: Elemente direkt auf dem Hintergrund bekommen einen festen Grund, damit das Tuch die Schrift nicht stört */
+.update-note { background: linear-gradient(rgba(242,181,68,.06), rgba(242,181,68,.06)), var(--surface); }
+.cool-banner { background: linear-gradient(135deg, rgba(120,190,255,.14), rgba(120,190,255,.04)), var(--surface); }
+.foot { background: var(--surface); border-radius: 12px; padding: 8px 12px; border: 1px solid var(--line); }

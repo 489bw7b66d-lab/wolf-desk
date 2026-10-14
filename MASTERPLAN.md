@@ -1,6 +1,6 @@
 # Wolf Desk – Masterplan
 
-Stand: 12.10.2026 · Code: Etappe 8w · 1.172 Tests · auf dem iPhone geprüft bis 8u (1.155 von 1.155 am 12.10. um 10:14) · **Donchian besteht die Prüfung (12.10.) und ist sechster Baustein** · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
+Stand: 12.10.2026 · Code: Etappe 8x1 · 1.172 Tests · auf dem iPhone geprüft bis 8u (1.155 von 1.155 am 12.10. um 10:14) · **Donchian besteht die Prüfung (12.10.) und ist sechster Baustein** · **Testplan 2 abgeschlossen: alle drei Schalter in der Entwicklung abgelegt, Tresor zu** · Pakete nach Bedarf, mit Claudes Meinung (Jensen, 08.10., 11:16; der Sammelmodus der zweiten Meinung gilt nicht) · Testplan 1 abgeschlossen, kein Kandidat besteht · Richtungsentscheidung 07.10.: Setup-Finder statt weiterer Einstiegsregeln
 
 Dieses Dokument ersetzt alle früheren Fassungen des Masterplans. Es enthält alles, um Wolf Desk weiterzuentwickeln oder wiederherzustellen, auch in einem neuen Chat.
 Es enthält bewusst **keine Zugangsdaten** (Token, Wallet, Chat-IDs) und **keine Kontobeträge**, weil das Repository öffentlich ist.
@@ -80,7 +80,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 - **Keine Disclaimer** („kein Finanzberater", „Entscheidung liegt bei dir"): Der Nutzer hat ausdrücklich gesagt, dass er auf eigenes Risiko handelt. Sachliche Hinweise bei riskanten Werten und die Bremse beim Überpacen bleiben.
 - **Eigene Ideen von Claude sind erwünscht**, laufen aber über dieselbe Messlatte wie alles andere.
 - **Modular:** Jede Datei hat eine Aufgabe; der Rechen-Kern wird nie nebenbei verändert, Neues kommt in eigene Dateien.
-- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8w). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
+- **Etappen:** Jedes Update ist ein Paket mit Nummer (zuletzt 8x1). Die Nummern folgen der Bau-Reihenfolge. Ein Paket, ein Thema.
 - **Vor jedem Paket:** alle Tests grün, zusätzlich mit vielen verstellten Einstellungen, der Wächter komplett durchgespielt (Testlauf, normaler Lauf, keine doppelten Meldungen), Sichtprüfung in iPhone-Größe.
 - **Lieferung:** nur geänderte Dateien als ZIP mit eigenem Ordner, dazu eine Schritt-für-Schritt-Anleitung und eine Zeile „nicht getestet".
 - **Vor größeren Änderungen:** Datum und Uhrzeit von der Uhr holen, Bestand prüfen (Versionsnummer!), offene Punkte im Masterplan durchgehen, Plan zeigen, dann bauen.
@@ -105,7 +105,7 @@ Hinweise für den Bau (alles zuerst im Code nachprüfen):
 | Wofür | Adresse |
 |---|---|
 | App | `https://489bw7b66d-lab.github.io/wolf-desk/` |
-| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8w` |
+| Tests | `https://489bw7b66d-lab.github.io/wolf-desk/tests.html?v=8x1` |
 | Repository | `https://github.com/489bw7b66d-lab/wolf-desk` |
 | Code als ZIP | `https://github.com/489bw7b66d-lab/wolf-desk/archive/refs/heads/main.zip` |
 | Hochladen | `https://github.com/489bw7b66d-lab/wolf-desk/upload/main` |
@@ -161,7 +161,7 @@ Der Bot ist im Kanal **Admin** mit „Nachrichten posten". Nur der BotFather mit
 
 **Rahmen:** `index.html`, `main.js`, `styles.css`, `manifest.json`, `tests.html` + 44 Dateien `test-*.js`, `watcher.js`, `.github/workflows/wolf-watch.yml`, Icons `icon-180/192/512.png` (seit 8c der goldene Wolfskopf)
 
-**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8w">` und eine Import-Liste mit `?v=8w` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
+**Versionsnummer:** `index.html` hat `<meta name="app-version" content="8x1">` und eine Import-Liste mit `?v=8x1` je Datei. Bei jedem Update erhöhen und neue Dateien eintragen. `tests.html` führt die Test-Dateien einzeln auf: neue Test-Dateien dort importieren und an die Liste `all` anhängen. Die App erkennt neue Versionen selbst und lädt neu.
 
 **Speicher auf dem iPhone (geht beim Neu-Hinzufügen der App sehr wahrscheinlich verloren, es gibt noch keine Funktion zum Wiedereinlesen):** Wallet-Adresse, Startkapital, Einschätzungen, Ziele, eigene Chart-Linien, Stops von Hand, Backtests, Geduld-Daten, **Stichtag und eingefrorene Marktliste der langen Historie, Ergebnisse der Testplan-Läufe und bestätigte Blindproben** (deshalb das Protokoll kopieren und an Claude geben, es kommt als `TESTPLAN-PROTOKOLL.md` ins Repository).
 
@@ -554,6 +554,8 @@ Jensens Rückmeldung zu 8l auf echten Kursen (07.10., ab 16:46): 82 Märkte im T
 - Einordnung: Testplan 2 hat gezeigt, dass das Band spät reagiert und als Regel nicht trennt; in der Karte steht das in der Fußzeile.
 - 13 neue Tests (1.172). Geprüft: alle Tests, Startseite und Finder mit nachgebildeten Kursen in iPhone-Größe.
 - **Nicht getestet:** echte Kerzen; die Ampel bei Gelb und Rot im echten Bild (nur in den Tests).
+
+**Etappe 8x „Hintergrund Punktwelle“ (14.10., Beginn der Schönheits-OP, nur Optik):** Wunsch von Jensen (14.10., 23:07, Vorlage: Halbton-Punktmuster): goldenes Punktraster als Fläche wie ein ruhig gewölbtes Tuch mit Glanz (aus drei Vorschlägen gewählt: „A, ruhig gewölbt“), als feste Ebene hinter der App (`ui-bg.js`, einmal auf ein Canvas gezeichnet, neu nur bei Größenänderung; keine Animation). Schatten hinter dem Seitentitel; Karten, Hinweis-Banner und Fußzeile voll deckend, damit Text lesbar bleibt (8x1). Keine Tests nötig (reine Zeichnung), Sichtprüfung in iPhone-Größe.
 
 **Testplan 3 „Relative Stärke“ (gemerkt, Jensen 12.10., 10:38):** Frage: Laufen Coins, die vor dem Markt laufen (neue Hochs, Stärke gegen den Alt-Index), auch danach besser? Anlass: Jensens Idee vom 08.10. und Donchian (in Entwicklung und Prüfung knapp besser als ein zufälliger Coin). Vorab festzuschreiben wie Testplan 1 und 2; Kandidat für den **noch geschlossenen Tresor** (letzte unverbrauchte Daten); optional BTC und Märkte bis 2017 für mehr Zyklen. Nicht vor der Schönheits-OP.
 
