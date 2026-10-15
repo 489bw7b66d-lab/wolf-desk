@@ -77,9 +77,9 @@
     3.2473401112337594,
     3.8236601668506394
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792072799999,
    "events": [
     "Key-Level",
     "VWAP"
@@ -975,6 +975,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.05,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "RENDER|long|1791922878221",
+   "id": 25,
+   "coin": "RENDER",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791922878221,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792072799999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.01,
    "mae": 1,
    "eng": "obs"
   }
