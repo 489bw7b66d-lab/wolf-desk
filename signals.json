@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "ENA",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792037491414,
+   "px": 0.1865,
+   "zone": [
+    0.1865,
+    0.1865
+   ],
+   "stop": 0.13950718760456624,
+   "tps": [
+    0.2804856247908675,
+    0.3274784371863013,
+    0.37447124958173506,
+    0.46845687437260264
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 27,
+   "eng": "obs"
+  },
+  {
    "coin": "ZRO",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "Volumen-Spike"
    ],
    "id": 8
-  },
-  {
-   "coin": "XRP",
-   "dir": "long",
-   "style": "intraday",
-   "score": 81,
-   "seal": false,
-   "at": 1791159029049,
-   "px": 1.518,
-   "zone": [
-    1.514265093036167,
-    1.5211
-   ],
-   "stop": 1.4971778256265844,
-   "tps": [
-    1.5381872674095824,
-    1.5586919883010815,
-    1.5791967091925805,
-    1.5997014300840795
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1791212399999,
-   "events": [
-    "EMA 8/21 Kreuzung aufwärts",
-    "EMA 21/55 Kreuzung aufwärts",
-    "Volumen-Spike"
-   ],
-   "id": 7
   }
  ],
  "archive": [
