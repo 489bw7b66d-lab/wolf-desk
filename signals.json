@@ -222,9 +222,9 @@
     0.8192640851469516,
     0.9763361277204274
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792033199999,
    "events": [
     "Fib-Rücklauf",
     "VWAP"
@@ -456,9 +456,9 @@
     3249.919861625303,
     3595.5297924379547
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792033199999,
    "events": [
     "VWAP",
     "Sweep"
@@ -923,6 +923,42 @@
    "mfe": 0.19,
    "mae": 1,
    "eng": "bm"
+  },
+  {
+   "key": "ETH|long|1791449838791",
+   "id": 11,
+   "coin": "ETH",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791449838791,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792033199999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.11,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "ONDO|long|1791807409652",
+   "id": 19,
+   "coin": "ONDO",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791807409652,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792033199999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.05,
+   "mae": 1,
+   "eng": "obs"
   }
  ]
 }
