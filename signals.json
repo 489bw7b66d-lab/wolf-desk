@@ -456,9 +456,9 @@
     0.010551293833161429,
     0.013076940749742144
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792043999999,
    "events": [
     "VWAP",
     "Sweep"
@@ -939,6 +939,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.11,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "PUMP|long|1791476195572",
+   "id": 13,
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791476195572,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792043999999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.43,
    "mae": 1,
    "eng": "obs"
   },
