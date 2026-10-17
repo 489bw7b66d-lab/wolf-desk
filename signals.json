@@ -280,9 +280,9 @@
     1.9798770514809754,
     2.260415577221463
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792274399999,
    "events": [
     "Key-Level",
     "VWAP"
@@ -957,6 +957,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.43,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "XRP|long|1791734941539",
+   "id": 18,
+   "coin": "XRP",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791734941539,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792274399999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.04,
    "mae": 1,
    "eng": "obs"
   },
