@@ -427,9 +427,9 @@
     15.371759306368496,
     18.052638959552745
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.37062461898274307,
+   "doneAt": 1792341465660,
    "events": [
     "VWAP",
     "Sweep"
@@ -958,6 +958,24 @@
    "zoneH": 0,
    "mfe": 0.43,
    "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "AVAX|long|1791476195572",
+   "id": 12,
+   "coin": "AVAX",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791476195572,
+   "status": "abgelaufen",
+   "r": -0.37062461898274307,
+   "doneAt": 1792341465660,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.82,
+   "mae": 0.51,
    "eng": "obs"
   },
   {
