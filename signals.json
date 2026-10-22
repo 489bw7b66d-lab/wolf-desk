@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "SOL",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792657207037,
+   "px": 103.91,
+   "zone": [
+    103.91,
+    103.91
+   ],
+   "stop": 94.36891117034563,
+   "tps": [
+    122.99217765930874,
+    132.5332664889631,
+    142.07435531861748,
+    161.15653297792622
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 28,
+   "eng": "obs"
+  },
+  {
    "coin": "ENA",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
    ],
    "id": 9,
    "eng": "bm"
-  },
-  {
-   "coin": "BTC",
-   "dir": "long",
-   "style": "intraday",
-   "score": 80,
-   "seal": true,
-   "at": 1791160660133,
-   "px": 86282,
-   "zone": [
-    86235.51432766333,
-    86504
-   ],
-   "stop": 85564.30014682167,
-   "tps": [
-    87175.21418084168,
-    87980.67119785168,
-    88786.12821486169,
-    89591.5852318717
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1791175499999,
-   "events": [
-    "MACD-Kreuzung aufwärts",
-    "Starkes Momentum",
-    "Volumen-Spike"
-   ],
-   "id": 8
   }
  ],
  "archive": [
