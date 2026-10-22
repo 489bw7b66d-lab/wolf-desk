@@ -1,6 +1,36 @@
 {
  "signals": [
   {
+   "coin": "WLD",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792671184161,
+   "px": 0.54125,
+   "zone": [
+    0.54125,
+    0.54125
+   ],
+   "stop": 0.43478166256824996,
+   "tps": [
+    0.7541866748635001,
+    0.8606550122952501,
+    0.9671233497270002,
+    1.1800600245905002
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 29,
+   "eng": "obs"
+  },
+  {
    "coin": "SOL",
    "dir": "long",
    "style": "swing",
@@ -550,34 +580,6 @@
     "Neu im Aufwärtstrend"
    ],
    "id": 10,
-   "eng": "bm"
-  },
-  {
-   "coin": "ZEC",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791293419945,
-   "px": 1377.5,
-   "zone": [
-    1374.4,
-    1374.4
-   ],
-   "stop": 1133.0792398973858,
-   "tps": [
-    1857.0415202052286,
-    2098.3622803078433,
-    2339.6830404104576,
-    2822.324560615686
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1791475199999,
-   "events": [
-    "Neu im Aufwärtstrend"
-   ],
-   "id": 9,
    "eng": "bm"
   }
  ],
