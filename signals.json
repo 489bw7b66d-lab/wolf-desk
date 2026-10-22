@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "XRP",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792699853406,
+   "px": 1.3038,
+   "zone": [
+    1.3038,
+    1.3038
+   ],
+   "stop": 1.1774587045509106,
+   "tps": [
+    1.5564825908981792,
+    1.6828238863472686,
+    1.809165181796358,
+    2.061847772694537
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 30,
+   "eng": "obs"
+  },
+  {
    "coin": "WLD",
    "dir": "long",
    "style": "swing",
@@ -194,9 +223,9 @@
     118.38038868668187,
     135.70708303002277
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.7288176122788973,
+   "doneAt": 1792699853406,
    "events": [
     "VWAP",
     "Sweep"
@@ -553,34 +582,6 @@
    ],
    "id": 11,
    "eng": "obs"
-  },
-  {
-   "coin": "ENA",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791360936350,
-   "px": 0.23911,
-   "zone": [
-    0.23858,
-    0.23858
-   ],
-   "stop": 0.19373800751413822,
-   "tps": [
-    0.32826398497172354,
-    0.37310597745758534,
-    0.4179479699434471,
-    0.5076319549151707
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1791982799999,
-   "events": [
-    "Neu im Aufwärtstrend"
-   ],
-   "id": 10,
-   "eng": "bm"
   }
  ],
  "archive": [
@@ -1140,6 +1141,24 @@
    "zoneH": 0,
    "mfe": 0.12,
    "mae": 0.79,
+   "eng": "obs"
+  },
+  {
+   "key": "HYPE|long|1791835756658",
+   "id": 23,
+   "coin": "HYPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791835756658,
+   "status": "abgelaufen",
+   "r": -0.7288176122788973,
+   "doneAt": 1792699853406,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.01,
+   "mae": 0.89,
    "eng": "obs"
   },
   {
