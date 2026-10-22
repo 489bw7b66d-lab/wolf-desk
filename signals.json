@@ -223,9 +223,9 @@
     0.1224957793286261,
     0.14112566899293913
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.765973403875562,
+   "doneAt": 1792687801862,
    "events": [
     "VWAP",
     "Sweep"
@@ -252,9 +252,9 @@
     1.7428859141690896,
     2.0694288712536344
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.7442206139423189,
+   "doneAt": 1792687801862,
    "events": [
     "VWAP",
     "Sweep"
@@ -281,9 +281,9 @@
     451.0898078671522,
     533.3497118007283
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.7687828088282905,
+   "doneAt": 1792687801862,
    "events": [
     "Key-Level",
     "VWAP"
@@ -1086,6 +1086,60 @@
    "zoneH": 0,
    "mfe": 0.05,
    "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "DOGE|long|1791821731739",
+   "id": 20,
+   "coin": "DOGE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791821731739,
+   "status": "abgelaufen",
+   "r": -0.765973403875562,
+   "doneAt": 1792687801862,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.04,
+   "mae": 0.99,
+   "eng": "obs"
+  },
+  {
+   "key": "SUI|long|1791821731739",
+   "id": 21,
+   "coin": "SUI",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791821731739,
+   "status": "abgelaufen",
+   "r": -0.7442206139423189,
+   "doneAt": 1792687801862,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.02,
+   "mae": 0.94,
+   "eng": "obs"
+  },
+  {
+   "key": "TAO|long|1791821731739",
+   "id": 22,
+   "coin": "TAO",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791821731739,
+   "status": "abgelaufen",
+   "r": -0.7687828088282905,
+   "doneAt": 1792687801862,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.12,
+   "mae": 0.79,
    "eng": "obs"
   },
   {
