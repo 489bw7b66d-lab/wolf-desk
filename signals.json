@@ -194,9 +194,9 @@
     0.32017853133264274,
     0.39113279699896414
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": 0.06229364730213736,
+   "doneAt": 1792716810370,
    "events": [
     "VWAP",
     "Order Block"
@@ -1159,6 +1159,24 @@
    "zoneH": 0,
    "mfe": 0.01,
    "mae": 0.89,
+   "eng": "obs"
+  },
+  {
+   "key": "ARB|long|1791851178297",
+   "id": 24,
+   "coin": "ARB",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1791851178297,
+   "status": "abgelaufen",
+   "r": 0.06229364730213736,
+   "doneAt": 1792716810370,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.72,
+   "mae": 0.23,
    "eng": "obs"
   },
   {
