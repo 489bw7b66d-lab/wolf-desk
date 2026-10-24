@@ -252,9 +252,9 @@
     3.6680763532725633,
     4.547464529908845
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.39686683227303376,
+   "doneAt": 1792879887588,
    "events": [
     "VWAP",
     "Sweep"
@@ -1195,6 +1195,24 @@
    "zoneH": 0,
    "mfe": 0.01,
    "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "ZRO|long|1792009476117",
+   "id": 26,
+   "coin": "ZRO",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792009476117,
+   "status": "abgelaufen",
+   "r": -0.39686683227303376,
+   "doneAt": 1792879887588,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.85,
+   "mae": 0.62,
    "eng": "obs"
   }
  ]
