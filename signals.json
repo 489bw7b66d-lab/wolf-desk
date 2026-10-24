@@ -1,6 +1,64 @@
 {
  "signals": [
   {
+   "coin": "VVV",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792815067200,
+   "px": 24.6686,
+   "zone": [
+    24.6686,
+    24.6686
+   ],
+   "stop": 19.49028662162428,
+   "tps": [
+    35.02522675675145,
+    40.20354013512717,
+    45.3818535135029,
+    55.73848027025434
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 32,
+   "eng": "obs"
+  },
+  {
+   "coin": "XMR",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792815067200,
+   "px": 579.5,
+   "zone": [
+    579.5,
+    579.5
+   ],
+   "stop": 510.3496624747847,
+   "tps": [
+    717.8006750504306,
+    786.951012575646,
+    856.1013501008613,
+    994.4020251512919
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 33,
+   "eng": "obs"
+  },
+  {
    "coin": "PUMP",
    "dir": "long",
    "style": "swing",
@@ -523,64 +581,6 @@
     "Order Block"
    ],
    "id": 16,
-   "eng": "obs"
-  },
-  {
-   "coin": "AVAX",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791476195572,
-   "px": 10.01,
-   "zone": [
-    10.01,
-    10.01
-   ],
-   "stop": 8.669560173407875,
-   "tps": [
-    12.690879653184247,
-    14.031319479776371,
-    15.371759306368496,
-    18.052638959552745
-   ],
-   "status": "abgelaufen",
-   "r": -0.37062461898274307,
-   "doneAt": 1792341465660,
-   "events": [
-    "VWAP",
-    "Sweep"
-   ],
-   "id": 12,
-   "eng": "obs"
-  },
-  {
-   "coin": "PUMP",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791476195572,
-   "px": 0.0055,
-   "zone": [
-    0.0055,
-    0.0055
-   ],
-   "stop": 0.004237176541709642,
-   "tps": [
-    0.008025646916580715,
-    0.009288470374871072,
-    0.010551293833161429,
-    0.013076940749742144
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1792043999999,
-   "events": [
-    "VWAP",
-    "Sweep"
-   ],
-   "id": 13,
    "eng": "obs"
   }
  ],
