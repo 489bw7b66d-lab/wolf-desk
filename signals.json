@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "kPEPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792844320804,
+   "px": 0.004404,
+   "zone": [
+    0.004404,
+    0.004404
+   ],
+   "stop": 0.0037015648754917564,
+   "tps": [
+    0.005808870249016487,
+    0.0065113053735247305,
+    0.007213740498032974,
+    0.008618610747049463
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 34,
+   "eng": "obs"
+  },
+  {
    "coin": "VVV",
    "dir": "long",
    "style": "swing",
@@ -552,35 +581,6 @@
     "Order Block"
    ],
    "id": 15,
-   "eng": "obs"
-  },
-  {
-   "coin": "BTC",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791490408312,
-   "px": 81849,
-   "zone": [
-    81849,
-    81849
-   ],
-   "stop": 77426.9980423809,
-   "tps": [
-    90693.0039152382,
-    95115.00587285729,
-    99537.0078304764,
-    108381.0117457146
-   ],
-   "status": "abgelaufen",
-   "r": -0.23541373567380716,
-   "doneAt": 1792354840405,
-   "events": [
-    "VWAP",
-    "Order Block"
-   ],
-   "id": 16,
    "eng": "obs"
   }
  ],
