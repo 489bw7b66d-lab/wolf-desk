@@ -164,9 +164,9 @@
     0.9671233497270002,
     1.1800600245905002
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792918799999,
    "events": [
     "Key-Level",
     "VWAP",
@@ -1231,6 +1231,24 @@
    "zoneH": 0,
    "mfe": 0.84,
    "mae": 0.25,
+   "eng": "obs"
+  },
+  {
+   "key": "WLD|long|1792671184161",
+   "id": 29,
+   "coin": "WLD",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792671184161,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1792918799999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.24,
+   "mae": 1,
    "eng": "obs"
   }
  ]
