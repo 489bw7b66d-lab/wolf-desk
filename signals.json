@@ -223,9 +223,9 @@
     0.37447124958173506,
     0.46845687437260264
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": 0.1744947702001508,
+   "doneAt": 1792904566188,
    "events": [
     "VWAP",
     "Order Block"
@@ -1213,6 +1213,24 @@
    "zoneH": 0,
    "mfe": 0.85,
    "mae": 0.62,
+   "eng": "obs"
+  },
+  {
+   "key": "ENA|long|1792037491414",
+   "id": 27,
+   "coin": "ENA",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792037491414,
+   "status": "abgelaufen",
+   "r": 0.1744947702001508,
+   "doneAt": 1792904566188,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.84,
+   "mae": 0.25,
    "eng": "obs"
   }
  ]
