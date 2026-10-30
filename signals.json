@@ -1,6 +1,36 @@
 {
  "signals": [
   {
+   "coin": "TRX",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793366386437,
+   "px": 0.33477,
+   "zone": [
+    0.33477,
+    0.33477
+   ],
+   "stop": 0.3229360736611671,
+   "tps": [
+    0.3584378526776658,
+    0.3702717790164987,
+    0.3821057053553316,
+    0.4057735580329974
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP",
+    "Donchian"
+   ],
+   "id": 36,
+   "eng": "obs"
+  },
+  {
    "coin": "HYPE",
    "dir": "long",
    "style": "swing",
@@ -550,36 +580,6 @@
     "Sweep"
    ],
    "id": 17,
-   "eng": "obs"
-  },
-  {
-   "coin": "SOL",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791490408312,
-   "px": 109.46,
-   "zone": [
-    109.46,
-    109.46
-   ],
-   "stop": 100.10514615236099,
-   "tps": [
-    128.169707695278,
-    137.524561542917,
-    146.879415390556,
-    165.589123085834
-   ],
-   "status": "abgelaufen",
-   "r": -0.9150330020559728,
-   "doneAt": 1792354840405,
-   "events": [
-    "VWAP",
-    "Sweep",
-    "Order Block"
-   ],
-   "id": 14,
    "eng": "obs"
   }
  ],
