@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "HYPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793320370378,
+   "px": 89.3994,
+   "zone": [
+    89.3994,
+    89.3994
+   ],
+   "stop": 79.3667191997884,
+   "tps": [
+    109.46476160042317,
+    119.49744240063477,
+    129.53012320084636,
+    149.59548480126955
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Donchian"
+   ],
+   "id": 35,
+   "eng": "obs"
+  },
+  {
    "coin": "kPEPE",
    "dir": "long",
    "style": "swing",
@@ -194,9 +223,9 @@
     142.07435531861748,
     161.15653297792622
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1793321999999,
    "events": [
     "VWAP",
     "Order Block"
@@ -551,36 +580,6 @@
     "Order Block"
    ],
    "id": 14,
-   "eng": "obs"
-  },
-  {
-   "coin": "XMR",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791490408312,
-   "px": 527.06,
-   "zone": [
-    527.06,
-    527.06
-   ],
-   "stop": 470.6477824312789,
-   "tps": [
-    639.884435137442,
-    696.296652706163,
-    752.708870274884,
-    865.533305412326
-   ],
-   "status": "abgelaufen",
-   "r": 0.9019322797941492,
-   "doneAt": 1792354840405,
-   "events": [
-    "VWAP",
-    "Sweep",
-    "Order Block"
-   ],
-   "id": 15,
    "eng": "obs"
   }
  ],
@@ -1231,6 +1230,24 @@
    "zoneH": 0,
    "mfe": 0.84,
    "mae": 0.25,
+   "eng": "obs"
+  },
+  {
+   "key": "SOL|long|1792657207037",
+   "id": 28,
+   "coin": "SOL",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792657207037,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1793321999999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.14,
+   "mae": 1,
    "eng": "obs"
   },
   {
