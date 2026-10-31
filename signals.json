@@ -19,9 +19,9 @@
     0.3821057053553316,
     0.4057735580329974
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1793411999999,
    "events": [
     "Key-Level",
     "VWAP",
@@ -1265,6 +1265,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.24,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "TRX|long|1793366386437",
+   "id": 36,
+   "coin": "TRX",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793366386437,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1793411999999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.46,
    "mae": 1,
    "eng": "obs"
   }
