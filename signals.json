@@ -194,9 +194,9 @@
     1.809165181796358,
     2.061847772694537
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.4614484899238081,
+   "doneAt": 1793572412637,
    "events": [
     "VWAP",
     "Order Block"
@@ -1266,6 +1266,24 @@
    "zoneH": 0,
    "mfe": 0.24,
    "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "XRP|long|1792699853406",
+   "id": 30,
+   "coin": "XRP",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792699853406,
+   "status": "abgelaufen",
+   "r": -0.4614484899238081,
+   "doneAt": 1793572412637,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.32,
+   "mae": 0.82,
    "eng": "obs"
   },
   {
