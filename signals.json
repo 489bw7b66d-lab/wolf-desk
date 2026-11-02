@@ -165,9 +165,9 @@
     0.009444345527670645,
     0.011850518291505966
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.43055927470007044,
+   "doneAt": 1793609086223,
    "events": [
     "Key-Level",
     "VWAP"
@@ -1284,6 +1284,24 @@
    "zoneH": 0,
    "mfe": 0.32,
    "mae": 0.82,
+   "eng": "obs"
+  },
+  {
+   "key": "PUMP|long|1792729334425",
+   "id": 31,
+   "coin": "PUMP",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792729334425,
+   "status": "abgelaufen",
+   "r": -0.43055927470007044,
+   "doneAt": 1793609086223,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.04,
+   "mae": 0.72,
    "eng": "obs"
   },
   {
