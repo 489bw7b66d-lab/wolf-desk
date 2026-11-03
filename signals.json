@@ -107,9 +107,9 @@
     0.007213740498032974,
     0.008618610747049463
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": 0.6335104616408995,
+   "doneAt": 1793723071557,
    "events": [
     "VWAP",
     "Sweep"
@@ -1338,6 +1338,24 @@
    "zoneH": 0,
    "mfe": 1.16,
    "mae": 0.08,
+   "eng": "obs"
+  },
+  {
+   "key": "kPEPE|long|1792844320804",
+   "id": 34,
+   "coin": "kPEPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792844320804,
+   "status": "abgelaufen",
+   "r": 0.6335104616408995,
+   "doneAt": 1793723071557,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 1.86,
+   "mae": 0.28,
    "eng": "obs"
   },
   {
