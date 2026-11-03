@@ -136,9 +136,9 @@
     45.3818535135029,
     55.73848027025434
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": -0.6819981221584073,
+   "doneAt": 1793693728595,
    "events": [
     "VWAP",
     "Order Block"
@@ -165,9 +165,9 @@
     856.1013501008613,
     994.4020251512919
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": 0.7052749378441754,
+   "doneAt": 1793693728595,
    "events": [
     "VWAP",
     "Sweep"
@@ -1302,6 +1302,42 @@
    "zoneH": 0,
    "mfe": 0.04,
    "mae": 0.72,
+   "eng": "obs"
+  },
+  {
+   "key": "VVV|long|1792815067200",
+   "id": 32,
+   "coin": "VVV",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792815067200,
+   "status": "abgelaufen",
+   "r": -0.6819981221584073,
+   "doneAt": 1793693728595,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.33,
+   "mae": 0.69,
+   "eng": "obs"
+  },
+  {
+   "key": "XMR|long|1792815067200",
+   "id": 33,
+   "coin": "XMR",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1792815067200,
+   "status": "abgelaufen",
+   "r": 0.7052749378441754,
+   "doneAt": 1793693728595,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 1.16,
+   "mae": 0.08,
    "eng": "obs"
   },
   {
