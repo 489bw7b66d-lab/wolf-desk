@@ -5,7 +5,7 @@ import { CONFIG } from './config.js';
 import { getCandles, getMarketCtx, analyzeMarket, analyzeAllModes, heat } from './core-scanner.js';
 import { analyzeTimeframe, scoreTimeframe } from './core-signals.js';
 import { scanUniverse } from './core-universe.js';
-import { getTradeable } from './core-tradeable.js';
+import { getRaw } from './core-tradeable.js';
 
 const H = () => CONFIG.signals.hot;
 const listeners = new Set();
@@ -30,7 +30,7 @@ export function pickHot(results, max) {
 async function round() {
   const ctx = await getMarketCtx();
   const allNames = getMarkets();
-  const uni = await scanUniverse(allNames, ctx.ctx, getTradeable());
+  const uni = await scanUniverse(allNames, ctx.ctx, getRaw());
   hot.source = uni.source;
   const coins = uni.coins.filter((c) => !(ctx.map[c] < CONFIG.signals.minDayVolumeUsd));
   hot.skipped = uni.coins.length - coins.length;

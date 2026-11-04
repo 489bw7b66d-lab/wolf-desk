@@ -159,7 +159,9 @@ export function settingsFile(diff, date = new Date()) {
 export function listsForExport(watchlist, tradeable, rec = RECOMMENDED) {
   const out = {};
   if (Array.isArray(watchlist) && watchlist.length && !same(watchlist, rec.watchlist)) out.watchlist = [...watchlist];
-  if (Array.isArray(tradeable) && tradeable.length) out.tradeable = [...tradeable];
+  // 8y: '*' allein ist die Empfehlung (automatisch) und muss nicht in die Datei; Ausnahmen oder eine eigene Liste schon.
+  // Leer bleibt leer (= Top-Coins), damit der Wächter nicht wieder auf „automatisch“ fällt.
+  if (Array.isArray(tradeable) && !same(tradeable, rec.tradeable || ['*'])) out.tradeable = [...tradeable];
   return out;
 }
 

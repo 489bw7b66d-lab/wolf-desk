@@ -781,3 +781,28 @@ body { background: transparent; }
 .update-note { background: linear-gradient(rgba(242,181,68,.06), rgba(242,181,68,.06)), var(--surface); }
 .cool-banner { background: linear-gradient(135deg, rgba(120,190,255,.14), rgba(120,190,255,.04)), var(--surface); }
 .foot { background: var(--surface); border-radius: 12px; padding: 8px 12px; border: 1px solid var(--line); }
+
+/* 8y: Index-Fenster mit Linien-Chips und Vollbild */
+.mkt-idx { grid-template-columns: minmax(0, 1fr); }
+.idx-open { position: relative; display: block; width: 100%; height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; background: none; color: inherit; cursor: zoom-in; }
+.idx-zoom { position: absolute; top: 2px; left: 4px; font-size: 13px; color: var(--muted); opacity: .8; }
+.idx-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.idx-chip { display: inline-flex; font-family: var(--font); align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 700; opacity: .75; }
+.idx-chip i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; opacity: .5; }
+.idx-chip i.dash { background: repeating-linear-gradient(90deg, var(--muted) 0 3px, transparent 3px 5px); }
+.idx-chip b { font-weight: 800; color: inherit; }
+.idx-chip small { font-size: 10px; color: var(--muted); font-weight: 600; }
+.idx-chip.on { color: var(--text); border-color: rgba(214,160,60,.55); opacity: 1; }
+.idx-chip.on i { opacity: 1; }
+.idx-chip:disabled { opacity: .35; }
+.idx-full { position: fixed; inset: 0; z-index: 200; background: var(--bg); padding: calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 12px); display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.idx-full-head { display: flex; align-items: center; gap: 8px; }
+.idx-full-head b { font-size: 14px; flex: 1; min-width: 0; }
+.idx-full-head .chips { display: flex; gap: 4px; flex-wrap: nowrap; }
+.idx-full-head .chip-btn { height: 30px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
+.idx-close { padding: 0; width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 16px; font-weight: 800; flex: none; }
+.idx-full-chart svg { touch-action: none; }
+.idx-read { font-size: 12.5px; min-height: 18px; line-height: 1.5; }
+.mkt-idx-svg.big { width: 100%; height: auto; }
+@media (max-width: 380px) { .idx-full-head b { font-size: 12.5px; } }
+.mk-back button::after { content: none; }

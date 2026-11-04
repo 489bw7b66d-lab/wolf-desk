@@ -1,7 +1,7 @@
 // Zyklus-Kompass auf der Startseite (8w): Rad mit den sieben Phasen, Zeiger auf die aktuelle, in der Mitte die Ampel des
 // Bull Market Support Bands. Rechnung in core-compass.js. Nur Anzeige, ohne Messung.
 import { market, onMarket } from './core-market.js';
-import { loadIndex, trendOf, perfPct, relStrength } from './core-index.js';
+import { loadIndex, trendOf, perfPct, relStrength, envOf } from './core-index.js';
 import { getCandles } from './core-scanner.js';
 import { PHASES, bandState, phaseOf } from './core-compass.js';
 import { esc, tipInline } from './ui-parts.js';
@@ -46,8 +46,9 @@ export function wheelSvg(phase, band) {
   return `<svg viewBox="0 0 ${W} ${H}" class="compass-svg" role="img" aria-label="Zyklus-Kompass: ${phase ? 'Phase ' + phase.n + ', ' + phase.name : 'keine Einordnung'}, Band ${at}">${s}</svg>`;
 }
 
+const sg = (x) => `${x >= 0 ? '+' : '−'}${f.pct(Math.abs(x), 1)}`;
 const pp = (x) => (x == null ? '–' : `${x >= 0 ? '+' : '−'}${String(Math.abs(Math.round(x * 10) / 10)).replace('.', ',')} Pp.`);
-const TIP = 'Einordnung nach festen Regeln aus deinem Rahmen (Masterplan, Zyklus-Kompass), ohne Messung. Mitte: Bull Market Support Band von BTC (20-Wochen-SMA und 21-Wochen-EMA, nur abgeschlossene Wochen): grün = Wochenschluss über dem steigenden Band; gelb = erster Schluss darunter, im Band oder Band steigt nicht mehr; rot = mindestens zwei Schlüsse darunter und das Band fällt. Phase: rot → Risk-off (oder Boden, wenn BTC oder Alts schon wieder aufwärts laufen); gelb nach Schwäche → Distributionsverdacht; grün → je nach Alt-Index gegen BTC (30 Tage): BTC vorn = Bitcoin-Führung, Alts holen auf = frühe Rotation, Alts klar vorn und der Rest stärker als die Top 10 = breite Alt-Season; Gier ab 80 und BTC 30 Tage über +20 % = Euphorie. Sektoren kann die App nicht messen. Testplan 2: Das Band reagiert spät, als Regel trennte es nicht verlässlich.';
+const TIP = 'Einordnung nach festen Regeln aus deinem Rahmen (Masterplan, Zyklus-Kompass), ohne Messung. Mitte: Bull Market Support Band von BTC (20-Wochen-SMA und 21-Wochen-EMA, nur abgeschlossene Wochen): grün = Wochenschluss über dem steigenden Band; gelb = erster Schluss darunter, im Band oder Band steigt nicht mehr; rot = mindestens zwei Schlüsse darunter und das Band fällt. Phase: rot → Risk-off (oder Boden, wenn BTC oder Alts schon wieder aufwärts laufen); gelb nach Schwäche → Distributionsverdacht; grün → je nach Alt-Index gegen BTC (30 Tage): BTC vorn = Bitcoin-Führung, Alts holen auf = frühe Rotation, Alts klar vorn und der Rest stärker als die Top 10 = breite Alt-Season; Gier ab 80 und BTC 30 Tage über +20 % = Euphorie. Sektoren kann die App nicht messen. Umfeld (8y): Aktien & Indizes gegen Rohstoffe über 30 Tage aus den xyz-Märkten bei Hyperliquid, nur Hinweis, ändert die Phase nicht. Aktien vorn = eher Risk-on, Aktien fallen und Rohstoffe halten besser = eher Risk-off. Testplan 2: Das Band reagiert spät, als Regel trennte es nicht verlässlich.';
 
 function render() {
   const box = $('compass');
@@ -55,11 +56,12 @@ function render() {
   const band = btc ? bandState(btc) : null, idx = loadIndex(), hasIdx = !!idx?.alt?.length;
   const x = { band, btcUp: btc ? trendOf(btc) : null, altUp: hasIdx ? trendOf(idx.alt) : null, rs30: hasIdx && btc ? perfPct(idx.alt, 30) - perfPct(btc, 30) : null,
     breadth: hasIdx ? relStrength(idx.small, idx.top, 30) : null, fng: market.fng?.value ?? null, btc30: btc ? perfPct(btc, 30) : null };
-  const ph = hasIdx ? phaseOf(x) : null;
+  const ph = hasIdx ? phaseOf(x) : null, env = envOf(idx);
   const facts = [
     band ? `<li><b style="color:${AMP[band.state][0]}">Band ${AMP[band.state][1]}</b> · ${esc(band.why)}</li>` : '<li class="muted">BTC-Kerzen werden geladen …</li>',
     hasIdx && x.rs30 != null ? `<li><b>Alts gegen BTC</b> · ${pp(x.rs30)} in 30 Tagen (${x.rs30 >= 0 ? 'Alts vorn' : 'BTC vorn'})</li>` : '',
     hasIdx && x.breadth != null ? `<li><b>Breite</b> · Rest gegen Top 10 ${pp(x.breadth)}</li>` : '',
+    env ? `<li><b style="color:${env.tone === 'on' ? 'var(--ok)' : env.tone === 'off' ? 'var(--warn)' : 'var(--text)'}">Umfeld</b> · ${[env.akt != null ? `Aktien ${sg(env.akt)}` : '', env.roh != null ? `Rohstoffe ${sg(env.roh)}` : ''].filter(Boolean).join(' · ')} in 30 Tagen · ${esc(env.text)}</li>` : '',
     x.fng != null ? `<li><b>Stimmung</b> · Fear & Greed ${x.fng}${x.btc30 != null ? ` · BTC ${x.btc30 >= 0 ? '+' : '−'}${f.pct(Math.abs(x.btc30), 1)} in 30 Tagen` : ''}</li>` : '',
   ].filter(Boolean).join('');
   box.innerHTML = `${wheelSvg(ph, band)}

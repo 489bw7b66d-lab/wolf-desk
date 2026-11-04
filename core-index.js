@@ -14,6 +14,7 @@
 import { ema } from './core-indicators.js';
 import { toWeekly } from './core-engine2.js';
 import { sellBlocks } from './core-sellblock.js';
+import { classOf } from './core-classes.js';
 
 const DAY = 864e5;
 export const IDX = {
@@ -28,17 +29,21 @@ export const IDX = {
   maxGapDays: 140,  // ist der gespeicherte Index älter, wird er neu aufgebaut statt fortgeschrieben
   retryHours: 20,   // 8n1: so lange nach einem fehlgeschlagenen Versuch wird die lange Historie nicht erneut geladen
   minTop: 3,        // 8o: so viele Märkte braucht der Top-10-Index mindestens
+  slow2: 200,       // 8y: EMA 200 der Alts im Bild (Jensen, 04.11.)
+  // 8y: eigene Linien für Rohstoffe und Aktien & Indizes. Viele dieser Märkte sind jung, deshalb kürzere Wartezeit und weniger Mitglieder.
+  cls: { minDays: 20, minMembers: 2 },
 };
 const dayOf = (t) => Math.floor(t / DAY) * DAY;
 
 // series: { COIN: [abgeschlossene Tageskerzen { t, o, h, l, c, v }] }. Ergebnis: { alt, small, top }, je eine Kerzenreihe ab 100 (top: nur die zehn umsatzstärksten, 8o).
 // Je Tag: Mittel der Tagesänderungen aller Mitglieder (Schluss, Eröffnung, Hoch, Tief jeweils gegen den Schluss vom Vortag).
 // Kein Blick in die Zukunft: Mitgliedschaft (110 Tage) und Rangliste (Umsatz der 30 Tage davor) nutzen nur frühere Tage.
+// 8y: Nur Krypto zählt (ohne PAXG, ohne xyz-Märkte); Rohstoffe und Aktien & Indizes kommen als eigene Reihen roh und akt dazu.
 export function buildIndex(series, cfg = IDX) {
   const rows = new Map(); // Tag -> [{ coin, k }]
   const S = {};
   for (const [coin, list] of Object.entries(series || {})) {
-    if (coin === 'BTC' || !Array.isArray(list)) continue;
+    if (coin === 'BTC' || !Array.isArray(list) || classOf(coin) !== 'krypto') continue;
     const cs = list.filter((c) => c && c.c > 0 && c.o > 0).map((c) => ({ ...c, t: dayOf(c.t) }));
     S[coin] = cs;
     // Umsatz in USD als laufende Summe, damit das 30-Tage-Fenster billig ist
@@ -67,7 +72,34 @@ export function buildIndex(series, cfg = IDX) {
     if (big.length >= cfg.minTop) { const b = step(pt, big); top.push({ t, T: t + DAY - 1, ...b }); pt = b.c; }
     if (rest.length >= cfg.minMembers) { const s = step(ps, rest); small.push({ t, T: t + DAY - 1, ...s }); ps = s.c; }
   }
-  return { alt, small, top };
+  return { alt, small, top, roh: classIndex(series, 'rohstoff', cfg), akt: classIndex(series, 'aktie', cfg) };
+}
+
+// 8y: gleich gewichtete Reihe einer Assetklasse (Rohstoffe bzw. Aktien & Indizes), Rechnung wie beim Alt-Index
+export function classIndex(series, cls, cfg = IDX) {
+  const c = cfg.cls || IDX.cls, rows = new Map(), S = {};
+  for (const [coin, list] of Object.entries(series || {})) {
+    if (!Array.isArray(list) || classOf(coin) !== cls) continue;
+    const cs = list.filter((x) => x && x.c > 0 && x.o > 0).map((x) => ({ ...x, t: dayOf(x.t) }));
+    S[coin] = cs;
+    for (let k = Math.max(1, c.minDays); k < cs.length; k++) {
+      if (cs[k].t - cs[k - 1].t !== DAY) continue;
+      if (!rows.has(cs[k].t)) rows.set(cs[k].t, []);
+      rows.get(cs[k].t).push({ coin, k });
+    }
+  }
+  const out = [];
+  let prev = 100;
+  for (const t of [...rows.keys()].sort((a, b) => a - b)) {
+    const mem = rows.get(t);
+    if (mem.length < c.minMembers) continue;
+    let o = 0, h = 0, l = 0, cl = 0;
+    for (const m of mem) { const x = S[m.coin][m.k], p = S[m.coin][m.k - 1].c; o += x.o / p; h += x.h / p; l += x.l / p; cl += x.c / p; }
+    const n = mem.length, O = prev * o / n, C = prev * cl / n;
+    out.push({ t, T: t + DAY - 1, o: O, c: C, h: Math.max(prev * h / n, O, C), l: Math.min(prev * l / n, O, C), n });
+    prev = C;
+  }
+  return out;
 }
 
 // Gespeicherten Index mit einem frisch gerechneten (kürzeren) fortschreiben: Die neuen Tage werden angekettet.
@@ -82,7 +114,9 @@ export function extendSeries(stored, fresh) {
 }
 export function extendIndex(stored, fresh) {
   const alt = extendSeries(stored?.alt, fresh?.alt), small = extendSeries(stored?.small, fresh?.small), top = extendSeries(stored?.top, fresh?.top);
-  return alt && small && top ? { alt, small, top } : null;
+  // 8y: Rohstoffe und Aktien sind jung und haben Lücken; passt die neue Reihe nicht an die alte, gilt die neue
+  const cl = (k) => extendSeries(stored?.[k], fresh?.[k]) || fresh?.[k] || stored?.[k] || [];
+  return alt && small && top ? { alt, small, top, roh: cl('roh'), akt: cl('akt') } : null;
 }
 
 // Trend wie bei den Coins: Tages-EMA 20 über EMA 100, mindestens 110 Tage. null = zu wenig Historie.
@@ -167,13 +201,15 @@ export function capExBtcText(global) {
 }
 
 // ---- Speicher: der Index als kurze Zahlenreihen (nur öffentliche Marktdaten) ----
-const KEY = 'wolfdesk.hlindex', VER = 2; // 8o: Fassung 2 mit Top-10-Reihe; Fassung 1 wird einmal neu aufgebaut
+// 8y: Fassung 3 mit Rohstoffen (roh) und Aktien & Indizes (akt); der Alt-Index ohne PAXG und xyz wird dafür einmal neu aufgebaut
+const KEY = 'wolfdesk.hlindex', VER = 3;
 const sig = (x) => Number(x.toPrecision(6));
-export const packIndex = (idx, meta = {}) => ({ v: VER, full: meta.full !== false, tried: meta.tried ?? null, got: meta.got ?? null, of: meta.of ?? null, alt: idx.alt.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), small: idx.small.map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]), top: (idx.top || []).map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]) });
+const pk = (a) => (a || []).map((x) => [x.t, sig(x.o), sig(x.h), sig(x.l), sig(x.c), x.n]);
+export const packIndex = (idx, meta = {}) => ({ v: VER, full: meta.full !== false, tried: meta.tried ?? null, got: meta.got ?? null, of: meta.of ?? null, alt: pk(idx.alt), small: pk(idx.small), top: pk(idx.top), roh: pk(idx.roh), akt: pk(idx.akt) });
 export function unpackIndex(p) {
   if (!p || p.v !== VER || !Array.isArray(p.alt) || !Array.isArray(p.small) || !Array.isArray(p.top)) return null;
   const un = (r) => ({ t: r[0], T: r[0] + DAY - 1, o: r[1], h: r[2], l: r[3], c: r[4], n: r[5] });
-  return { alt: p.alt.map(un), small: p.small.map(un), top: p.top.map(un), full: p.full !== false, tried: p.tried ?? null, got: p.got ?? null, of: p.of ?? null };
+  return { alt: p.alt.map(un), small: p.small.map(un), top: p.top.map(un), roh: (p.roh || []).map(un), akt: (p.akt || []).map(un), full: p.full !== false, tried: p.tried ?? null, got: p.got ?? null, of: p.of ?? null };
 }
 export function loadIndex(store = globalThis.localStorage) {
   try { return unpackIndex(JSON.parse(store.getItem(KEY))); } catch { return null; }
@@ -190,22 +226,48 @@ export function needsRebuild(stored, now = Date.now(), cfg = IDX) {
   return stored.full === false && !(now - (stored.tried || 0) < cfg.retryHours * 36e5);
 }
 
-// 8n1: Daten für das Bild auf der Startseite. Alt- und Small-Index über die letzten `days` Tage, beide am ersten Tag auf 100 gesetzt,
-// dazu EMA 20 und EMA 100 des Alt-Index (über die ganze Reihe gerechnet, dann abgeschnitten) und der nächste Tages-Sell-Block darüber.
+// 8n1: Daten für das Bild auf der Startseite. Alle Reihen über die letzten `days` Tage, jede am ersten Tag auf 100 gesetzt,
+// dazu EMA 20, EMA 100 und (8y) EMA 200 des Alt-Index (über die ganze Reihe gerechnet, dann abgeschnitten) und der nächste Tages-Sell-Block.
+// 8y: Rohstoffe (roh) und Aktien & Indizes (akt) als eigene Linien; beginnen sie später als der Ausschnitt, starten sie bei ihrem ersten Tag auf
+// der Höhe der Alts, damit sie im selben Bild vergleichbar sind.
 export function indexChart(idx, days = 180, cfg = IDX) {
-  const alt = idx?.alt || [], small = idx?.small || [], top = idx?.top || [];
+  const alt = idx?.alt || [];
   if (alt.length < 2) return null;
   const from = alt[Math.max(0, alt.length - days)].t, closes = alt.map((x) => x.c);
-  const ef = ema(closes, cfg.fast), es = ema(closes, cfg.slow);
+  const ef = ema(closes, cfg.fast), es = ema(closes, cfg.slow), e2 = ema(closes, cfg.slow2 || 200);
   const k0 = alt.findIndex((x) => x.t >= from), base = alt[k0].c;
-  const a = alt.slice(k0).map((x, j) => ({ t: x.t, y: (x.c / base) * 100, fast: ef[k0 + j] != null ? (ef[k0 + j] / base) * 100 : null, slow: alt.length >= cfg.minDays && es[k0 + j] != null ? (es[k0 + j] / base) * 100 : null }));
-  const sm = small.filter((x) => x.t >= from), sb = sm[0]?.c;
-  const s = sb > 0 ? sm.map((x) => ({ t: x.t, y: (x.c / sb) * 100 })) : [];
-  const tp = top.filter((x) => x.t >= from), tb = tp[0]?.c, T10 = tb > 0 ? tp.map((x) => ({ t: x.t, y: (x.c / tb) * 100 })) : [];
+  const val = (arr, j, need) => (alt.length >= need && arr[k0 + j] != null ? (arr[k0 + j] / base) * 100 : null);
+  const a = alt.slice(k0).map((x, j) => ({ t: x.t, y: (x.c / base) * 100, fast: val(ef, j, 1), slow: val(es, j, cfg.minDays), slow2: val(e2, j, cfg.slow2 || 200) }));
+  const altAt = new Map(a.map((p) => [p.t, p.y]));
+  const line = (arr) => {
+    const sm = (arr || []).filter((x) => x.t >= from), b = sm[0]?.c;
+    if (!(b > 0)) return [];
+    const lift = sm[0].t > from && altAt.has(sm[0].t) ? altAt.get(sm[0].t) / 100 : 1;
+    return sm.map((x) => ({ t: x.t, y: (x.c / b) * 100 * lift }));
+  };
+  const pct = (L) => (L.length ? (L[L.length - 1].y / L[0].y - 1) * 100 : null);
+  const s = line(idx.small), T10 = line(idx.top), roh = line(idx.roh), akt = line(idx.akt);
   const px = alt[alt.length - 1].c;
   const blk = sellBlocks(alt).filter((b) => b.top > px).sort((x, y) => Math.max(0, x.bottom - px) - Math.max(0, y.bottom - px))[0];
-  return { alt: a, small: s, top: T10, topPct: T10.length ? T10[T10.length - 1].y - 100 : null, block: blk ? { lo: (blk.bottom / base) * 100, hi: (blk.top / base) * 100 } : null,
-    altPct: a[a.length - 1].y - 100, smallPct: s.length ? s[s.length - 1].y - 100 : null, from, to: alt[alt.length - 1].t, full: idx.full !== false };
+  const nOf = (arr) => arr?.[arr.length - 1]?.n ?? 0;
+  return { alt: a, small: s, top: T10, roh, akt, topPct: pct(T10), rohPct: pct(roh), aktPct: pct(akt), rohN: nOf(idx.roh), aktN: nOf(idx.akt),
+    block: blk ? { lo: (blk.bottom / base) * 100, hi: (blk.top / base) * 100 } : null,
+    altPct: a[a.length - 1].y - 100, smallPct: pct(s), from, to: alt[alt.length - 1].t, full: idx.full !== false };
+}
+
+// 8y: Umfeld außerhalb von Krypto (Zeile im Zyklus-Kompass). Nur Hinweis, ändert die Phase nicht.
+// Aktien & Indizes gegen Rohstoffe über 30 Tage: Aktien vorn und steigend = Risk-on; Rohstoffe vorn und Aktien fallen = eher Risk-off.
+export function envOf(idx, cfg = IDX) {
+  const r = perfPct(idx?.roh, cfg.perfDays), a = perfPct(idx?.akt, cfg.perfDays);
+  if (r == null && a == null) return null;
+  let tone = 'gemischt', text = 'Umfeld gemischt';
+  if (a != null && r != null) {
+    if (a > cfg.even && a > r) { tone = 'on'; text = 'Aktien vorn → eher Risk-on'; }
+    else if (a < -cfg.even && r > a) { tone = 'off'; text = 'Aktien fallen, Rohstoffe halten besser → eher Risk-off'; }
+    else if (a > cfg.even && r > cfg.even) text = 'Aktien und Rohstoffe steigen';
+    else if (a < -cfg.even && r < -cfg.even) { tone = 'off'; text = 'Aktien und Rohstoffe fallen → eher Risk-off'; }
+  }
+  return { roh: r, akt: a, tone, text };
 }
 
 // 8o: Tacho der Startseite aus den drei Ebenen (Jensen, 08.10.: „die Karte soll mit einer Stimme sprechen“).

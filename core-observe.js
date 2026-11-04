@@ -2,6 +2,7 @@
 // Zeit-Ausstieg und meldet, wenn der Markt-Bias bei offener Position dreht. Richtungsentscheidung von Jensen (07.10.2026,
 // 16:11) und Ergänzung 20:33. Reine Funktionen (Texte und Entscheidungen), Tests in test-observe.js.
 // Wie im Finder: Eine Beobachtung behauptet keinen Vorteil, es gibt keinen Score.
+import { classNote } from './core-classes.js';
 import { CONFIG } from './config.js';
 import { BLOCK_NAME, tradeResult } from './core-finder.js';
 import { roomsText } from './core-sellblock.js';
@@ -48,6 +49,7 @@ export function obsText(e, r, { bias = null, id = null, appUrl = CONFIG.alerts?.
   const L = [
     `👁 <b>WOLF DESK${id ? ` #WD-${String(id).padStart(4, '0')}` : ''} · Beobachtung</b>`,
     `<b>${f.esc(dn(e.coin))}</b> · ${blocks.length} Bausteine: ${f.esc(blocks.join(', '))}`,
+    classNote(e.coin, e.M?.daily?.at(-1)?.t ?? Date.now()) ? `⚠️ ${f.esc(classNote(e.coin, e.M?.daily?.at(-1)?.t ?? Date.now()))}` : '',
     ...(bias ? biasLines(bias).slice(0, 2).map((t) => f.esc(t)) : []),
     line,
     `Kurs ${f.price(p.entry)} · Rahmen-Stop ${f.price(p.stop)} (2× Tages-ATR, −${f.pct(p.stopDistPct, 1)})`,

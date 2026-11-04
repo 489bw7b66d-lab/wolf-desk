@@ -1,20 +1,48 @@
-// Handelbare Märkte: deine eigene Liste (z. B. was über Ledger handelbar ist, Hyperliquid kann das nicht liefern).
-// Gespeichert auf diesem Gerät, über „Für den Wächter übernehmen“ auch in my-settings.js.
-// Ist die Liste leer, scannen Heiße Coins und Wächter wie bisher die Top-Coins. Tests in test-tradeable.js.
+// Handelbare Märkte. 8y (Jensen, 04.11.2026: „finde die beste Lösung“, Ledger zeigt jetzt 299 Perps): Ledger reicht durch, was
+// Hyperliquid listet (Hauptbörse und xyz). Standard ist deshalb „automatisch“: alle Märkte, die Hyperliquid gerade listet, ohne
+// abgeschaltete, bei jedem Laden und jedem Wächter-Lauf neu abgefragt. Ausnahmen (z. B. was Ledger doch nicht anbietet) lassen sich abwählen.
+// Gespeichert als Liste: '*' = automatisch, '-NAME' = Ausnahme. Ohne '*' ist es eine eigene Liste wie bisher; leer = Top-Coins.
+// Gespeichert auf diesem Gerät, über „Für den Wächter übernehmen“ auch in my-settings.js. Tests in test-tradeable.js.
 import { CONFIG } from './config.js';
 import { LEDGER_MARKETS } from './ledger-markets.js';
 
 const KEY = 'wolfdesk.tradeable';
-export const TRADEABLE_MAX = 300;
+export const AUTO = '*';
+export const TRADEABLE_MAX = 300; // nur für eine eigene Liste
 const listeners = new Set();
+let NAMES = [];
+// Die App meldet hier die aktuelle Marktliste von Hyperliquid (ohne abgeschaltete Märkte)
+export const setMarketNames = (names) => { NAMES = [...(names || [])]; listeners.forEach((fn) => { try { fn(getRaw()); } catch (e) { console.error(e); } }); };
+export const marketNames = () => NAMES;
 
-export function getTradeable() {
+export const isAuto = (raw) => Array.isArray(raw) && raw.includes(AUTO);
+export const skipsOf = (raw) => (raw || []).filter((c) => typeof c === 'string' && c.startsWith('-') && c.length > 1).map((c) => c.slice(1));
+
+// Die alte, abgetippte Ledger-Liste (29.09.) oder fast dieselbe wird zu „automatisch“; was daraus entfernt war, bleibt Ausnahme.
+export function migrateTradeable(list, ledger = LEDGER_MARKETS) {
+  if (!Array.isArray(list) || isAuto(list) || !list.length) return list;
+  const L = new Set(ledger);
+  if (list.length < ledger.length * 0.9 || !list.every((c) => L.has(c))) return list;
+  return [AUTO, ...ledger.filter((c) => !list.includes(c)).map((c) => '-' + c)];
+}
+
+// Gespeicherte Form → Liste der Märkte. names: alle Marktnamen (ohne abgeschaltete)
+export function resolveTradeable(raw, names = NAMES) {
+  const list = migrateTradeable(raw);
+  if (!isAuto(list)) return (list || []).filter((c) => typeof c === 'string' && !c.startsWith('-')).slice(0, TRADEABLE_MAX);
+  const skip = new Set(skipsOf(list));
+  return (names || []).filter((c) => !skip.has(c));
+}
+
+export function getRaw() {
   try {
     const v = JSON.parse(globalThis.localStorage?.getItem(KEY) || 'null');
-    if (Array.isArray(v)) return v.slice(0, TRADEABLE_MAX);
+    if (Array.isArray(v)) return migrateTradeable(v);
   } catch { /* Standard verwenden */ }
-  return (CONFIG.tradeable || []).slice(0, TRADEABLE_MAX);
+  return migrateTradeable([...(CONFIG.tradeable || [])]);
 }
+// Liste der Märkte (bei „automatisch“ aus der Marktliste von Hyperliquid)
+export const getTradeable = () => resolveTradeable(getRaw(), NAMES);
 
 function save(list) {
   try { globalThis.localStorage?.setItem(KEY, JSON.stringify(list)); } catch { /* egal */ }
@@ -22,18 +50,23 @@ function save(list) {
 }
 
 export function addTradeable(coin) {
-  const list = getTradeable();
+  const raw = getRaw();
+  if (isAuto(raw)) { save(raw.filter((c) => c !== '-' + coin)); return null; }
+  const list = resolveTradeable(raw);
   if (list.includes(coin)) return 'Schon in der Liste';
   if (list.length >= TRADEABLE_MAX) return `Maximal ${TRADEABLE_MAX} Märkte`;
   save([...list, coin].sort(byName));
   return null;
 }
-export const removeTradeable = (coin) => save(getTradeable().filter((c) => c !== coin));
+export function removeTradeable(coin) {
+  const raw = getRaw();
+  if (isAuto(raw)) { if (!raw.includes('-' + coin)) save([...raw, '-' + coin]); return; }
+  save(resolveTradeable(raw).filter((c) => c !== coin));
+}
 export const clearTradeable = () => save([]);
-// Deine Ledger-Liste (ledger-markets.js) übernehmen, z. B. wenn vorher schon eine eigene Liste gespeichert war
-export const loadLedger = () => save([...LEDGER_MARKETS].slice(0, TRADEABLE_MAX));
-export const isLedgerList = (list) => list.length === LEDGER_MARKETS.length && LEDGER_MARKETS.every((c) => list.includes(c));
-export const LEDGER_COUNT = LEDGER_MARKETS.length;
+export const setAuto = () => save([AUTO]);
+// Eigene Liste: startet mit dem, was gerade automatisch drin ist
+export const setManual = () => save(getTradeable().slice(0, TRADEABLE_MAX).sort(byName));
 export const onTradeable = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 
 // Sortierung nach Anzeigename (ohne Börsen-Präfix), damit xyz-Märkte zwischen den anderen stehen

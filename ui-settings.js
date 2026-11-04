@@ -4,7 +4,7 @@ import { CONFIG, SETTINGS_KEY } from './config.js';
 import { getViews } from './core-views.js';
 import { getPlans } from './core-plans.js';
 import { getWatchlist } from './core-watchlist.js';
-import { getTradeable } from './core-tradeable.js';
+import { getTradeable, getRaw } from './core-tradeable.js';
 import { tradeableBlock, bindTradeable } from './ui-tradeable.js';
 import { watchlistBlock, bindWatchlist } from './ui-watchlist-edit.js';
 import { storageBlock, bindStorage, refreshSize } from './ui-storage.js';
@@ -120,7 +120,7 @@ async function exportFile() {
   // 5d: Einschätzungen und Ziele NICHT mehr in die öffentliche Datei, die gehen ins Secret (Knopf „Private Daten“)
   // 8a: auch keine Beträge (Startkapital) in die öffentliche Datei; der Wert bleibt in der App auf diesem iPhone
   const diff = publicDiff(diffFromRecommended(values));
-  Object.assign(diff, listsForExport(getWatchlist(), getTradeable()));
+  Object.assign(diff, listsForExport(getWatchlist(), getRaw()));
   const text = settingsFile(diff);
   const file = new File([text], 'my-settings.js', { type: 'text/javascript' });
   try {

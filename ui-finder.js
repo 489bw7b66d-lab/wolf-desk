@@ -6,7 +6,8 @@ import { hl } from './core-api.js';
 import { getCandles, getMarketCtx } from './core-scanner.js';
 import { closedCandles } from './core-signals.js';
 import { scanUniverse } from './core-universe.js';
-import { getTradeable } from './core-tradeable.js';
+import { getRaw } from './core-tradeable.js';
+import { classNote } from './core-classes.js';
 import { NEW_RULES } from './core-ltrules.js';
 import { withChartTargets } from './core-exitplan.js';
 import { trapForLevel, trapHtml } from './ui-trap.js';
@@ -34,7 +35,7 @@ async function scan() {
   try {
     const ctx = await getMarketCtx(), names = markets();
     if (!names.length) throw new Error('Die Marktliste ist noch nicht geladen. Bitte gleich noch einmal versuchen.');
-    const uni = await scanUniverse(names, ctx.ctx, getTradeable());
+    const uni = await scanUniverse(names, ctx.ctx, getRaw());
     const coins = uni.coins.filter((c) => !(ctx.map[c] < CONFIG.signals.minDayVolumeUsd));
     // Stufe 1: Tageskerzen aller Märkte (kommen aus dem Zwischenspeicher, wenn „Heiße Coins“ sie gerade geholt hat)
     const up = [], dailyAll = {};
@@ -108,6 +109,7 @@ function row(e) {
   const ag = agreeOf({ up: e.up, vsBtc: e.vsBtc, breadthShare: scanned + skipped.length ? scanned / (scanned + skipped.length) : null, daily: e.M?.daily });
   let h = `<button type="button" class="fd-row" data-coin="${esc(e.coin)}" aria-expanded="${open}">
     <span class="fd-coin"><b>${esc(dn(e.coin))}</b> <span class="muted">Beobachtung · ${e.n} ${e.n === 1 ? 'Baustein' : 'Bausteine'}</span></span>
+    ${classNote(e.coin, e.M?.daily?.at(-1)?.t) ? `<span class="fd-room warn-t">${esc(classNote(e.coin, e.M?.daily?.at(-1)?.t))}</span>` : ''}
     ${coinBiasText(e.up, e.vsBtc) ? `<span class="fd-room muted">${esc(coinBiasText(e.up, e.vsBtc))}</span>` : ''}
     ${ag.of ? `<span class="fd-room ${ag.n === ag.of ? 'long' : 'muted'}">Kompass: ${ag.n} von ${ag.of} stimmen überein (${ag.items.filter((i) => i.ok !== null).map((i) => `${i.k} ${i.ok ? '✓' : '✗'}`).join(' · ')})</span>` : ''}
     ${blocks ? `<span class="chips">${blocks}</span>` : ''}

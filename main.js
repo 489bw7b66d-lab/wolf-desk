@@ -1,4 +1,5 @@
 // Startpunkt: verbindet Kern-Module und Anzeige.
+import { setMarketNames } from './core-tradeable.js';
 import { CONFIG } from './config.js';
 import { hl } from './core-api.js';
 import { loadAccount } from './core-account.js';
@@ -155,6 +156,7 @@ async function loadMarkets() {
       });
   });
   update({ markets, maxLev, szDec });
+  setMarketNames(Object.values(markets).flat()); // 8y: „automatisch“ = alle Märkte, die Hyperliquid gerade listet
 }
 
 // Navigation zwischen den Bereichen

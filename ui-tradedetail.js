@@ -4,7 +4,7 @@ import { CONFIG } from './config.js';
 import { hl, info } from './core-api.js';
 import { getCandles, getMarketCtx } from './core-scanner.js';
 import { scanUniverse } from './core-universe.js';
-import { getTradeable } from './core-tradeable.js';
+import { getTradeable, getRaw } from './core-tradeable.js';
 import { closedCandles } from './core-signals.js';
 import { tradeHistory } from './core-trades.js';
 import { loadIndex } from './core-index.js';
@@ -59,7 +59,7 @@ async function runDice() {
     const closed = rows.filter((r) => r.closed || (withOpen && r.marked)).map((r) => ({ ...r, closedAt: r.closedAt ?? now }));
     if (!closed.length) throw new Error('Keine Trades zum Vergleichen.');
     const ctx = await getMarketCtx(), names = Object.values(getState().markets || {}).flat();
-    const uni = await scanUniverse(names, ctx.ctx, getTradeable());
+    const uni = await scanUniverse(names, ctx.ctx, getRaw());
     const coins = [...new Set([...uni.coins.filter((c) => !(ctx.map[c] < CONFIG.signals.minDayVolumeUsd)), ...closed.map((r) => r.coin)])];
     const from = Math.min(...closed.map((r) => r.openedAt)) - 5 * 864e5, h4 = {};
     for (let k = 0; k < coins.length && !stop; k++) {

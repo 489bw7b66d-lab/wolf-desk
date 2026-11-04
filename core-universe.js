@@ -1,6 +1,7 @@
 // Welche Coins überwacht werden: Top N nach Market Cap (CoinGecko), soweit auf Hyperliquid handelbar.
 // Fällt CoinGecko aus, nehmen wir die Hyperliquid-Märkte mit dem höchsten Open Interest.
 import { CONFIG } from './config.js';
+import { isAuto, migrateTradeable, resolveTradeable } from './core-tradeable.js';
 
 const KEY = 'wolfdesk.universe';
 const MAX_AGE = 6 * 3600e3;
@@ -54,10 +55,14 @@ export async function getUniverse(hlNames, ctx) {
 
 // Was Heiße Coins und Wächter scannen: deine handelbaren Märkte, falls eingetragen, sonst die Top-Coins wie bisher.
 // allNames: alle Marktnamen inkl. xyz. Die Top-Liste kommt weiterhin nur aus der Hauptbörse.
-export function ownUniverse(allNames, tradeable = []) {
-  const own = (tradeable || []).filter((c) => allNames.includes(c));
-  return own.length ? { source: `Deine handelbaren Märkte (${own.length})`, coins: own, own: true } : null;
+// 8y: tradeable darf die gespeicherte Form sein ('*' = alle Märkte, die Hyperliquid listet, '-NAME' = Ausnahme).
+export function ownUniverse(allNames, tradeable = [], ctx = {}) {
+  const live = (allNames || []).filter((c) => !ctx?.[c]?.delisted);
+  const auto = isAuto(migrateTradeable(tradeable || []));
+  const own = resolveTradeable(tradeable || [], live).filter((c) => live.includes(c));
+  if (!own.length) return null;
+  return { source: auto ? `Alle Hyperliquid-Märkte (${own.length})` : `Deine handelbaren Märkte (${own.length})`, coins: own, own: true, auto };
 }
 export async function scanUniverse(allNames, ctx, tradeable = []) {
-  return ownUniverse(allNames, tradeable) || getUniverse(allNames.filter((n) => !n.includes(':')), ctx);
+  return ownUniverse(allNames, tradeable, ctx) || getUniverse(allNames.filter((n) => !n.includes(':')), ctx);
 }
