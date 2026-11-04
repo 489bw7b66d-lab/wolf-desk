@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "BTC",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793780940388,
+   "px": 78356,
+   "zone": [
+    78356,
+    78356
+   ],
+   "stop": 74422.8500886204,
+   "tps": [
+    86222.2998227592,
+    90155.44973413882,
+    94088.59964551842,
+    101954.89946827764
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "Sweep"
+   ],
+   "id": 38,
+   "eng": "obs"
+  },
+  {
    "coin": "ENA",
    "dir": "long",
    "style": "swing",
@@ -551,35 +580,6 @@
     "VWAP"
    ],
    "id": 19,
-   "eng": "obs"
-  },
-  {
-   "coin": "XRP",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791734941539,
-   "px": 1.4188,
-   "zone": [
-    1.4188,
-    1.4188
-   ],
-   "stop": 1.2785307371297563,
-   "tps": [
-    1.6993385257404876,
-    1.8396077886107316,
-    1.9798770514809754,
-    2.260415577221463
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1792274399999,
-   "events": [
-    "Key-Level",
-    "VWAP"
-   ],
-   "id": 18,
    "eng": "obs"
   }
  ],
