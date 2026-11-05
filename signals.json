@@ -107,9 +107,9 @@
     129.53012320084636,
     149.59548480126955
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1793894399999,
    "events": [
     "VWAP",
     "Donchian"
@@ -1356,6 +1356,24 @@
    "zoneH": 0,
    "mfe": 1.86,
    "mae": 0.28,
+   "eng": "obs"
+  },
+  {
+   "key": "HYPE|long|1793320370378",
+   "id": 35,
+   "coin": "HYPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793320370378,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1793894399999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.47,
+   "mae": 1,
    "eng": "obs"
   },
   {
