@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "xyz:AAPL",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793987255763,
+   "px": 344.05,
+   "zone": [
+    344.05,
+    344.05
+   ],
+   "stop": 326.6673915387712,
+   "tps": [
+    378.8152169224576,
+    396.1978253836864,
+    413.5804338449152,
+    448.3456507673728
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP"
+   ],
+   "id": 39,
+   "eng": "obs"
+  },
+  {
    "coin": "BTC",
    "dir": "long",
    "style": "swing",
@@ -551,35 +580,6 @@
     "VWAP"
    ],
    "id": 22,
-   "eng": "obs"
-  },
-  {
-   "coin": "ONDO",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791807409652,
-   "px": 0.50512,
-   "zone": [
-    0.50512,
-    0.50512
-   ],
-   "stop": 0.42658397871326215,
-   "tps": [
-    0.6621920425734757,
-    0.7407280638602137,
-    0.8192640851469516,
-    0.9763361277204274
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1792033199999,
-   "events": [
-    "Fib-Rücklauf",
-    "VWAP"
-   ],
-   "id": 19,
    "eng": "obs"
   }
  ],
