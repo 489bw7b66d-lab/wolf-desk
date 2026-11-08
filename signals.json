@@ -48,9 +48,9 @@
     94088.59964551842,
     101954.89946827764
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1794175199999,
    "events": [
     "Key-Level",
     "Sweep"
@@ -1391,6 +1391,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.46,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "BTC|long|1793780940388",
+   "id": 38,
+   "coin": "BTC",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793780940388,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1794175199999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.72,
    "mae": 1,
    "eng": "obs"
   }
