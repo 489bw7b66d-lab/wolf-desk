@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "XMR",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794284849972,
+   "px": 575,
+   "zone": [
+    575,
+    575
+   ],
+   "stop": 514.8800318812706,
+   "tps": [
+    695.2399362374589,
+    755.3599043561883,
+    815.4798724749178,
+    935.7198087123766
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 40,
+   "eng": "obs"
+  },
+  {
    "coin": "xyz:AAPL",
    "dir": "long",
    "style": "swing",
@@ -551,35 +580,6 @@
     "Sweep"
    ],
    "id": 21,
-   "eng": "obs"
-  },
-  {
-   "coin": "TAO",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791821731739,
-   "px": 286.57,
-   "zone": [
-    286.57,
-    286.57
-   ],
-   "stop": 245.44004803321192,
-   "tps": [
-    368.82990393357613,
-    409.9598559003642,
-    451.0898078671522,
-    533.3497118007283
-   ],
-   "status": "abgelaufen",
-   "r": -0.7687828088282905,
-   "doneAt": 1792687801862,
-   "events": [
-    "Key-Level",
-    "VWAP"
-   ],
-   "id": 22,
    "eng": "obs"
   }
  ],
