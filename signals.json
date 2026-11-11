@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "INIT",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794357542557,
+   "px": 0.20813,
+   "zone": [
+    0.20813,
+    0.20813
+   ],
+   "stop": 0.1367080705647009,
+   "tps": [
+    0.35097385887059823,
+    0.4223957883058973,
+    0.4938177177411964,
+    0.6366615766117947
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 42,
+   "eng": "obs"
+  },
+  {
    "coin": "xyz:TSLA",
    "dir": "long",
    "style": "swing",
@@ -551,35 +580,6 @@
     "Sweep"
    ],
    "id": 23,
-   "eng": "obs"
-  },
-  {
-   "coin": "DOGE",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1791821731739,
-   "px": 0.085236,
-   "zone": [
-    0.085236,
-    0.085236
-   ],
-   "stop": 0.07592105516784349,
-   "tps": [
-    0.10386588966431305,
-    0.11318083449646957,
-    0.1224957793286261,
-    0.14112566899293913
-   ],
-   "status": "abgelaufen",
-   "r": -0.765973403875562,
-   "doneAt": 1792687801862,
-   "events": [
-    "VWAP",
-    "Sweep"
-   ],
-   "id": 20,
    "eng": "obs"
   }
  ],
