@@ -806,3 +806,14 @@ body { background: transparent; }
 .mkt-idx-svg.big { width: 100%; height: auto; }
 @media (max-width: 380px) { .idx-full-head b { font-size: 12.5px; } }
 .mk-back button::after { content: none; }
+
+/* 8z1: Pre-IPO-Märkte */
+.pre-tag { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 999px; border: 1px solid rgba(214,160,60,.6); color: var(--gold); margin-left: 4px; vertical-align: middle; letter-spacing: .02em; }
+.pre-row { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--line); }
+.pre-row:first-child { border-top: 0; }
+.pre-open { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto 76px; gap: 10px; align-items: center; min-height: 48px; height: auto; padding: 0; border: 0; border-radius: 0; background: none; color: var(--text); font-size: 15px; text-align: left; }
+.pre-open .sym { font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pre-open b { text-align: right; font-weight: 800; }
+.pre-px { color: var(--text); font-variant-numeric: tabular-nums; }
+.pre-del { width: 36px; height: 36px; padding: 0; border-radius: 999px; background: var(--line); color: var(--text); font-size: 16px; flex: none; }
+.link-btn { background: none; border: 0; padding: 0; height: auto; color: var(--gold); font: inherit; font-weight: 700; text-decoration: underline; }

@@ -14,6 +14,7 @@ import { streamHealth, accountHealth } from './core-health.js';
 import { initPerformance, renderPerformance } from './ui-performance.js';
 import { initMarket } from './ui-market.js';
 import { initCompass } from './ui-compass.js';
+import { initPreIpo, renderPreIpo } from './ui-preipo.js';
 import { initBackground } from './ui-bg.js';
 import { initCoin, openCoin } from './ui-coin.js';
 import { initBacktest } from './ui-backtest.js';
@@ -187,7 +188,7 @@ document.addEventListener('touchstart', () => { touching = true; clearTimeout(to
 ['touchend', 'touchcancel'].forEach((ev) => document.addEventListener(ev, () => { clearTimeout(touchTimer); touchTimer = setTimeout(() => { touching = false; }, 350); }, { passive: true }));
 const renderAll = (s) => {
   if (touching) return; 
-  render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderWatchLive(s); renderFeedLive(s); renderMiniHealth(s);
+  render(s, !!address); renderRisk(s); renderPerformance(s); renderHome(s); renderPreIpo(s); renderWatchLive(s); renderFeedLive(s); renderMiniHealth(s);
 };
 const openFull = (r) => showDetail(r); // öffnet die Analyse als Blatt (5e)
 // 8a: Wer aus einem Blatt in ein anderes springt, bekommt oben links einen Zurück-Pfeil (eine Stufe zurück)
@@ -213,6 +214,7 @@ initHome(getState, openTrade, openFull, openCoin);
 initBackground();
 initMarket();
 initCompass();
+initPreIpo(getState, openCoin);
 initBacktest(getState);
 initBinance(); // 8h: lange Historie von Binance
 initLongTest(); // 8i: Testplan-Läufe auf der langen Historie

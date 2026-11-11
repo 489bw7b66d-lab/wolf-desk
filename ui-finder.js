@@ -7,7 +7,7 @@ import { getCandles, getMarketCtx } from './core-scanner.js';
 import { closedCandles } from './core-signals.js';
 import { scanUniverse } from './core-universe.js';
 import { getRaw } from './core-tradeable.js';
-import { classNote } from './core-classes.js';
+import { classNote, isPreIpo } from './core-classes.js';
 import { NEW_RULES } from './core-ltrules.js';
 import { withChartTargets } from './core-exitplan.js';
 import { trapForLevel, trapHtml } from './ui-trap.js';
@@ -108,7 +108,7 @@ function row(e) {
   const fib = fibText(e.fib), rs = rsiText(e.rsiDay, e.rsiH4), trap = keyTrap(e);
   const ag = agreeOf({ up: e.up, vsBtc: e.vsBtc, breadthShare: scanned + skipped.length ? scanned / (scanned + skipped.length) : null, daily: e.M?.daily });
   let h = `<button type="button" class="fd-row" data-coin="${esc(e.coin)}" aria-expanded="${open}">
-    <span class="fd-coin"><b>${esc(dn(e.coin))}</b> <span class="muted">Beobachtung · ${e.n} ${e.n === 1 ? 'Baustein' : 'Bausteine'}</span></span>
+    <span class="fd-coin"><b>${esc(dn(e.coin))}</b>${isPreIpo(e.coin) ? ' <small class="pre-tag">Pre-IPO</small>' : ''} <span class="muted">Beobachtung · ${e.n} ${e.n === 1 ? 'Baustein' : 'Bausteine'}</span></span>
     ${classNote(e.coin, e.M?.daily?.at(-1)?.t) ? `<span class="fd-room warn-t">${esc(classNote(e.coin, e.M?.daily?.at(-1)?.t))}</span>` : ''}
     ${coinBiasText(e.up, e.vsBtc) ? `<span class="fd-room muted">${esc(coinBiasText(e.up, e.vsBtc))}</span>` : ''}
     ${ag.of ? `<span class="fd-room ${ag.n === ag.of ? 'long' : 'muted'}">Kompass: ${ag.n} von ${ag.of} stimmen überein (${ag.items.filter((i) => i.ok !== null).map((i) => `${i.k} ${i.ok ? '✓' : '✗'}`).join(' · ')})</span>` : ''}

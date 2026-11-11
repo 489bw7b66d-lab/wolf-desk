@@ -30,6 +30,24 @@ const STOCKS = new Set(['NVDA', 'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN',
   'BE', 'ZHIPU', 'STRC', 'BOT', 'GIGADEV', 'SKHY', 'KSTR', 'CXMT', 'GEV', 'KORU', 'UNITREE', 'SOXL', 'MAGS', 'AAOI', 'MRNA', 'XBI', 'SHEIN',
   'SNXX', 'OURA', 'UMC', 'CAMBRICON', 'TWST', 'GLW', 'RELIANCE', 'JIO', 'ANT', 'ICE']);
 
+// 8z1 (Jensen, 11.11.: „die Pre-IPOs interessieren mich, können wir die highlighten“): Firmen, die noch nicht an der Börse sind.
+// Liste von Hand, sie veraltet mit jedem Börsengang; in der App lässt sie sich auf der Startseite anpassen (nur auf dem Gerät).
+export const PREIPO = new Set(['SPCX', 'SPACEX', 'OPENAI', 'ANTHROPIC', 'XAI', 'STRIPE', 'DATABRICKS', 'KRAKEN', 'CBRS', 'SHEIN', 'UNITREE', 'CXMT', 'OURA', 'JIO', 'ANT']);
+const PRE_KEY = 'wolfdesk.preipo';
+export function preIpoEdit() { try { const v = JSON.parse(globalThis.localStorage?.getItem(PRE_KEY) || 'null'); return { add: Array.isArray(v?.add) ? v.add : [], del: Array.isArray(v?.del) ? v.del : [] }; } catch { return { add: [], del: [] }; } }
+export function setPreIpo(coin, on) {
+  const e = preIpoEdit(), std = PREIPO.has(baseName(coin)) && isPrefixed(coin);
+  e.add = e.add.filter((c) => c !== coin); e.del = e.del.filter((c) => c !== coin);
+  if (on && !std) e.add.push(coin); if (!on && std) e.del.push(coin);
+  try { globalThis.localStorage?.setItem(PRE_KEY, JSON.stringify(e)); } catch { /* egal */ }
+}
+// edit: eigene Änderungen { add, del }; Standard: die auf diesem Gerät gespeicherten (im Wächter keine)
+export function isPreIpo(coin, edit = preIpoEdit()) {
+  if (edit.del.includes(coin)) return false;
+  return edit.add.includes(coin) || (isPrefixed(coin) && PREIPO.has(baseName(coin)));
+}
+export const preIpoList = (names, edit = preIpoEdit()) => (names || []).filter((c) => isPreIpo(c, edit));
+
 export const baseName = (coin) => String(coin || '').replace(/^[a-z0-9]+:/i, '').toUpperCase();
 export const isPrefixed = (coin) => /^[a-z0-9]+:/i.test(String(coin || ''));
 
@@ -52,7 +70,7 @@ export const unclassified = guessed;
 export function classNote(coin, t = null) {
   const k = classOf(coin);
   if (k === 'krypto') return '';
-  const label = k === 'rohstoff' ? 'Rohstoff' : k === 'aktie' ? 'Aktie / Index' : k === 'fx' ? 'Devisen' : 'kein Krypto';
+  const label = isPreIpo(coin) ? 'Pre-IPO' : k === 'rohstoff' ? 'Rohstoff' : k === 'aktie' ? 'Aktie / Index' : k === 'fx' ? 'Devisen' : 'kein Krypto';
   const day = t == null ? null : new Date(t).getUTCDay();
   const weekend = isPrefixed(coin) && (day === 0 || day === 6);
   return `${label} · nicht gemessen${weekend ? ' · Wochenende, dünner Handel' : ''}`;
