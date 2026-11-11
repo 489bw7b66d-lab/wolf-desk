@@ -11,7 +11,7 @@ import { suggestImpact, cooldown, cooledRisk, leftText, planWithStop, planOrigSt
 import { stopNoiseDaily } from './core-stopcheck.js';
 // 8p: übernommener Vorschlag heißt in der Leiter „Rahmen-Stop“
 const frameStop = (p, stop) => planWithStop(p, stop, 'Rahmen-Stop (2× Tages-ATR)');
-import { tradeHistory } from './core-trades.js';
+import { tradeHistory, change24h } from './core-trades.js';
 import { accountRisk } from './core-positions.js';
 import { totalRisk } from './core-totalrisk.js';
 import { riskBudget, budgetText } from './core-riskbudget.js';
@@ -164,11 +164,12 @@ function renderLive() {
     }
   }
   const age = ts ? Date.now() - ts : null;
+  const ch24 = change24h(px, s.prevDay?.[current.coin]); // 8z: 24-Stunden-Änderung wie im Positions-Blatt
   const pos = priceVsPlan(basePlan || p, px);
   const cls = pos ? { zone: 'ok', chasing: 'warn', early: 'warn', invalid: 'bad' }[pos.state] : 'warn';
   box.className = 'live-box ' + cls;
   box.innerHTML = px ? `<div class="live-top"><span class="k">Live-Kurs</span><span class="meta ${age != null && age < 15000 ? '' : 'lag'}">${age != null && age < 15000 ? '● live' : 'verzögert'}</span></div>
-    <div class="live-px">${f.price(px)}</div>
+    <div class="coin-px"><span class="live-px">${f.price(px)}</span>${ch24 == null ? '' : `<span class="chg ${ch24 >= 0 ? 'long' : 'short'}">${ch24 >= 0 ? '+' : '−'}${f.pct(Math.abs(ch24), 2)} <small>24h</small></span>`}</div>
     <p>${pos ? LIVE_TEXT[pos.state](pos.distPct) : ''}</p>
     ${p.liveEntry ? `<button type="button" class="small-btn ghost" id="live-reset">Zurück zum Zonen-Einstieg</button>`
       : pos && pos.state !== 'invalid' ? `<button type="button" class="small-btn" id="live-take">Live-Kurs als Einstieg</button>` : ''}`

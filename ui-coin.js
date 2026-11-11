@@ -21,6 +21,8 @@ import * as f from './core-format.js';
 import { exitPlanFor, tp2Note, rText } from './core-exitplan.js';
 import { trapForCoin, trapHtml } from './ui-trap.js';
 import { tipInline } from './ui-parts.js';
+import { stopAdvice, stopVerdict, dailyAtr } from './core-stopadvice.js';
+import { setManualStop } from './core-stops.js';
 
 const $ = (id) => document.getElementById(id);
 let getState = () => ({});
@@ -115,18 +117,18 @@ function loadChart() {
 
 export function openCoin(name) {
   if (!name) return;
-  coin = name; exitMsg = ''; lastExit = Date.now();
+  coin = name; exitMsg = ''; stopMsg = ''; lastExit = Date.now();
   const p = position(getState());
   tf = p ? '1h' : '4h';
   $('sheet-body').innerHTML = `<div id="coin-view">
     <div class="sheet-head">
       <div><h2 id="sheet-title" class="coin" style="font-size:24px;margin:0">${coinIcon(coin, 28)}${esc(dn(coin))}</h2>
-      <span class="meta">${p ? 'Offene Position' : 'Markt'}</span></div>
+      <span class="meta">${p ? 'Trading-Karte · offene Position' : 'Markt'}</span></div>
       ${p ? `<span class="sig-badge ${p.side}">${p.side === 'long' ? 'LONG ▲' : 'SHORT ▼'}</span>` : ''}
     </div>
     ${viewSummary(coin)}
     <div id="coin-live" class="live-box" aria-live="polite"></div>
-    ${p ? `<div id="coin-pos"></div>${p.side === 'long' ? '<div id="coin-trap"></div>' : ''}${exitBoxHtml()}${stopBoxHtml(p)}<h3 class="sub-h">Chart</h3>` : ''}
+    ${p ? `<div id="coin-pos"></div><div id="coin-stop"></div>${p.side === 'long' ? '<div id="coin-trap"></div>' : ''}${exitBoxHtml()}${stopBoxHtml(p)}<h3 class="sub-h">Chart</h3>` : ''}
     <div class="chart-tfs" role="group" aria-label="Chart-Zeitebene">${CHART_TFS.map((t) => `<button type="button" data-ktf="${t}" aria-pressed="${t === tf}">${TFL[t]}</button>`).join('')}</div>
     <div id="coin-chart" class="chart-box"></div>
     ${chartTools('coin-chart', coin)}
@@ -268,8 +270,52 @@ function renderTrap() {
   box.innerHTML = r ? `<h3 class="sub-h">Bullenfallen-Check</h3>${trapHtml(r, { position: true, id: 'trap-pos' })}` : '';
   if (open) box.querySelector('details')?.setAttribute('open', '');
 }
+// ===== Stop-Loss-Empfehlung (8z): für jede offene Position, auch eigene Trades ohne Signal, Long und Short =====
+let stopMsg = '';
+function stopCtx() {
+  const s = getState(), p = position(s);
+  if (!p) return null;
+  const d = cache.get(coin + '|1d');
+  if (!d && !cache.has(coin + '|1d!')) {
+    const k = coin; cache.set(k + '|1d!', true);
+    getCandles(k, '1d').then((cs) => { cache.set(k + '|1d', cs.slice(-300)); if (coin === k) { renderStop(); renderExit(); } }).catch(() => { cache.delete(k + '|1d!'); });
+  }
+  const c = planCtx(), px = s.prices?.[coin] ?? p.mark;
+  const a = stopAdvice({ side: p.side, entry: p.entry, price: px, stop: p.stop ?? null, liq: p.liq, size: p.size, atrDay: d ? dailyAtr(d) : null,
+    planStop: c?.targets?.stop ?? null, trail: live?.pp?.trail?.stop ?? null });
+  return { p, a, loading: !d, equity: s.account ? accountSummary(s.account, CONFIG.accountMode)?.equity : null };
+}
+function renderStop() {
+  const box = $('coin-stop');
+  if (!box) return;
+  const c = stopCtx();
+  if (!c?.a) { box.innerHTML = ''; return; }
+  const { p, a, equity } = c, long = p.side === 'long';
+  const head = `<h3 class="sub-h">Stop-Loss-Empfehlung ${tipInline('Für jede offene Position, auch deine eigenen Trades. Empfehlung: der Rahmen-Stop, 2 × Tages-ATR ab deinem Einstieg (der Stop des gemessenen Rahmens). Ab TP1 der nachgezogene Stop, wenn er besser schützt. Ohne Tageskerzen der Struktur-Stop aus dem automatischen Plan. Liegt der Kurs schon hinter dem Rahmen-Stop, gibt es keine Empfehlung mehr. Die App setzt keine Order: den Stop legst du selbst bei Ledger an.', 'stopadv')}</h3>`;
+  if (c.loading && !a.rec) { box.innerHTML = `${head}<p class="empty">Lade Tageskerzen …</p>`; return; }
+  const sp = (v) => `${v >= 0 ? '+' : '−'}${f.pct(Math.abs(v), 1)}`;
+  const row = (cls, label, price, info) => `<div class="lvl"><span class="dot" style="background:var(--${cls})"></span><span class="lbl">${label}</span><span class="px">${price}</span><span class="pc ${cls === 'bad' ? 'short' : 'muted'}">${info}</span></div>`;
+  const curInfo = a.current == null ? 'fehlt' : sp(((a.current - p.entry) / p.entry) * 100);
+  const rows = [
+    row('gold', 'Einstieg', f.price(p.entry), long ? 'Long' : 'Short'),
+    a.rec ? row('bad', 'Empfehlung', `<b>${f.price(a.rec.price)}</b>`, sp(a.fromEntryPct)) : '',
+    row(a.current == null ? 'warn' : 'muted', 'Dein Stop', a.current == null ? '–' : f.price(a.current), curInfo),
+  ].join('');
+  const cls = { fehlt: 'short', weiter: 'warn-t', enger: 'warn-t', gerissen: 'short', passt: 'long', gesichert: 'long', ohne: 'muted' }[a.state];
+  const money = a.rec && a.pnlAtStop != null ? `Am empfohlenen Stop: <b class="${a.pnlAtStop >= 0 ? 'long' : 'short'}">${f.signedUsd(a.pnlAtStop)}</b>${equity > 0 && a.pnlAtStop < 0 ? ` (${f.pct((Math.abs(a.pnlAtStop) / equity) * 100, 1)} vom Konto)` : ''} · Abstand zum Kurs ${f.pct(a.fromPricePct, 1)}` : '';
+  const canSet = a.rec && p.stopSource !== 'Order' && a.state !== 'passt';
+  box.innerHTML = `${head}
+    <div class="ladder">${rows}</div>
+    ${a.rec ? `<p class="meta" style="font-size:12.5px;margin:6px 0 0">${esc(a.rec.label)}${a.atrDay ? ` · Tages-ATR ${f.price(a.atrDay)}` : ''}${a.alt ? ` · zweite Marke: ${esc(a.alt.label)} ${f.price(a.alt.price)}` : ''}</p>` : ''}
+    <p class="${cls}" style="font-size:13px;font-weight:700;margin:6px 0 0">${esc(stopVerdict(a))}</p>
+    ${money ? `<p class="meta" style="font-size:12.5px;margin:4px 0 0">${money}</p>` : ''}
+    ${a.rec && a.liqFirst ? `<p class="warnline">Achtung: Deine Liquidation (${f.price(p.liq)}) käme vor diesem Stop. Hebel senken oder Margin nachlegen, sonst greift der Stop nie.</p>` : ''}
+    ${a.rec && p.stopSource === 'Order' && a.state !== 'passt' ? `<p class="meta" style="font-size:12.5px;margin:4px 0 0">Du hast eine Stop-Order bei Hyperliquid. Ändern kannst du sie nur dort bzw. in Ledger.</p>` : ''}
+    ${canSet ? '<div class="set-actions"><button type="button" id="sa-take" class="ghost">Als meinen Stop eintragen</button></div>' : ''}
+    ${stopMsg ? `<p class="meta" style="color:var(--gold);font-size:12.5px">${esc(stopMsg)}</p>` : ''}`;
+}
 function renderExit() {
-  renderTrap();
+  renderTrap(); renderStop();
   const box = $('coin-exit');
   if (!box) return;
   const c = exitCtx();
@@ -299,6 +345,15 @@ function renderExit() {
 }
 
 function planClicks() {
+$('sheet-body').addEventListener('click', (e) => {
+  if (e.target.id !== 'sa-take' || !$('coin-stop')) return;
+  const c = stopCtx();
+  if (!c?.a?.rec) return;
+  const dec = Math.max(0, Math.min(8, 5 - Math.floor(Math.log10(c.a.rec.price))));
+  setManualStop(coin, Number(c.a.rec.price.toFixed(dec)));
+  stopMsg = 'Eingetragen (nur in der App, setzt keine Order). Leg den Stop jetzt auch bei Ledger an.';
+  renderLive(); renderPlan(); renderStop();
+});
 $('sheet-body').addEventListener('click', (e) => {
   if (e.target.id !== 'xp-take' || !$('coin-exit')) return;
   const c = exitCtx();

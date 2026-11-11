@@ -43,7 +43,7 @@ function body() {
       <p class="set-hint">Gescannt wird bei jedem Laden und jedem Wächter-Lauf die aktuelle Liste, tote Märkte fallen über den Mindestumsatz raus. Für den Wächter danach „Für den Wächter übernehmen“.</p>
       ${search}
       ${skips.length ? `<p class="set-hint" style="margin-top:10px">Ausnahmen (werden nicht gescannt, Tippen nimmt sie wieder auf):</p><div class="mk-chips mk-back" role="list">${skips.map((x) => `<button type="button" role="listitem" data-tr-back="${esc(x)}" aria-label="${esc(dn(x))} wieder aufnehmen">${esc(dn(x))}${tag(x)} ↺</button>`).join('')}</div>` : ''}
-      ${un.length ? `<p class="set-hint" style="margin-top:10px">Noch keiner Klasse zugeordnet (zählen in keinem Index, sag mir Bescheid): ${esc(un.map(dn).join(', '))}</p>` : ''}`;
+      ${un.length ? `<p class="set-hint" style="margin-top:10px">Nach dem Namen nicht bekannt, als Aktie gezählt (falls etwas davon ein Rohstoff ist, sag Bescheid): ${esc(un.map(dn).join(', '))}</p>` : ''}`;
   }
   const list = getTradeable();
   return `${mode}

@@ -87,7 +87,7 @@ export function renderHome(s) {
   $('home-pos').innerHTML = r.positions.length ? riskSum(r.positions, r.summary.equity) + r.positions.map((p) => {
     const st = p.evaluation.worst;
     const ch = change24h(s.prices?.[p.coin], s.prevDay?.[p.coin]);
-    return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}" aria-label="${esc(dn(p.coin))}: Positions-Blatt öffnen"><span class="dot r-${st}"></span>
+    return `<button type="button" class="pos-row" data-coin="${esc(p.coin)}" aria-label="${esc(dn(p.coin))}: Trading-Karte der Position öffnen"><span class="dot r-${st}"></span>
       <span class="sym">${coinIcon(p.coin)}${esc(dn(p.coin))} <small class="${p.side}">${p.side === 'long' ? 'L' : 'S'} ${f.lev(p.leverage)}</small>
         <span class="pos-px">${f.price(p.mark)} <b class="${ch == null ? 'muted' : ch >= 0 ? 'long' : 'short'}">${ch == null ? '' : (ch >= 0 ? '+' : '−') + f.pct(Math.abs(ch), 2)}</b></span></span>
       <span class="meta">Liq ${f.pct(p.liqDist)}${p.side === 'long' ? trapMini((() => { try { return trapForCoin(p.coin); } catch { return null; } })()) : ''}</span>
