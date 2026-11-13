@@ -135,9 +135,9 @@
     815.4798724749178,
     935.7198087123766
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1794545999999,
    "events": [
     "VWAP",
     "Sweep"
@@ -1427,6 +1427,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.72,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "XMR|long|1794284849972",
+   "id": 40,
+   "coin": "XMR",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794284849972,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1794545999999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.35,
    "mae": 1,
    "eng": "obs"
   },
