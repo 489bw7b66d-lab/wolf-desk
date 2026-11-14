@@ -19,9 +19,9 @@
     112.28737127490238,
     131.3307569123536
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1794679199999,
    "events": [
     "Key-Level",
     "Sweep"
@@ -1463,6 +1463,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 1,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "HYPE|long|1794573499441",
+   "id": 45,
+   "coin": "HYPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794573499441,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1794679199999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.11,
    "mae": 1,
    "eng": "obs"
   }
