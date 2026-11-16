@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "xyz:AAPL",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794854121784,
+   "px": 351.93,
+   "zone": [
+    351.93,
+    351.93
+   ],
+   "stop": 337.1192415065181,
+   "tps": [
+    381.55151698696386,
+    396.36227548044576,
+    411.17303397392766,
+    440.7945509608915
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 47,
+   "eng": "obs"
+  },
+  {
    "coin": "HYPE",
    "dir": "long",
    "style": "swing",
@@ -222,9 +251,9 @@
     413.5804338449152,
     448.3456507673728
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": 0.45045023118736605,
+   "doneAt": 1794854121784,
    "events": [
     "Key-Level",
     "VWAP"
@@ -551,35 +580,6 @@
     "Order Block"
    ],
    "id": 28,
-   "eng": "obs"
-  },
-  {
-   "coin": "ENA",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1792037491414,
-   "px": 0.1865,
-   "zone": [
-    0.1865,
-    0.1865
-   ],
-   "stop": 0.13950718760456624,
-   "tps": [
-    0.2804856247908675,
-    0.3274784371863013,
-    0.37447124958173506,
-    0.46845687437260264
-   ],
-   "status": "abgelaufen",
-   "r": 0.1744947702001508,
-   "doneAt": 1792904566188,
-   "events": [
-    "VWAP",
-    "Order Block"
-   ],
-   "id": 27,
    "eng": "obs"
   }
  ],
@@ -1428,6 +1428,24 @@
    "zoneH": 0,
    "mfe": 0.72,
    "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "xyz:AAPL|long|1793987255763",
+   "id": 39,
+   "coin": "xyz:AAPL",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1793987255763,
+   "status": "abgelaufen",
+   "r": 0.45045023118736605,
+   "doneAt": 1794854121784,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.98,
+   "mae": 0.29,
    "eng": "obs"
   },
   {
