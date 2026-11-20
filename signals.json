@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "xyz:AMZN",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1795207970381,
+   "px": 246.83,
+   "zone": [
+    246.83,
+    246.83
+   ],
+   "stop": 226.94972182324807,
+   "tps": [
+    286.59055635350387,
+    306.47083453025584,
+    326.35111270700776,
+    366.11166906051164
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Order Block"
+   ],
+   "id": 48,
+   "eng": "obs"
+  },
+  {
    "coin": "xyz:AAPL",
    "dir": "long",
    "style": "swing",
@@ -106,9 +135,9 @@
     0.008196510926107028,
     0.010118766389160542
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1795190399999,
    "events": [
     "VWAP",
     "Sweep"
@@ -193,9 +222,9 @@
     503.8599987761384,
     567.0199981642077
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1795208399999,
    "events": [
     "Key-Level",
     "VWAP"
@@ -551,35 +580,6 @@
     "Order Block"
    ],
    "id": 29,
-   "eng": "obs"
-  },
-  {
-   "coin": "SOL",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1792657207037,
-   "px": 103.91,
-   "zone": [
-    103.91,
-    103.91
-   ],
-   "stop": 94.36891117034563,
-   "tps": [
-    122.99217765930874,
-    132.5332664889631,
-    142.07435531861748,
-    161.15653297792622
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1793321999999,
-   "events": [
-    "VWAP",
-    "Order Block"
-   ],
-   "id": 28,
    "eng": "obs"
   }
  ],
@@ -1467,6 +1467,24 @@
    "eng": "obs"
   },
   {
+   "key": "xyz:TSLA|long|1794341406811",
+   "id": 41,
+   "coin": "xyz:TSLA",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794341406811,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1795208399999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.85,
+   "mae": 0.97,
+   "eng": "obs"
+  },
+  {
    "key": "INIT|long|1794357542557",
    "id": 42,
    "coin": "INIT",
@@ -1481,6 +1499,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 1,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "kPEPE|long|1794508169985",
+   "id": 44,
+   "coin": "kPEPE",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794508169985,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1795190399999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.34,
    "mae": 1,
    "eng": "obs"
   },
