@@ -77,9 +77,9 @@
     347.7771166226844,
     386.3706749340266
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1795179599999,
    "events": [
     "Key-Level",
     "Sweep"
@@ -1499,6 +1499,24 @@
    "sf": "mittel",
    "zoneH": 0,
    "mfe": 0.11,
+   "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "xyz:AMZN|long|1794573499441",
+   "id": 46,
+   "coin": "xyz:AMZN",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794573499441,
+   "status": "stop",
+   "r": -1,
+   "doneAt": 1795179599999,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.21,
    "mae": 1,
    "eng": "obs"
   }
