@@ -164,9 +164,9 @@
     4.509356190624935,
     4.967134285937403
    ],
-   "status": "offen",
-   "r": null,
-   "doneAt": null,
+   "status": "abgelaufen",
+   "r": 0.8493197992241525,
+   "doneAt": 1795298354352,
    "events": [
     "VWAP",
     "Donchian"
@@ -1500,6 +1500,24 @@
    "zoneH": 0,
    "mfe": 1,
    "mae": 1,
+   "eng": "obs"
+  },
+  {
+   "key": "xyz:NATGAS|long|1794434093877",
+   "id": 43,
+   "coin": "xyz:NATGAS",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1794434093877,
+   "status": "abgelaufen",
+   "r": 0.8493197992241525,
+   "doneAt": 1795298354352,
+   "sf": "mittel",
+   "zoneH": 0,
+   "mfe": 0.92,
+   "mae": 0.62,
    "eng": "obs"
   },
   {
