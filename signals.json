@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "VVV",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1795514189635,
+   "px": 25.279,
+   "zone": [
+    25.279,
+    25.279
+   ],
+   "stop": 20.265911554234656,
+   "tps": [
+    35.30517689153069,
+    40.31826533729604,
+    45.33135378306138,
+    55.35753067459207
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP"
+   ],
+   "id": 50,
+   "eng": "obs"
+  },
+  {
    "coin": "xyz:COST",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "VWAP"
    ],
    "id": 31,
-   "eng": "obs"
-  },
-  {
-   "coin": "XRP",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1792699853406,
-   "px": 1.3038,
-   "zone": [
-    1.3038,
-    1.3038
-   ],
-   "stop": 1.1774587045509106,
-   "tps": [
-    1.5564825908981792,
-    1.6828238863472686,
-    1.809165181796358,
-    2.061847772694537
-   ],
-   "status": "abgelaufen",
-   "r": -0.4614484899238081,
-   "doneAt": 1793572412637,
-   "events": [
-    "VWAP",
-    "Order Block"
-   ],
-   "id": 30,
    "eng": "obs"
   }
  ],
