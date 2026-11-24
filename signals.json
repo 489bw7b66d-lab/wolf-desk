@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "xyz:TSLA",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1795552159463,
+   "px": 382.4,
+   "zone": [
+    382.4,
+    382.4
+   ],
+   "stop": 348.9898075226789,
+   "tps": [
+    449.22038495464204,
+    482.6305774319631,
+    516.0407699092841,
+    582.8611548639262
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "VWAP"
+   ],
+   "id": 51,
+   "eng": "obs"
+  },
+  {
    "coin": "VVV",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "Sweep"
    ],
    "id": 33,
-   "eng": "obs"
-  },
-  {
-   "coin": "PUMP",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1792729334425,
-   "px": 0.004632,
-   "zone": [
-    0.004632,
-    0.004632
-   ],
-   "stop": 0.0034289136180823384,
-   "tps": [
-    0.007038172763835322,
-    0.008241259145752983,
-    0.009444345527670645,
-    0.011850518291505966
-   ],
-   "status": "abgelaufen",
-   "r": -0.43055927470007044,
-   "doneAt": 1793609086223,
-   "events": [
-    "Key-Level",
-    "VWAP"
-   ],
-   "id": 31,
    "eng": "obs"
   }
  ],
