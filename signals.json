@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "xyz:COST",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1795479210492,
+   "px": 1085,
+   "zone": [
+    1085,
+    1085
+   ],
+   "stop": 1045.1087701079891,
+   "tps": [
+    1164.7824597840215,
+    1204.6736896760324,
+    1244.5649195680433,
+    1324.3473793520648
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "VWAP",
+    "Sweep"
+   ],
+   "id": 49,
+   "eng": "obs"
+  },
+  {
    "coin": "xyz:AMZN",
    "dir": "long",
    "style": "swing",
@@ -550,36 +579,6 @@
     "Order Block"
    ],
    "id": 30,
-   "eng": "obs"
-  },
-  {
-   "coin": "WLD",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1792671184161,
-   "px": 0.54125,
-   "zone": [
-    0.54125,
-    0.54125
-   ],
-   "stop": 0.43478166256824996,
-   "tps": [
-    0.7541866748635001,
-    0.8606550122952501,
-    0.9671233497270002,
-    1.1800600245905002
-   ],
-   "status": "stop",
-   "r": -1,
-   "doneAt": 1792918799999,
-   "events": [
-    "Key-Level",
-    "VWAP",
-    "Order Block"
-   ],
-   "id": 29,
    "eng": "obs"
   }
  ],
