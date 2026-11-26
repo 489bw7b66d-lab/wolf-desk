@@ -1,6 +1,35 @@
 {
  "signals": [
   {
+   "coin": "XMR",
+   "dir": "long",
+   "style": "swing",
+   "score": null,
+   "seal": false,
+   "at": 1795703270970,
+   "px": 466.11,
+   "zone": [
+    466.11,
+    466.11
+   ],
+   "stop": 388.2986936176811,
+   "tps": [
+    621.7326127646378,
+    699.5439191469567,
+    777.3552255292756,
+    932.9778382939134
+   ],
+   "status": "offen",
+   "r": null,
+   "doneAt": null,
+   "events": [
+    "Key-Level",
+    "Order Block"
+   ],
+   "id": 52,
+   "eng": "obs"
+  },
+  {
    "coin": "xyz:TSLA",
    "dir": "long",
    "style": "swing",
@@ -550,35 +579,6 @@
     "Order Block"
    ],
    "id": 32,
-   "eng": "obs"
-  },
-  {
-   "coin": "XMR",
-   "dir": "long",
-   "style": "swing",
-   "score": null,
-   "seal": false,
-   "at": 1792815067200,
-   "px": 579.5,
-   "zone": [
-    579.5,
-    579.5
-   ],
-   "stop": 510.3496624747847,
-   "tps": [
-    717.8006750504306,
-    786.951012575646,
-    856.1013501008613,
-    994.4020251512919
-   ],
-   "status": "abgelaufen",
-   "r": 0.7052749378441754,
-   "doneAt": 1793693728595,
-   "events": [
-    "VWAP",
-    "Sweep"
-   ],
-   "id": 33,
    "eng": "obs"
   }
  ],
